@@ -1,0 +1,7 @@
+Project tools:
+-Html5
+-bootstrap&css
+-webservices with node js
+-angular js and angular js ui-router
+-Express js and pug
+-Mysql and stored programs
