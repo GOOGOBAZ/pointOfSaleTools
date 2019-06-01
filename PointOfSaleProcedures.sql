@@ -758,9 +758,9 @@ DELIMITER //
 
 CREATE PROCEDURE computeBalancesStatement(IN accountNamexx VARCHAR(100), IN startDatexx DATE,IN endDatexx DATE) READS SQL DATA BEGIN
 
-CALL previousAccountBalance(startDatexx, @theRunBalTwo);
-CALL accountNumberByAccountName(accountNamexx,@accountN);
 
+CALL accountNumberByAccountName(accountNamexx,@accountN);
+CALL previousAccountBalance(@accountN,startDatexx, @theRunBalTwo);
 CALL generalLedgerStatement(@accountN, @theRunBalTwo, startDatexx,endDatexx);
 
 END //
@@ -791,9 +791,9 @@ DELIMITER ;
 
 DELIMITER //
 
-CREATE PROCEDURE previousAccountBalance(IN accountNumber,IN fistPostDate DATE, OUT theRunBal DOUBLE) READS SQL DATA BEGIN
+CREATE PROCEDURE previousAccountBalance(IN accountNumberV VARCHAR(50),IN fistPostDate DATE, OUT theRunBal DOUBLE) READS SQL DATA BEGIN
 
- SELECT Balance INTO theRunBal FROM balancesdb WHERE postDate<=fistPostDate ORDER BY TxnId DESC Limit 1;
+ SELECT Balance INTO theRunBal FROM balancesdb WHERE postDate<=fistPostDate AND accountNumber=accountNumberV ORDER BY TxnId DESC Limit 1;
  
  IF theRunBal  IS NULL THEN
  
@@ -804,12 +804,13 @@ CREATE PROCEDURE previousAccountBalance(IN accountNumber,IN fistPostDate DATE, O
 END //
 
 DELIMITER ;
+
+
+
 	
 DROP PROCEDURE IF EXISTS generalLedgerStatement;
 
 DELIMITER //
-
-
 
 CREATE PROCEDURE generalLedgerStatement(IN accountNumbers VARCHAR(100), IN prevBal VARCHAR(100), IN startDate DATE,IN endDate DATE) READS SQL DATA BEGIN
 
