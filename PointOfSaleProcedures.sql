@@ -791,7 +791,7 @@ DELIMITER ;
 
 DELIMITER //
 
-CREATE PROCEDURE previousAccountBalance(IN fistPostDate DATE, OUT theRunBal DOUBLE) READS SQL DATA BEGIN
+CREATE PROCEDURE previousAccountBalance(IN accountNumber,IN fistPostDate DATE, OUT theRunBal DOUBLE) READS SQL DATA BEGIN
 
  SELECT Balance INTO theRunBal FROM balancesdb WHERE postDate<=fistPostDate ORDER BY TxnId DESC Limit 1;
  
@@ -836,7 +836,7 @@ IF @runningBalance IS NULL THEN */
 
 DROP TABLE IF EXISTS temp_ledgerstatement;
 
-CREATE  TABLE temp_ledgerstatement(id INTEGER,temp_BatchNumber VARCHAR(30),temp_PostDate DATE,temp_Narration VARCHAR(200),temp_DEDITAmount DOUBLE,temp_CREDITAmount DOUBLE,temp_runBalance DOUBLE);
+CREATE TEMPORARY  TABLE temp_ledgerstatement(id INTEGER,temp_BatchNumber VARCHAR(30),temp_PostDate DATE,temp_Narration VARCHAR(200),temp_DEDITAmount DOUBLE,temp_CREDITAmount DOUBLE,temp_runBalance DOUBLE);
 
 
 
