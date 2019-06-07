@@ -60,6 +60,7 @@ SELECT instalment_next_due_date, interest_rate,TotalPrincipalRemaining INTO last
 
 
 UPDATE new_loan_appstore SET instalment_next_due_date=originalDueDate WHERE loan_id=loanId;
+
 UPDATE new_loan_appstore1 SET instalment_next_due_date=originalDueDate WHERE loan_id=loanId;
 
 END IF;

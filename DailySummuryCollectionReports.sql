@@ -200,7 +200,9 @@ DELIMITER ;
 
  CALL prepareDailyReport(); 
 
-/* SELECT CollectionId, accountName,loanID FROM DailyCollection; */
+
+
+
 
 
 DROP PROCEDURE IF EXISTS updatdateNormalDailyInterest;
@@ -430,6 +432,8 @@ END //
 DELIMITER ;
 
 
+
+
 DROP PROCEDURE IF EXISTS updatdateNormalDailyPrincipal;
 
 DELIMITER //
@@ -437,7 +441,6 @@ DELIMITER //
 CREATE PROCEDURE updatdateNormalDailyPrincipal(IN loanIdCC VARCHAR(100) ,IN  principal VARCHAR(100)) READS SQL DATA BEGIN
 
 SELECT PrincimpalCollectedToday,AmountCollectedToday,CollectionId INTO @principalCollected,@instalmentAmountCollected,@Id from DailyCollection WHERE CollectionDate=CURDATE() AND  loanID=loanIdCC ORDER BY CollectionId DESC Limit 1;
-
 
 IF @principalCollected IS NULL THEN
 SET @principalCollected=0.0;
@@ -457,10 +460,10 @@ SET @principalCollected=NULL;
 SET @instalmentAmountCollected=NULL;
 SET @Id=NULL;
 
-
 END //
-
 DELIMITER ;
+
+
 
 
 DROP PROCEDURE IF EXISTS updatdateNormalDailyPrincipalWriteOff;
@@ -501,21 +504,20 @@ DELIMITER ;
 
 
 
+
+
 DROP PROCEDURE IF EXISTS CollectionOnDisbursement;
 
 DELIMITER //
 
 CREATE PROCEDURE CollectionOnDisbursement(IN loanIdCC VARCHAR(100)) READS SQL DATA BEGIN
 
- 
- 
-/*  SELECT ledgerIds;
- */
+
 SELECT applicant_account_name INTO @borrower  from new_loan_appstore where loan_id=loanIdCC;
 
-/* SELECT @borrower,@loanId; */
 
-SELECT SUM(PrincipalRemaining), SUM(InterestRemaing),SUM(AccumulatedInterestRemaining),SUM(LoanPenaltyRemaining),SUM(InstalmentRemaining),COUNT(trn_id) INTO @princimpaArrears,@interestArrears,@accumInterestArrears,@penaltyArrears,@instalmentArrears,@instalmentsArreas
+SELECT SUM(PrincipalRemaining), SUM(InterestRemaing),SUM(AccumulatedInterestRemaining),SUM(LoanPenaltyRemaining),SUM(InstalmentRemaining),COUNT(trn_id) 
+INTO @princimpaArrears,@interestArrears,@accumInterestArrears,@penaltyArrears,@instalmentArrears,@instalmentsArreas
  from new_loan_appstoreamort WHERE instalment_due_date<CURDATE() AND NOT instalment_status='P' AND master2_id=loanIdCC;
  
 
@@ -545,9 +547,10 @@ SET @instalmentArrears=0.0;
 SET @instalmentsArreas=0.0;
  END IF;
  
-/* SELECT  @interestArrears,@princimpaArrears,@instalmentArrears,@instalmentsArreas; */
+SELECT SUM(PrincipalRemaining), SUM(InterestRemaing),SUM(AccumulatedInterestRemaining),SUM(LoanPenaltyRemaining),SUM(InstalmentRemaining) INTO 
 
-SELECT SUM(PrincipalRemaining), SUM(InterestRemaing),SUM(AccumulatedInterestRemaining),SUM(LoanPenaltyRemaining),SUM(InstalmentRemaining) INTO @princimpal,@interest,@accumInterest,@loanPenalty,@instalmentAmount from new_loan_appstoreamort WHERE instalment_due_date=CURDATE() AND NOT instalment_status='P' AND master2_id=loanIdCC;
+@princimpal,@interest,@accumInterest,@loanPenalty,@instalmentAmount from new_loan_appstoreamort 
+WHERE instalment_due_date=CURDATE() AND NOT instalment_status='P' AND master2_id=loanIdCC;
 
 
  IF @interest IS NULL THEN
@@ -570,9 +573,9 @@ SET @loanPenalty=0.0;
    IF @instalmentAmount IS NULL THEN
 SET @instalmentAmount=0.0;
  END IF;
-/* SELECT  @interest,@princimpal,@instalmentAmount; */
 
- SELECT SUM(PrincipalRemaining), SUM(InterestRemaing),SUM(AccumulatedInterestRemaining),SUM(LoanPenaltyRemaining),SUM(InstalmentRemaining) INTO @totalprincimpal,@totalinterest,@totalAccuminterest,@totalPenalty,@totalInstalmnets
+ SELECT SUM(PrincipalRemaining), SUM(InterestRemaing),SUM(AccumulatedInterestRemaining),SUM(LoanPenaltyRemaining),SUM(InstalmentRemaining) 
+ INTO @totalprincimpal,@totalinterest,@totalAccuminterest,@totalPenalty,@totalInstalmnets
  from new_loan_appstoreamort WHERE instalment_due_date<=CURDATE() AND NOT instalment_status='P' AND master2_id=loanIdCC;
 
  IF @totalprincimpal IS NULL THEN
@@ -594,8 +597,7 @@ SET @totalPenalty=0.0;
   IF @totalInstalmnets IS NULL THEN
 SET @totalInstalmnets=0.0;
  END IF;
-/* SELECT  @totalinterestArrears,@totalprincimpaArrears,@totalinstalmentArrears; */
-    
+
 
 INSERT INTO DailyCollection VALUES(null,CURDATE(),@borrower,loanIdCC,@princimpaArrears,@princimpal,@totalprincimpal,'0.0',@interestArrears,@interest,@totalinterest,'0.0',@accumInterestArrears,@accumInterest,@totalAccuminterest,'0.0',
 @penaltyArrears,@loanPenalty,@totalPenalty,'0.0',@instalmentArrears,@instalmentAmount,@totalInstalmnets,'0.0',@instalmentsArreas,'0','NA','NA','NA');
@@ -615,28 +617,7 @@ DELIMITER ;
 /*  CALL prepareDailyReport();
  */
 
-DROP TABLE IF EXISTS `sequenceNumbers`;
 
-CREATE TABLE `sequenceNumbers` (
-  `trn_id` int(11) NOT NULL AUTO_INCREMENT,
-  `groupNumber` int(11) DEFAULT 10000,
-  `trnSequencyNumber` int(11) DEFAULT 20000,
-  `batchNumber` int(11) DEFAULT 30000,
-  `budgetEstimateNumber` int(11) DEFAULT 40000,
-  `otherNumbers1` int(11) DEFAULT 50000,
-  `otherNumbers2` int(11) DEFAULT 60000,
-  `otherNumbers3` int(11) DEFAULT 70000,
-  `otherNumbers4` int(11) DEFAULT 80000,
-  PRIMARY KEY (`trn_id`),
-  UNIQUE KEY `trn_id` (`trn_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-
-INSERT INTO sequenceNumbers VALUES(null,10000,20000,30000,40000,50000,60000,70000,80000);
-
-
-DROP PROCEDURE IF EXISTS dailyCollectionInstalmentStatement;
-
-DELIMITER //
 
 
 
@@ -651,28 +632,13 @@ DECLARE forSelectingTxnIds CURSOR FOR SELECT CollectionId  FROM dailycollection 
  
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
  
-/*  SELECT accountName,startDate,endDate; */
- 
-
-
-/*  
-IF @runningBalance IS NULL THEN */
-/* SET @runningBalance=0.0; */
-/* END IF; */
-
-/* SELECT @runningBalance; */
 
 DROP TABLE IF EXISTS temp_dailycollection;
 
-CREATE  TABLE temp_dailycollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection DOUBLE,temp_ActualCollection DOUBLE,temp_BalColl DOUBLE,temp_Variance VARCHAR(200));
-
-
-
-
+CREATE  TEMPORARY TABLE temp_dailycollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection DOUBLE,temp_ActualCollection DOUBLE,temp_BalColl DOUBLE,temp_Variance VARCHAR(200));
 
 
  OPEN forSelectingTxnIds;
-
 
 
 accounts_loop: LOOP 
@@ -717,10 +683,6 @@ LEAVE accounts_loop;
  INSERT INTO temp_dailycollection VALUES(Ids,@narration,@ExpectedAm,@actualToday,@Varince,@Vstatus);
 
 
- 
-
-
-
 SET l_done=0;
 
  END LOOP accounts_loop;
@@ -737,51 +699,6 @@ END //
 DELIMITER ;
 
 CALL dailyCollectionInstalmentStatement('2019-05-23');
-
-
-DROP PROCEDURE IF EXISTS groupNumber;
-
-DELIMITER //
-
-CREATE PROCEDURE groupNumber() READS SQL DATA BEGIN
- 
- 
- SELECT  groupNumber  INTO @theGroupNumber FROM sequenceNumbers;
- 
- SET @theGroupNumber=@theGroupNumber+1;
-
- UPDATE sequenceNumbers SET groupNumber=@theGroupNumber;
-
-SELECT @theGroupNumber ;
-
-END //
-
-DELIMITER ;
-
-CALL groupNumber();
-
-
-
-DROP PROCEDURE IF EXISTS batchNumber;
-
-DELIMITER //
-
-CREATE PROCEDURE batchNumber() READS SQL DATA BEGIN
- 
- 
- SELECT   batchNumber  INTO @theGroupNumber FROM sequenceNumbers;
- 
- SET @theGroupNumber=@theGroupNumber+1;
-
- UPDATE sequenceNumbers SET  batchNumber=@theGroupNumber;
-
-SELECT @theGroupNumber ;
-
-END //
-
-DELIMITER ;
-
-CALL batchNumber();
 
 
 
@@ -802,28 +719,14 @@ DECLARE forSelectingTxnIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore WHER
  
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
  
-/*  SELECT accountName,startDate,endDate; */
- 
 
-
-/*  
-IF @runningBalance IS NULL THEN */
-/* SET @runningBalance=0.0; */
-/* END IF; */
-
-/* SELECT @runningBalance; */
 
 DROP TABLE IF EXISTS temp_grossPortFolio;
 
-CREATE  TABLE temp_grossPortFolio(id INTEGER,temp_Borrower VARCHAR(200),temp_outStandingPrici DOUBLE,temp_OutStandingInterst DOUBLE,temp_OutStandingAccum DOUBLE,temp_OutStandingPenalty VARCHAR(200),temp_OutStandingTotal VARCHAR(200));
-
-
-
-
+CREATE TEMPORARY  TABLE temp_grossPortFolio(id INTEGER,temp_Borrower VARCHAR(200),temp_outStandingPrici DOUBLE,temp_OutStandingInterst DOUBLE,temp_OutStandingAccum DOUBLE,temp_OutStandingPenalty VARCHAR(200),temp_OutStandingTotal VARCHAR(200));
 
 
  OPEN forSelectingTxnIds;
-
 
 
 accounts_loop: LOOP 
@@ -839,23 +742,13 @@ LEAVE accounts_loop;
 
  END IF;
  
- 
- 
  SELECT  applicant_account_name, TotalPrincipalRemaining,TotalInterestRemaining,TotalAccumulatedInterestRemaining,TotalLoanPenaltyRemaining  INTO @borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty FROM new_loan_appstore WHERE trn_id=txnIdS;
  
  SET Ids=Ids+1;
    
    SET @totalAll=@remPrinc+@remInt+@remAccumI+@remaPenalty;
    
-  
-   
-   
-
  INSERT INTO temp_grossPortFolio VALUES(Ids,@borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty,@totalAll);
-
-
- 
-
 
 
 SET l_done=0;
@@ -874,5 +767,351 @@ END //
 DELIMITER ;
 
 CALL grossLoanPortfolio();
+
+
+DROP PROCEDURE IF EXISTS dailyCollectionInstalmentStatementArrears;
+
+DELIMITER //
+
+
+CREATE PROCEDURE dailyCollectionInstalmentStatementArrears(IN theDate DATE) READS SQL DATA BEGIN
+
+ DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT CollectionId  FROM dailycollection WHERE CollectionDate=theDate;
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+
+DROP TABLE IF EXISTS temp_dailycollection;
+
+CREATE  TEMPORARY TABLE temp_dailycollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection DOUBLE,temp_ActualCollection DOUBLE,temp_BalColl DOUBLE,temp_Variance VARCHAR(200));
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+ 
+ 
+ SELECT  accountName, ExpectedTotalAmountToday,AmountCollectedToday  INTO @narration,@ExpectedAm,@actualToday FROM dailycollection WHERE CollectionId=txnIdS;
+ 
+ SET Ids=Ids+1;
+   
+   SET @Varince=@actualToday-@ExpectedAm;
+   
+   IF @Varince>=0.0 THEN
+   
+   SET @Vstatus='+Ve';
+   
+   SET @Varince=0.0;
+   
+   END IF;
+   
+   IF @Varince<0.0 THEN
+   
+   SET @Vstatus='-Ve';
+   
+   SET @Varince=@Varince*-1;
+ 
+   END IF;
+   
+   
+
+ INSERT INTO temp_dailycollection VALUES(Ids,@narration,@ExpectedAm,@actualToday,@Varince,@Vstatus);
+
+
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+ 
+
+
+SELECT id ,temp_NarrationC,temp_ExpectedCollection ,temp_ActualCollection,temp_BalColl,temp_Variance  FROM temp_dailycollection;
+
+
+END //
+
+DELIMITER ;
+
+CALL dailyCollectionInstalmentStatementArrears('2019-05-23');
+
+
+
+
+DROP PROCEDURE IF EXISTS dailyCollectionPrincipal;
+
+DELIMITER //
+
+
+CREATE PROCEDURE dailyCollectionPrincipal(IN theDate DATE) READS SQL DATA BEGIN
+
+ DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT CollectionId  FROM dailycollection WHERE CollectionDate=theDate;
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+
+DROP TABLE IF EXISTS temp_dailycollection;
+
+CREATE  TEMPORARY TABLE temp_dailycollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection DOUBLE,temp_ActualCollection DOUBLE,temp_BalColl DOUBLE,temp_Variance VARCHAR(200));
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+ 
+ 
+ SELECT  accountName, ExpectedPrincipalToday,PrincimpalCollectedToday  INTO @narration,@ExpectedAm,@actualToday FROM dailycollection WHERE CollectionId=txnIdS;
+ 
+ SET Ids=Ids+1;
+   
+   SET @Varince=@actualToday-@ExpectedAm;
+   
+   IF @Varince>=0.0 THEN
+   
+   SET @Vstatus='+Ve';
+   
+   SET @Varince=0.0;
+   
+   END IF;
+   
+   IF @Varince<0.0 THEN
+   
+   SET @Vstatus='-Ve';
+   
+   SET @Varince=@Varince*-1;
+ 
+   END IF;
+   
+   
+
+ INSERT INTO temp_dailycollection VALUES(Ids,@narration,@ExpectedAm,@actualToday,@Varince,@Vstatus);
+
+
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+ 
+
+
+SELECT id ,temp_NarrationC,temp_ExpectedCollection ,temp_ActualCollection,temp_BalColl,temp_Variance  FROM temp_dailycollection;
+
+
+END //
+
+DELIMITER ;
+
+CALL dailyCollectionPrincipal('2019-05-23');
+
+
+
+DROP PROCEDURE IF EXISTS dailyCollectionPrincipalArrears;
+
+DELIMITER //
+
+
+CREATE PROCEDURE dailyCollectionPrincipalArrears(IN theDate DATE) READS SQL DATA BEGIN
+
+ DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT CollectionId  FROM dailycollection WHERE CollectionDate=theDate;
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+
+DROP TABLE IF EXISTS temp_dailycollection;
+
+CREATE  TEMPORARY TABLE temp_dailycollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection DOUBLE,temp_ActualCollection DOUBLE,temp_BalColl DOUBLE,temp_Variance VARCHAR(200));
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+ 
+ 
+ SELECT  accountName, ExpectedTotalPrincimpalToday,PrincimpalCollectedToday  INTO @narration,@ExpectedAm,@actualToday FROM dailycollection WHERE CollectionId=txnIdS;
+ 
+ SET Ids=Ids+1;
+   
+   SET @Varince=@actualToday-@ExpectedAm;
+   
+   IF @Varince>=0.0 THEN
+   
+   SET @Vstatus='+Ve';
+   
+   SET @Varince=0.0;
+   
+   END IF;
+   
+   IF @Varince<0.0 THEN
+   
+   SET @Vstatus='-Ve';
+   
+   SET @Varince=@Varince*-1;
+ 
+   END IF;
+   
+   
+
+ INSERT INTO temp_dailycollection VALUES(Ids,@narration,@ExpectedAm,@actualToday,@Varince,@Vstatus);
+
+
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+ 
+
+
+SELECT id ,temp_NarrationC,temp_ExpectedCollection ,temp_ActualCollection,temp_BalColl,temp_Variance  FROM temp_dailycollection;
+
+
+END //
+
+DELIMITER ;
+
+CALL dailyCollectionPrincipalArrears('2019-06-05');
+
+
+
+
+
+DROP PROCEDURE IF EXISTS dailyCollectionInterest;
+
+DELIMITER //
+
+
+CREATE PROCEDURE dailyCollectionInterest(IN theDate DATE) READS SQL DATA BEGIN
+
+ DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT CollectionId  FROM dailycollection WHERE CollectionDate=theDate;
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+
+DROP TABLE IF EXISTS temp_dailycollection;
+
+CREATE  TEMPORARY TABLE temp_dailycollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection DOUBLE,temp_ActualCollection DOUBLE,temp_BalColl DOUBLE,temp_Variance VARCHAR(200));
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+ 
+ 
+ SELECT  accountName, ExpectedInterestToday,InterestCollectedToday  INTO @narration,@ExpectedAm,@actualToday FROM dailycollection WHERE CollectionId=txnIdS;
+ 
+ SET Ids=Ids+1;
+   
+   SET @Varince=@actualToday-@ExpectedAm;
+   
+   IF @Varince>=0.0 THEN
+   
+   SET @Vstatus='+Ve';
+   
+   SET @Varince=0.0;
+   
+   END IF;
+   
+   IF @Varince<0.0 THEN
+   
+   SET @Vstatus='-Ve';
+   
+   SET @Varince=@Varince*-1;
+ 
+   END IF;
+   
+   
+
+ INSERT INTO temp_dailycollection VALUES(Ids,@narration,@ExpectedAm,@actualToday,@Varince,@Vstatus);
+
+
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+ 
+
+
+SELECT id ,temp_NarrationC,temp_ExpectedCollection ,temp_ActualCollection,temp_BalColl,temp_Variance  FROM temp_dailycollection;
+
+
+END //
+
+DELIMITER ;
+
+CALL dailyCollectionPrincipalArrears('2019-06-05');
 
 

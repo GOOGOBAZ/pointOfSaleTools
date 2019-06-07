@@ -104,49 +104,6 @@ DELIMITER ;
 CALL dailyCollectionInstalmentStatement('2019-05-23');
 
 
-DROP PROCEDURE IF EXISTS groupNumber;
-
-DELIMITER //
-
-CREATE PROCEDURE groupNumber() READS SQL DATA BEGIN
- 
- 
- SELECT  groupNumber  INTO @theGroupNumber FROM sequenceNumbers;
- 
- SET @theGroupNumber=@theGroupNumber+1;
-
- UPDATE sequenceNumbers SET groupNumber=@theGroupNumber;
-
-SELECT @theGroupNumber ;
-
-END //
-
-DELIMITER ;
-
-CALL groupNumber();
-
-
-
-DROP PROCEDURE IF EXISTS batchNumber;
-
-DELIMITER //
-
-CREATE PROCEDURE batchNumber() READS SQL DATA BEGIN
- 
- 
- SELECT   batchNumber  INTO @theGroupNumber FROM sequenceNumbers;
- 
- SET @theGroupNumber=@theGroupNumber+1;
-
- UPDATE sequenceNumbers SET  batchNumber=@theGroupNumber;
-
-SELECT @theGroupNumber ;
-
-END //
-
-DELIMITER ;
-
-CALL batchNumber();
 
 
 
@@ -231,11 +188,11 @@ SET l_done=0;
  
 
 
-SELECT id ,temp_NarrationC,temp_ExpectedCollection ,temp_ActualCollection,temp_BalColl,temp_Variance  FROM temp_dailycollection;
+SELECT id,temp_Borrower,temp_outStandingPrici,temp_OutStandingInterst,temp_OutStandingAccum,temp_OutStandingPenalty,temp_OutStandingTotal  FROM temp_grossPortFolio;
 
 
 END //
 
 DELIMITER ;
 
-CALL dailyCollectionInstalmentStatement('2019-05-23');
+CALL grossLoanPortfolio();
