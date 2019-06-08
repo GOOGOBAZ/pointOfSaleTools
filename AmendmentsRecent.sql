@@ -79,13 +79,7 @@ Date_loop: LOOP
 
 
 
-IF lastDate>=current_date() THEN
 
-CALL updateAccountsAfter(loanIdZ,lastDate,@totalInterest,princinpalRemaining);
-
-LEAVE Date_loop;
-
-END IF;
 
 
 /* IF @counter<=1 THEN
@@ -126,6 +120,14 @@ SELECT lastDate,InterestRate,originalDueDate,princinpalRemaining,loanId,interest
 
 INSERT INTO interestComputed VALUES(null,loanIdZ,@pureDate,princinpalRemaining,interestInveolved,0.0,interestInveolved,@totalInterest,0.0,@totalInterest,'Pending'); 
 
+
+IF lastDate>=current_date() THEN
+
+CALL updateAccountsAfter(loanIdZ,lastDate,@totalInterest,princinpalRemaining);
+
+LEAVE Date_loop;
+
+END IF;
 
 
 
@@ -191,6 +193,7 @@ DELIMITER //
 
 CREATE PROCEDURE updateAccountsAfter(IN loanId VARCHAR(30),IN newDateDue DATE,IN interestComputed Double,IN princimpalRemaining Double) READS SQL DATA BEGIN
 
+SELECT interestComputed;
 
 SET @sql_text1 = concat(CAST("SELECT interest_amount, InstalmentRemaining,InterestRemaing, instalment_amount INTO @interestAmount, @instalmentRemaining,@interestRemaining,@InstalmentAmount FROM new_loan_appstoreamort WHERE master2_id='" AS CHAR CHARACTER SET utf8),loanId, CAST("'" AS CHAR CHARACTER SET utf8));
 
@@ -220,15 +223,18 @@ IF @totalInterestRemaining IS NULL THEN
 SET @totalInterestRemaining=0;
 END IF;
 
-SET @instalmentRemaining=princimpalRemaining+interestComputed,@interestRemaining=interestComputed,@interestAmount=interestComputed,@InstalmentAmount=@InstalmentAmount+interestComputed;
+SET @instalmentRemaining=princimpalRemaining+interestComputed,@interestRemaining=interestComputed,@interestAmount=interestComputed,@InstalmentAmount=@instalmentRemaining;
 
 SET @totalInstalmentsRemaining=princimpalRemaining+interestComputed,@totalInterestRemaining=interestComputed,@totalInterestAmount=@totalInterestAmount+interestComputed;
 
 
-/* SELECT @instalmentRemaining,@interestRemaining,@totalInstalmentsRemaining,@totalInterestRemaining,@interestAmount,@totalInterestAmount,loanId;
- */
-UPDATE new_loan_appstoreamort SET InstalmentRemaining=@instalmentRemaining,InterestRemaing=@interestRemaining,interest_amount=@interestAmount,instalment_amount=@InstalmentAmount WHERE master2_id=loanId;
+SELECT @instalmentRemaining,@interestRemaining,@totalInstalmentsRemaining,@totalInterestRemaining,@interestAmount,@totalInterestAmount,loanId;
+
+UPDATE new_loan_appstoreamort SET InstalmentRemaining=@instalmentRemaining,InterestRemaing=interestComputed,interest_amount=interestComputed,instalment_amount=@InstalmentAmount WHERE master2_id=loanId;
+
 UPDATE new_loan_appstore SET balance_due=@totalInstalmentsRemaining,TotalInterestRemaining=@totalInterestRemaining,instalment_next_due_date=newDateDue,total_interest=@totalInterestAmount WHERE loan_id=loanId;
+
+
 UPDATE new_loan_appstore1 SET balance_due=@totalInstalmentsRemaining,TotalInterestRemaining=@totalInterestRemaining,instalment_next_due_date=newDateDue,total_interest=@totalInterestAmount WHERE loan_id=loanId;
 
 END //
@@ -257,9 +263,9 @@ SELECT interest_rate,TotalPrincipalRemaining INTO @InterestRate,@princinpalRemai
 
 SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE master2_id=loanIdUsed;
 
-SELECT interest_rate,TotalPrincipalRemaining INTO @InterestRate,@princinpalRemaining FROM new_loan_appstore WHERE loan_id=loanIdUsed;
 
 SET @interest=((@InterestRate*@princinpalRemaining)/1200);
+
 
 interestPayment_Loop: LOOP
 
@@ -267,9 +273,6 @@ interestPayment_Loop: LOOP
 SELECT TrnId,InterestInvoRemaining, InterestPaidIn,totalInterstInvRemaing,totalInterstInvPaid,totalInterstInv INTO @theId,@interestRemaining,@interestPaidnow,@totalInteInvoRemain,@totalInterestInvPaid,@totalInterestInveo FROM interestcomputed WHERE loanId=loanIdUsed AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1;
 
 
-SET InterestPaid=InterestPaid-@interest;
-
-CALL newDateConverted(@originalDueDate);
 
 
 IF InterestPaid<@interest THEN
@@ -313,6 +316,9 @@ END IF;
 
 
 
+SET InterestPaid=InterestPaid-@interest;
+
+CALL newDateConverted(@originalDueDate);
 
 
 IF InterestPaid<@interest THEN
