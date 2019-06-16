@@ -887,7 +887,7 @@ DELIMITER ;
 
  DROP PROCEDURE IF EXISTS 	countNumberValueOfActiveSavings2;	
 DELIMITER //
-CREATE PROCEDURE countNumberValueOfActiveSavings( )
+CREATE PROCEDURE countNumberValueOfActiveSavings2( )
 BEGIN
  
 DECLARE ItemIdu INTEGER;DECLARE totalValueSaving INTEGER;DECLARE totalNumberOfSavings INTEGER;
@@ -1610,7 +1610,7 @@ UPDATE summurystats SET TotalNumberOfGroupLoansDisbursedCycle7=existingNumberOfL
 SET existingNumberOfLoans=0;
 SET existingValueOfLoans=0;
 
-
+29
  END IF;
  IF BorrowingCategoryS='Individual' THEN
 

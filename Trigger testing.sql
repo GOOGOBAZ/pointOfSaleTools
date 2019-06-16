@@ -37,8 +37,25 @@ END IF;
 
 UPDATE account_created_store SET running_balance=NEW.ledger_balance,trn_date=NEW.trn_date  WHERE account_number=NEW.account_number;
 
-CALL   updateMaster"+AccountNumber+"(NEW.trn_date,NEW.account_number,NEW.ledger_balance,NEW.staff_id);
+CALL   updateMaster01123000110(NEW.trn_date,NEW.account_number,NEW.ledger_balance,NEW.staff_id);
 
 END;
 
 DELIMITER ;
+
+
+CREATE PROCEDURE updateMaster01123000110(IN TrnDate DATE,IN accountNumber VARCHAR(20),IN NewLedgerBalance VARCHAR(20),IN StaffId VARCHAR(8))
+BEGIN
+
+CALL priviousBalance01123000110(accountNumber,@previouslyAdded);
+
+CALL currentMasterBalance0112300010(@currentlAdded);
+
+CALL accountNma(accountNumber,@accountName);
+		
+ SET @newMasterBalance=(@currentlAdded-@previouslyAdded)+NewLedgerBalance;
+
+INSERT INTO BSANCA0112300010(trn_id,trn_date,value_date,account_name,account_number,account_balance,master_balance,staff_id) 
+
+VALUES (null, TrnDate,TrnDate,@accountName,accountNumber,NewLedgerBalance,@newMasterBalance,StaffId); 
+END;

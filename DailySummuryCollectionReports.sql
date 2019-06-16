@@ -37,6 +37,7 @@ CREATE TABLE `DailyCollection` (
   `AmountCollectedToday` varchar(100) DEFAULT '0',
   
    `NumberOfInstalmentsInArrears` varchar(100) DEFAULT '0',
+   
   `VarianceCollection` varchar(100) DEFAULT '0',
   `OtherThree` varchar(45) DEFAULT 'NCO',
   `OtherFour` varchar(45) DEFAULT 'NCO',
@@ -619,6 +620,10 @@ DELIMITER ;
 
 
 
+DROP PROCEDURE IF EXISTS dailyCollectionInstalmentStatement;
+
+DELIMITER //
+
 
 
 CREATE PROCEDURE dailyCollectionInstalmentStatement(IN theDate DATE) READS SQL DATA BEGIN
@@ -1113,5 +1118,87 @@ END //
 DELIMITER ;
 
 CALL dailyCollectionPrincipalArrears('2019-06-05');
+
+
+
+/*  */
+
+DROP PROCEDURE IF EXISTS grandSummryDailyReport;
+
+DELIMITER //
+
+/* The grand summury daily report will generate a report of total loan collections and general cash items by collecting data from different tables */
+/* The expected summuries should include both loan and cash collection summuries */
+CREATE PROCEDURE grandSummryDailyReport(IN theDate DATE) READS SQL DATA BEGIN
+
+SELECT SUM(`ExpectedPrincipalArrears`),SUM(`ExpectedPrincipalToday`),SUM(`ExpectedTotalPrincimpalToday`),SUM(`PrincimpalCollectedToday`),
+SUM(`ExpectedInterestArrears`),SUM(`ExpectedInterestToday`),SUM(`ExpectedTotalInterestToday`),(`InterestCollectedToday`),SUM(`ExpectedAccumInterestArrears`),
+SUM(`ExpectedAccumInterestToday`),SUM(`ExpectedTotalIAccumnterestToday`),SUM(`AccumInterestCollectedToday`),SUM(`ExpectedPenaltyArrears`),SUM(`ExpectedPenaltyToday`) ,
+SUM(`ExpectedTotalIPenaltyToday`),SUM(`PenaltyCollectedToday`),SUM(`ExpectedAmountInArrears`),SUM(`ExpectedAmountToday`),SUM(`ExpectedTotalAmountToday`) ,
+SUM(`AmountCollectedToday`),SUM(`NumberOfInstalmentsInArrears`) INTO
+ @ExpectedPrincinpaWithArrears, /*This is the  princimpal amount expected for only instalments in arrears*/
+@ExpectedPricimpalToday,/* This is the princimpal amount excluding those payments in arrears*/
+@ExpectedTotalPricimpalToday,/* This is the princimpal amount without arrears plus the princimpal amount with arrears expected today*/
+@ActualPrincimpalCollectedToday, /* This is total princimpal amount actually collected today*/
+
+ @ExpectedInterestWithArrears, /*This is the  interest amount expected for only instalments in arrears*/
+@ExpectedInterstToday,/* This is the interest amount excluding those payments in arrears*/
+@ExpectedTotalInterestToday,/* This is the interest amount without arrears plus the interest amount with arrears expected today*/
+@ActualInterestCollectedToday, /* This is total interest amount actually collected today*/
+
+ @ExpectedAccumInterestWithArrears, /*This is the  interest amount expected for only instalments in arrears*/
+@ExpectedAccumInterstToday,/* This is the interest amount excluding those payments in arrears*/
+@ExpectedTotalAccumInterestToday,/* This is the interest amount without arrears plus the interest amount with arrears expected today*/
+@ActualAccumInterestCollectedToday, /* This is total interest amount actually collected today*/
+
+ @ExpectedPenaltyWithArrears, /*This is the  interest amount expected for only instalments in arrears*/
+@ExpectedPenaltyToday,/* This is the interest amount excluding those payments in arrears*/
+@ExpectedTotalPenaltyToday,/* This is the interest amount without arrears plus the interest amount with arrears expected today*/
+@ActualPenaltyCollectedToday, /* This is total interest amount actually collected today*/
+
+ @ExpectedTotalAmountWithArrears, /*This is the  total expected amount including princimpal and interest expected but for only payments in arrears*/
+@ExpectedTotalAmountToday,/* This is the total amount expected excludint the instalments in arrears*/
+@ExpectedOverallTotalAmountToday,/* This is the total amount expected overall including interest and princimpa in arrears*/
+@ActualTotalAmountCollectedToday /* This is total amount actually collected today*/
+
+FROM dailycollection WHERE CollectionDate=theDate;
+
+CALL OpeningCashBalance(theDate,@OpeningCahdBala);
+
+CALL ProcessingFeesCollected(theDate,@processingFees);
+
+CALL LedgerFees(theDate,@ledgerFessCol);
+
+CALL SavingsCollected(theDate,@savingsC);
+
+CALL ReceivablesCreated(theDate,@receiavale);
+
+
+CALL RecevablesRefunded(theDate,@Refundreceiavale);
+
+
+CALL PayablesCreated(theDate,@payableCreated);
+
+
+CALL PayablesRefunded(theDate,@RefundPayable);
+
+
+CALL ExpensesMade(theDate,@ExpensesMa);
+
+CALL DrawingsMade(theDate,@DrawingM);
+
+CALL OtherDeposits(theDate,@otherDeposits);
+
+
+CREATE  TEMPORARY TABLE temp_dailySummuryCollection(id INTEGER,temp_NarrationC VARCHAR(200),temp_ExpectedCollection VARCHAR(200),temp_ActualCollection VARCHAR(200),temp_BalColl VARCHAR(200),temp_Variance VARCHAR(200));
+
+INSERT INTO temp_dailySummuryCollection VALUES(1,"LOAN SUMMURIES","","","","");
+INSERT INTO temp_dailySummuryCollection VALUES(1,"LOAN SUMMURIES",0,0,0,0);
+
+END //
+
+DELIMITER ;
+
+
 
 

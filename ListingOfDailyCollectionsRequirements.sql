@@ -1,0 +1,28 @@
+
+LOAN SUMMURIES:
+-Total Expected Collections
+-Total Expected Collections With Arrears
+-Total Actual Collectionss
+
+-TotalExpectedInterest
+-TotalExpectedInterestWithArrears
+-TotalActualInterestCollected
+
+-TotalExpectedPrincimpal
+-TotalExpectedPrincimpalWithArrears
+-TotalActualPrincipalCollected
+
+
+DailyCollectionSummury:
+OpeningCashBalance:
+ProcessingFees
+LedgerFees
+InterestCollected
+PrincimpalCollection
+Savings
+ReceivablesCreated
+RecevablesRefunded
+PayablesCreated
+PayablesRefunded
+ExpensesMade
+OtherDeposits

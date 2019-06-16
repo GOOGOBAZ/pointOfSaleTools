@@ -59,3 +59,6 @@ SET trId=@trIdV;
 
      END//
  DELIMITER ;
+ 
+ 
+ 
