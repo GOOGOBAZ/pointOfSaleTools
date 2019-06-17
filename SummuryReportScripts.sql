@@ -2340,7 +2340,7 @@ CREATE  TEMPORARY TABLE temp_summuryReport(id INTEGER,temp_NarrationC VARCHAR(20
   
    SET @summuryString=SUBSTRING_INDEX(@mainStrng, ':', -1);
   
-/*   SELECT @mainStrng,@selectString,@summuryString; */
+  SELECT @mainStrng,@selectString,@summuryString;
   
   
   
@@ -2372,7 +2372,7 @@ DROP PREPARE stmt1;
 	
 	
 	SET @differenceNu=@endingValueValue-@startingValue;
-	
+	SELECT @differenceNu;
 	IF @differenceNu<0 THEN
 	
 	SET @percentRe=ABS(@differenceNu)/@startingValue*100;
@@ -2384,10 +2384,19 @@ DROP PREPARE stmt1;
 	
 	ELSEIF @differenceNu>0 THEN
 	
-	SET @percentRe=ABS(@differenceNu)/@startingValue*100;
 	
+	
+	IF @startingValue=0 THEN
+	@percentRe=100;
+	ELSE
+	SET @percentRe=ABS(@differenceNu)/@startingValue*100;
+	END IF;
+	
+	
+	
+/* 	SELECT @percentRe; */
 	 SET @indicatorNu=concat(@percentRe,CAST('%  Increment' AS CHAR CHARACTER SET utf8));
- 
+/*  SELECT @indicatorNu; */
 	ELSEIF  @differenceNu=0 THEN
 	
 	 SET @indicatorNu='No Change';
