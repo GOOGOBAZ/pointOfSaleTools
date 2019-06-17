@@ -1129,16 +1129,39 @@ UPDATE summurystats SET TotalNumberOfActiveSavingsCustomers=totalNumberOfSavings
 
   SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
   
-  SELECT SUM(running_balance) INTO totalValueDeposits FROM account_created_store WHERE running_balance>0 AND account_number like '0550200%';
+  SELECT SUM(running_balance) INTO totalValueDeposits FROM account_created_store WHERE  account_number like '05502%';
   
-  SELECT COUNT(running_balance) INTO totalNumberOfDeposits FROM account_created_store WHERE running_balance>0 AND account_number like '0550200%';
+  SELECT COUNT(running_balance) INTO totalNumberOfDeposits FROM account_created_store WHERE running_balance>0 AND account_number like '05502%';
 
-UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits,TotalValueOfDeposits=totalValueDeposits WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalValueOfDeposits=totalValueDeposits WHERE ItemId=ItemIdu;
 
  END//
  DELIMITER ;
 
+
+ DROP PROCEDURE IF EXISTS pmms.countNumberValueOfActiveDeposits2;
  
+ 	DELIMITER //
+ CREATE PROCEDURE countNumberValueOfActiveDeposits2( )
+ BEGIN
+ 
+ DECLARE ItemIdu INTEGER;
+ 
+ DECLARE totalValueDeposits INTEGER;
+ 
+ DECLARE totalNumberOfDeposits INTEGER;
+ 
+
+  SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
+  
+  SELECT SUM(running_balance) INTO totalValueDeposits FROM account_created_store WHERE running_balance>0 AND account_number like '05502%';
+  
+  SELECT COUNT(running_balance) INTO totalNumberOfDeposits FROM account_created_store WHERE running_balance>0 AND account_number like '05502%';
+
+UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits WHERE ItemId=ItemIdu;
+
+ END//
+ DELIMITER ;
 
 
 
@@ -1216,12 +1239,12 @@ UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits
  SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfLoansCycle5, totalValueLoansCycle5 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle5';
  SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfLoansCycle6, totalValueLoansCycle6 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle6';
  SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfLoansCycle7, totalValueLoansCycle7 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle7';
- SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfLoansCycleAbove7, totalValueLoansCycleAbove7 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND NOT LoanCycle='Cycle1' OR 'Cycle2' OR 'Cycle3' OR 'Cycle4' OR 'Cycle5' OR 'Cycle6' OR 'Cycle7';
+ SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfLoansCycleAbove7, totalValueLoansCycleAbove7 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND NOT (LoanCycle='Cycle1' OR LoanCycle='Cycle2' OR LoanCycle='Cycle3' OR LoanCycle='Cycle4' OR LoanCycle='Cycle5' OR LoanCycle='Cycle6' OR LoanCycle='Cycle7');
 
 
  SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoans, totalValueCustomerLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND loan_id LIKE 'newloan05502%10';
 
- SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle1, totalValueCustomerLoansCycle1 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle1' AND loan_id LIKE 'newloan055200%10';
+ SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle1, totalValueCustomerLoansCycle1 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle1' AND loan_id LIKE 'newloan0552%10';
 SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle2, totalValueCustomerLoansCycle2 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle2' AND loan_id LIKE 'newloan05502%10';
 SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle3, totalValueCustomerLoansCycle3 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle3' AND loan_id LIKE 'newloan05502%10';
 SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle4, totalValueCustomerLoansCycle4 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle4' AND loan_id LIKE 'newloan05502%10';
@@ -1229,7 +1252,7 @@ SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNum
 SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle6, totalValueCustomerLoansCycle6 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle6' AND loan_id LIKE 'newloan05502%10';
 
 SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycle7, totalValueCustomerLoansCycle7 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND LoanCycle='Cycle7' AND loan_id LIKE 'newloan05502%10';
-SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycleAbove7, totalValueCustomerLoansCycleAbove7 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND NOT LoanCycle='Cycle1' OR 'Cycle2' OR 'Cycle3' OR 'Cycle4' OR 'Cycle5' OR 'Cycle6' OR 'Cycle7' AND loan_id LIKE 'newloan05502%10';
+SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfCustomerLoansCycleAbove7, totalValueCustomerLoansCycleAbove7 FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed' AND NOT (LoanCycle='Cycle1' OR LoanCycle='Cycle2' OR LoanCycle='Cycle3' OR LoanCycle='Cycle4' OR LoanCycle='Cycle5' OR LoanCycle='Cycle6' OR LoanCycle='Cycle7') AND loan_id LIKE 'newloan05502%10';
 
 
 UPDATE pmms.summurystats SET TotalNumberOfActiveLoans=totalNumberOfLoans,TotalValueOfActiveLoans=totalValueLoans,TotalNumberOfActiveLoansCycle1=totalNumberOfLoansCycle1,TotalValueOfActiveLoansCycle1=totalValueLoansCycle1,
@@ -1610,7 +1633,6 @@ UPDATE summurystats SET TotalNumberOfGroupLoansDisbursedCycle7=existingNumberOfL
 SET existingNumberOfLoans=0;
 SET existingValueOfLoans=0;
 
-29
  END IF;
  IF BorrowingCategoryS='Individual' THEN
 
@@ -1940,7 +1962,7 @@ DECLARE l_done INT DEFAULT 0;
          DECLARE TotalinterestInArrears INTEGER DEFAULT 0;
  
 
- DECLARE ForSelectingIds CURSOR FOR SELECT DISTINCT master2_id  FROM pmms_loans.new_loan_appstoreamort WHERE instalment_due_date<CURDATE()  AND NOT instalment_status='P';
+ DECLARE ForSelectingIds CURSOR FOR SELECT DISTINCT master2_id  FROM pmms_loans.new_loan_appstoreamort WHERE instalment_due_date<CURDATE()  AND NOT instalment_status='P' AND master2_id LIKE 'newloan%';
 
 
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
@@ -1961,7 +1983,7 @@ accounts_loop: LOOP
 LEAVE accounts_loop;
 
  END IF;
-
+SELECT loanIds;
 
 SELECT SUM(PrincipalRemaining),SUM(InterestRemaing) INTO principalInArrears,interestInArrears FROM pmms_loans.new_loan_appstoreamort WHERE instalment_due_date<CURDATE() AND master2_id=loanIds AND NOT instalment_status='P';
 
@@ -1971,21 +1993,21 @@ SELECT SUM(PrincipalRemaining),SUM(InterestRemaing) INTO TotalprincipalInArrears
 
 
 
-SET ExistingPrinOnlyArrears=ExistingPrinOnlyArrears+principalInArrears;
+SET @NowExistingPrinOnlyArrears=ExistingPrinOnlyArrears+principalInArrears;
 
-SET ExistingIntnOnlyArrears=ExistingIntnOnlyArrears+interestInArrears;
+SET @NowExistingIntnOnlyArrears=ExistingIntnOnlyArrears+interestInArrears;
 
-SET ExistingNumberArrears=ExistingNumberArrears+1;
-
-
-SET ExistingTotalPrinInArrears=ExistingTotalPrinInArrears+TotalprincipalInArrears;
-
-SET ExistingTotalIntInArrears=ExistingTotalIntInArrears+TotalinterestInArrears;
+SET @NowExistingNumberArrears=ExistingNumberArrears+1;
 
 
-UPDATE pmms.summurystats SET TotalValueOfPrincipalOutStandingArrears=ExistingPrinOnlyArrears,TotalValueOfInterestOutStandingArrears=ExistingIntnOnlyArrears,TotalNumberOfLoansInArrears=ExistingNumberArrears,TotalValueOfPrincipalLoansInArrears=ExistingTotalPrinInArrears,TotalValueOfInterestInArrears=ExistingTotalIntInArrears WHERE ItemId=ItemIdu;
+SET @NowExistingTotalPrinInArrears=ExistingTotalPrinInArrears+TotalprincipalInArrears;
 
-SET l_done=0;
+SET @NowExistingTotalIntInArrears=ExistingTotalIntInArrears+TotalinterestInArrears;
+
+/* SELECT  @NowExistingPrinOnlyArrears,@NowExistingIntnOnlyArrears,@NowExistingNumberArrears; */
+UPDATE pmms.summurystats SET TotalValueOfPrincipalOutStandingArrears=@NowExistingPrinOnlyArrears,TotalValueOfInterestOutStandingArrears=@NowExistingIntnOnlyArrears,TotalNumberOfLoansInArrears=@NowExistingNumberArrears,TotalValueOfPrincipalLoansInArrears=@NowExistingTotalPrinInArrears,TotalValueOfInterestInArrears=@NowExistingTotalIntInArrears WHERE ItemId=ItemIdu;
+
+/* SET l_done=0; */
 SET ExistingPrinOnlyArrears=0;
 
 SET ExistingIntnOnlyArrears=0;
@@ -2053,33 +2075,33 @@ DECLARE totalValueOfLiabilities INTEGER;
 
   SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
   
-  SELECT SUM(running_balance) INTO totalValueOfCash FROM account_created_store WHERE running_balance>0 AND account_number like '0112300%';
+  SELECT SUM(running_balance) INTO totalValueOfCash FROM account_created_store WHERE  account_number like '0112300%';
   
-  SELECT COUNT(running_balance) INTO totalValueOfBankBalance FROM account_created_store WHERE running_balance>0 AND account_number like '0112200%';
+  SELECT SUM(running_balance) INTO totalValueOfBankBalance FROM account_created_store WHERE  account_number like '0112200%';
    
-    SELECT SUM(running_balance) INTO totalValueOfAssets FROM account_created_store WHERE running_balance>0 AND account_number like '011%';
+    SELECT SUM(running_balance) INTO totalValueOfAssets FROM account_created_store WHERE  account_number like '011%';
   
-  SELECT COUNT(running_balance) INTO totalValueOfReceivables FROM account_created_store WHERE running_balance>0 AND account_number like '0113100%';
+  SELECT SUM(running_balance) INTO totalValueOfReceivables FROM account_created_store WHERE   account_number like '0113100%';
    
-     SELECT COUNT(running_balance) INTO totalValueOfPayables FROM account_created_store WHERE running_balance>0 AND account_number like '055000%';
+     SELECT SUM(running_balance) INTO totalValueOfPayables FROM account_created_store WHERE  account_number like '055000%';
    
-    SELECT SUM(running_balance) INTO totalValueOfFixedAssets FROM account_created_store WHERE  running_balance>0 AND (account_number like '01100%' OR account_number like  '01101%' OR account_number like   '01102%' OR account_number like   '01103%' OR account_number like   '01104%' OR  account_number like  '01105%' OR account_number like   '01106%' OR  account_number like  '01136%');
+    SELECT SUM(running_balance) INTO totalValueOfFixedAssets FROM account_created_store WHERE  (account_number like '01100%' OR account_number like  '01101%' OR account_number like   '01102%' OR account_number like   '01103%' OR account_number like   '01104%' OR  account_number like  '01105%' OR account_number like   '01106%' OR  account_number like  '01136%');
     
     CALL InterestReceivable(@interestReceivable);
     CALL currentAssets(@totalCurrentAssets);
  SET totalCurrentAssetsIncludingInterestR=@interestReceivable+@totalCurrentAssets;
  
-  SELECT COUNT(running_balance) INTO totalValueOfMainIncome FROM account_created_store WHERE running_balance>0 AND (account_number like '03300%' OR account_number like  '03301%' OR account_number like '03302%' OR account_number like  '03303%');
+  SELECT SUM(running_balance) INTO totalValueOfMainIncome FROM account_created_store WHERE  (account_number like '03300%' OR account_number like  '03301%' OR account_number like '03302%' OR account_number like  '03303%');
 
-   SELECT COUNT(running_balance) INTO totalValueOfOtherIncome FROM account_created_store WHERE running_balance>0 AND ( account_number like  '03304%' OR account_number like '03305%' OR account_number like  '03306%' OR account_number like  '03307%' OR account_number like '03308%' OR account_number like  '03309%' OR account_number like  '03310%' OR account_number like '03311%' OR account_number like  '03312%' OR account_number like  '03313%' OR account_number like '03314%' OR account_number like  '03315%' OR account_number like  '03316%' OR account_number like '03317%' OR account_number like  '03318%' OR account_number like  '03319%' OR account_number like '03320%' OR account_number like  '03321%' OR account_number like  '03322%' OR account_number like '03323%' OR account_number like  '03324%' OR account_number like  '03325%');
+   SELECT SUM(running_balance) INTO totalValueOfOtherIncome FROM account_created_store WHERE  ( account_number like  '03304%' OR account_number like '03305%' OR account_number like  '03306%' OR account_number like  '03307%' OR account_number like '03308%' OR account_number like  '03309%' OR account_number like  '03310%' OR account_number like '03311%' OR account_number like  '03312%' OR account_number like  '03313%' OR account_number like '03314%' OR account_number like  '03315%' OR account_number like  '03316%' OR account_number like '03317%' OR account_number like  '03318%' OR account_number like  '03319%' OR account_number like '03320%' OR account_number like  '03321%' OR account_number like  '03322%' OR account_number like '03323%' OR account_number like  '03324%' OR account_number like  '03325%');
     
- SELECT SUM(running_balance) INTO totalValueOfIncome FROM account_created_store WHERE running_balance>0 AND account_number like '033%';
+ SELECT SUM(running_balance) INTO totalValueOfIncome FROM account_created_store WHERE  account_number like '033%';
   
-  SELECT SUM(running_balance) INTO totalValueOfExpenses FROM account_created_store WHERE running_balance>0 AND account_number like '022%';
+  SELECT SUM(running_balance) INTO totalValueOfExpenses FROM account_created_store WHERE  account_number like '022%';
   
-    SELECT SUM(running_balance) INTO totalValueOfLiabilities FROM account_created_store WHERE running_balance>0 AND account_number like '055%';
+    SELECT SUM(running_balance) INTO totalValueOfLiabilities FROM account_created_store WHERE account_number like '055%';
   
- SELECT SUM(running_balance) INTO totalValueOfCapital FROM account_created_store WHERE running_balance>0 AND account_number like '044%';
+ SELECT SUM(running_balance) INTO totalValueOfCapital FROM account_created_store WHERE  account_number like '044%';
   
 UPDATE summurystats SET TotalValueOfCashBalances=totalValueOfCash,TotalValueOfBankBalances=totalValueOfBankBalance,TotalValueOfAssets=totalValueOfAssets,TotalValueOfReceivables=totalValueOfReceivables,TotalValueOfPayables=totalValueOfPayables,TotalValueOfFixedAssets=totalValueOfFixedAssets,TotalValueOfCurrentAssetsIncludingInterestReceivable=totalCurrentAssetsIncludingInterestR,TotalValueOfCurrentAssetsMinusInterestReceivable=@totalCurrentAssets,
 TotalValueOfMainIncome=totalValueOfMainIncome,TotalValueOfOtherIncome=totalValueOfOtherIncome,TotalValueOfIncome=totalValueOfIncome,TotalValueOfExpenses=totalValueOfExpenses,TotalValueOfLiabilities=totalValueOfLiabilities,TotalValueOfCapital=totalValueOfCapital WHERE ItemId=ItemIdu;
@@ -2113,7 +2135,7 @@ END IF;
 
    CREATE PROCEDURE  currentAssets (OUT currentAssets VARCHAR(30)) BEGIN
 
-SELECT SUM(running_balance) INTO currentAssets FROM account_created_store WHERE  running_balance>0 AND (account_number like '01113%' OR account_number like  '01114%' OR account_number like   '01115%' OR account_number like   '01116%' OR account_number like   '01117%' OR  account_number like  '01118%' OR account_number like   '01119%' OR  account_number like  '01120%' OR  account_number like  '01121%' OR  account_number like  '01122%' OR  account_number like  '01123%' OR  account_number like  '01124%' OR  account_number like  '01125%' OR  account_number like  '01126%' OR  account_number like  '01127%' OR  account_number like  '01128%' OR  account_number like  '01129%' OR  account_number like  '01130%' OR  account_number like  '01131%' OR  account_number like  '01132%' OR  account_number like  '01133%' OR  account_number like  '01134%' OR  account_number like  '01135%');
+SELECT SUM(running_balance) INTO currentAssets FROM account_created_store WHERE (account_number like '01113%' OR account_number like  '01114%' OR account_number like   '01115%' OR account_number like   '01116%' OR account_number like   '01117%' OR  account_number like  '01118%' OR account_number like   '01119%' OR  account_number like  '01120%' OR  account_number like  '01121%' OR  account_number like  '01122%' OR  account_number like  '01123%' OR  account_number like  '01124%' OR  account_number like  '01125%' OR  account_number like  '01126%' OR  account_number like  '01127%' OR  account_number like  '01128%' OR  account_number like  '01129%' OR  account_number like  '01130%' OR  account_number like  '01131%' OR  account_number like  '01132%' OR  account_number like  '01133%' OR  account_number like  '01134%' OR  account_number like  '01135%');
 
 IF (currentAssets IS NULL) THEN
 
