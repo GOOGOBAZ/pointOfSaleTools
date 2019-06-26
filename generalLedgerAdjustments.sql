@@ -1,6 +1,6 @@
 
 
- DROP PROCEDURE IF EXISTS pmms.adjustTrnIdS;
+ DROP PROCEDURE IF EXISTS adjustTrnIdS;
  
  	DELIMITER //
 

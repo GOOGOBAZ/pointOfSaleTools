@@ -1,32 +1,4 @@
-DROP TRIGGER IF EXISTS countStatAccounts; 
-DROP TRIGGER IF EXISTS countStatAccountsRedece;	
-DROP TRIGGER IF EXISTS UpdateSharesAddRemove;
-DROP TRIGGER IF EXISTS pmms.UpdateSharesAddRemove;
-DROP TRIGGER IF EXISTS pmms.UpdateSavingsWithDraws;
- 
 
-
-DROP PROCEDURE IF EXISTS deleteFromMaster;
-DROP PROCEDURE IF EXISTS countNumberValueOfActiveSavings;
-DROP PROCEDURE IF EXISTS pmms.countNumberValueOfActiveSavings;
-DROP PROCEDURE IF EXISTS pmms.countNumberValueOfCompletedWrittenOffLoans;
-DROP PROCEDURE IF EXISTS pmms.creatingArrearsLoanSummury;
-DROP PROCEDURE IF EXISTS pmms.creatingRunningBalancesOfShares;
-DROP PROCEDURE IF EXISTS pmms.currentAssets;
-DROP PROCEDURE IF EXISTS pmms.deleteFromMaster;
-DROP PROCEDURE IF EXISTS pmms.InterestReceivable;
-DROP PROCEDURE IF EXISTS pmms.loanRepaymentsUpdatesAll;
-DROP PROCEDURE IF EXISTS pmms.statsTracking;
-DROP PROCEDURE IF EXISTS pmms.totalNumberValueOfShares;
-DROP PROCEDURE IF EXISTS pmms.totalValueOfLoanBook;
-DROP PROCEDURE IF EXISTS pmms.updateCountStatsAccounts;
-DROP PROCEDURE IF EXISTS pmms.updateCountStatsAccountsReduce1;
-DROP PROCEDURE IF EXISTS pmms.updateCountStatsCustomers;
-DROP PROCEDURE IF EXISTS pmms.updateLoanAmountNumberDisbursements;
-DROP PROCEDURE IF EXISTS pmms.updateSavingsMade;
-DROP PROCEDURE IF EXISTS pmms.updateSavingsRemoved;
-DROP PROCEDURE IF EXISTS pmms.updateSharesAdded;
-DROP PROCEDURE IF EXISTS pmms.updateSharesRemoved;
  
 			
  DROP PROCEDURE IF EXISTS createSummuryStat;
@@ -901,7 +873,7 @@ DELIMITER ;
  
  
  
-  
+  DROP PROCEDURE IF EXISTS updateSavingsMade;
  
  	DELIMITER //
  CREATE PROCEDURE updateSavingsMade(IN  SavingsAdded INTEGER)
@@ -922,7 +894,7 @@ UPDATE summurystats SET TotalNumberOfSavingsMade=existingNumberSavingsMade,Total
  DELIMITER ;
  
 
-
+DROP PROCEDURE IF EXISTS updateSavingsRemoved;
 
  	DELIMITER //
  CREATE PROCEDURE updateSavingsRemoved(IN  SavingsRemoved INTEGER)
@@ -973,7 +945,7 @@ DROP PROCEDURE IF EXISTS totalNumberValueOfShares;
  
  DECLARE ItemIdu INTEGER;
  
- DECLARE accountNumbersShare CURSOR FOR SELECT DISTINCT account_number FROM pmms.shares_run_bal;
+ DECLARE accountNumbersShare CURSOR FOR SELECT DISTINCT account_number FROM shares_run_bal;
 
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET noMoreAccounts=1;
 
@@ -988,7 +960,7 @@ accountsLoop:REPEAT
 
  IF noMoreAccounts=0 THEN
 
- SELECT running_balance_n_shares,running_balance_v_shares INTO existingNumberOfShares,existingValueOfShares FROM pmms.shares_run_bal WHERE account_number= memberAccountNumber ORDER BY trn_id DESC LIMIT 1;
+ SELECT running_balance_n_shares,running_balance_v_shares INTO existingNumberOfShares,existingValueOfShares FROM shares_run_bal WHERE account_number= memberAccountNumber ORDER BY trn_id DESC LIMIT 1;
 
 
 IF existingValueOfShares>0 THEN
@@ -1114,7 +1086,7 @@ UPDATE summurystats SET TotalNumberOfActiveSavingsCustomers=totalNumberOfSavings
 
 
 
- DROP PROCEDURE IF EXISTS pmms.countNumberValueOfActiveDeposits;
+ DROP PROCEDURE IF EXISTS countNumberValueOfActiveDeposits;
  
  	DELIMITER //
  CREATE PROCEDURE countNumberValueOfActiveDeposits( )
@@ -1139,7 +1111,7 @@ UPDATE summurystats SET TotalValueOfDeposits=totalValueDeposits WHERE ItemId=Ite
  DELIMITER ;
 
 
- DROP PROCEDURE IF EXISTS pmms.countNumberValueOfActiveDeposits2;
+ DROP PROCEDURE IF EXISTS countNumberValueOfActiveDeposits2;
  
  	DELIMITER //
  CREATE PROCEDURE countNumberValueOfActiveDeposits2( )
@@ -1165,7 +1137,7 @@ UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits
 
 
 
- DROP PROCEDURE IF EXISTS pmms.countNumberValueOfActiveLoans;
+ DROP PROCEDURE IF EXISTS countNumberValueOfActiveLoans;
  
  	DELIMITER //
  CREATE PROCEDURE countNumberValueOfActiveLoans( ) BEGIN
@@ -1228,7 +1200,7 @@ UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits
  DECLARE totalNumberOfCustomerLoansCycleAbove7 INTEGER;
  
 
-  SELECT ItemId INTO ItemIdu FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+  SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   
   SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfLoans, totalValueLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Disbursed';
@@ -1277,7 +1249,7 @@ TotalNumberOfActiveLoansCycle5=totalNumberOfLoansCycle5,TotalValueOfActiveLoansC
  DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS pmms.updateLoanAmountNumberDisbursements;
+DROP PROCEDURE IF EXISTS updateLoanAmountNumberDisbursements;
 
  	DELIMITER //
  CREATE PROCEDURE updateLoanAmountNumberDisbursements(IN loanId VARCHAR(30), IN  principalAmount DOUBLE) BEGIN
@@ -1339,7 +1311,7 @@ END IF;*/
 
  IF BorrowingCategoryS='Individual' THEN
 
-SELECT ItemId,TotalNumberOfIndividualLoansDisbursed,TotalValueOfIndividualLoansDisbursed INTO ItemIdu,existingNumberOfLoans,existingValueOfLoans FROM pmms.summurystats  ORDER BY ItemId DESC Limit 1;
+SELECT ItemId,TotalNumberOfIndividualLoansDisbursed,TotalValueOfIndividualLoansDisbursed INTO ItemIdu,existingNumberOfLoans,existingValueOfLoans FROM summurystats  ORDER BY ItemId DESC Limit 1;
  
 SET existingNumberOfLoans=existingNumberOfLoans+1;
 SET existingValueOfLoans=existingValueOfLoans+principalAmount;
@@ -1353,7 +1325,7 @@ END IF;
 
  IF LoanCycleS='Cycle1' THEN 
  
-SELECT ItemId,TotalNumberOfLoansDisbursedCycle1,TotalValueOfLoansDisbursedCycle1 INTO ItemIdu,existingNumberOfLoans,existingValueOfLoans FROM pmms.summurystats  ORDER BY ItemId DESC Limit 1;
+SELECT ItemId,TotalNumberOfLoansDisbursedCycle1,TotalValueOfLoansDisbursedCycle1 INTO ItemIdu,existingNumberOfLoans,existingValueOfLoans FROM summurystats  ORDER BY ItemId DESC Limit 1;
  
 SET existingNumberOfLoans=existingNumberOfLoans+1;
 SET existingValueOfLoans=existingValueOfLoans+principalAmount;
@@ -1365,7 +1337,7 @@ SET existingValueOfLoans=0;
 
 
  IF BorrowingCategoryS='Group' THEN
-SELECT ItemId,TotalNumberOfGroupLoansDisbursedCycle1,TotalValueOfGroupLoansDisbursedCycle1 INTO ItemIdu,existingNumberOfLoans,existingValueOfLoans FROM pmms.summurystats  ORDER BY ItemId DESC Limit 1;
+SELECT ItemId,TotalNumberOfGroupLoansDisbursedCycle1,TotalValueOfGroupLoansDisbursedCycle1 INTO ItemIdu,existingNumberOfLoans,existingValueOfLoans FROM summurystats  ORDER BY ItemId DESC Limit 1;
  
 SET existingNumberOfLoans=existingNumberOfLoans+1;
 SET existingValueOfLoans=existingValueOfLoans+principalAmount;
@@ -1726,7 +1698,7 @@ UPDATE summurystats SET TotalNumberOfAccounts=existingAccounts WHERE ItemId=Item
 
 
 
- DROP PROCEDURE IF EXISTS pmms.countNumberValueOfCompletedWrittenOffLoans;
+ DROP PROCEDURE IF EXISTS countNumberValueOfCompletedWrittenOffLoans;
  
  	DELIMITER //
  CREATE PROCEDURE countNumberValueOfCompletedWrittenOffLoans() BEGIN
@@ -1735,7 +1707,7 @@ UPDATE summurystats SET TotalNumberOfAccounts=existingAccounts WHERE ItemId=Item
 
   DECLARE totalValueWrittenOffLoans INTEGER;DECLARE totalNumberOfWrittenOffLoans INTEGER;
 
-  SELECT ItemId INTO ItemIdu FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+  SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   
   SELECT COUNT(princimpal_amount),SUM(princimpal_amount) INTO totalNumberOfCompltedLoans, totalValueCompletedLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Completed';
@@ -1743,7 +1715,7 @@ UPDATE summurystats SET TotalNumberOfAccounts=existingAccounts WHERE ItemId=Item
    SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfWrittenOffLoans, totalValueWrittenOffLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='WrittenOff';
    
 
-UPDATE pmms.summurystats SET TotalNumberOfLoansCompleted=totalNumberOfCompltedLoans,TotalValueOfLoansCompleted=totalValueCompletedLoans,TotalNumberOfLoansWrittenOff=totalNumberOfWrittenOffLoans,TotalValueOfLoansWrittenOff=totalValueWrittenOffLoans WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfLoansCompleted=totalNumberOfCompltedLoans,TotalValueOfLoansCompleted=totalValueCompletedLoans,TotalNumberOfLoansWrittenOff=totalNumberOfWrittenOffLoans,TotalValueOfLoansWrittenOff=totalValueWrittenOffLoans WHERE ItemId=ItemIdu;
 
  END//
  DELIMITER ;
@@ -1754,7 +1726,7 @@ UPDATE pmms.summurystats SET TotalNumberOfLoansCompleted=totalNumberOfCompltedLo
 
 
 
- DROP PROCEDURE IF EXISTS pmms.loanRepaymentsUpdatesAll;
+ DROP PROCEDURE IF EXISTS loanRepaymentsUpdatesAll;
  
  	DELIMITER //
  CREATE PROCEDURE loanRepaymentsUpdatesAll(IN typOfRepayment VARCHAR(100),IN loanId VARCHAR(100),IN InstalmentNo INTEGER,IN amountPAI INTEGER) BEGIN
@@ -1774,23 +1746,23 @@ UPDATE pmms.summurystats SET TotalNumberOfLoansCompleted=totalNumberOfCompltedLo
 IF typOfRepayment='updateNewLoanPrincipalNow' THEN 
 
 
-  SELECT ItemId,TotalNumberOfAllPrincipalLoanRepayments,TotalValueOfAllPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+  SELECT ItemId,TotalNumberOfAllPrincipalLoanRepayments,TotalValueOfAllPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   SET  ExistingNumber=ExistingNumber+1;
   SET  ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfAllPrincipalLoanRepayments=ExistingNumber,TotalValueOfAllPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfAllPrincipalLoanRepayments=ExistingNumber,TotalValueOfAllPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
 IF InstalmentDueDate=CURDATE() THEN 
 
-  SELECT ItemId,TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly,TotalValueOfPrincipalLoanRepaymentsDueLoansOnly INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+  SELECT ItemId,TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly,TotalValueOfPrincipalLoanRepaymentsDueLoansOnly INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
  SET ExistingNumber=ExistingNumber+1;
  SET ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly=ExistingNumber,TotalValueOfPrincipalLoanRepaymentsDueLoansOnly=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly=ExistingNumber,TotalValueOfPrincipalLoanRepaymentsDueLoansOnly=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
@@ -1798,12 +1770,12 @@ END IF;
 
 IF InstalmentDueDate<CURDATE() THEN
 
- SELECT ItemId,TotalNumberOfArrearsPrincipalLoanRepayments,TotalValueOfArrearsPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+ SELECT ItemId,TotalNumberOfArrearsPrincipalLoanRepayments,TotalValueOfArrearsPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
  SET ExistingNumber=ExistingNumber+1;
  SET ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfArrearsPrincipalLoanRepayments=ExistingNumber,TotalValueOfArrearsPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfArrearsPrincipalLoanRepayments=ExistingNumber,TotalValueOfArrearsPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
  SET   ExistingValue=0;
 END IF;
@@ -1811,24 +1783,24 @@ END IF;
 
 IF InstalmentDueDate>CURDATE() THEN 
 
-  SELECT ItemId,TotalNumberOfEarlyPrincipalLoanRepayments,TotalValueOfEarlyPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+  SELECT ItemId,TotalNumberOfEarlyPrincipalLoanRepayments,TotalValueOfEarlyPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
  SET ExistingNumber=ExistingNumber+1;
  SET ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfEarlyPrincipalLoanRepayments=ExistingNumber,TotalValueOfEarlyPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfEarlyPrincipalLoanRepayments=ExistingNumber,TotalValueOfEarlyPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 END IF;
 
 IF InstalmentDueDate>=CURDATE() THEN 
 
-  SELECT ItemId,TotalNumberOfLoanRepaymentsMinusArrears,TotalValueOfLoanRepaymentsMinusArrears INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+  SELECT ItemId,TotalNumberOfLoanRepaymentsMinusArrears,TotalValueOfLoanRepaymentsMinusArrears INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
  SET ExistingNumber=ExistingNumber+1;
  SET ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfLoanRepaymentsMinusArrears=ExistingNumber,TotalValueOfLoanRepaymentsMinusArrears=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfLoanRepaymentsMinusArrears=ExistingNumber,TotalValueOfLoanRepaymentsMinusArrears=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
  SET   ExistingValue=0;
 END IF;
@@ -1841,24 +1813,24 @@ END IF;
 IF typOfRepayment='updateNewInterestNow' THEN 
 
 
- SELECT ItemId,TotalNumberOfAllInterestPayments,TotalValueOfInterestReceived INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+ SELECT ItemId,TotalNumberOfAllInterestPayments,TotalValueOfInterestReceived INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   SET  ExistingNumber=ExistingNumber+1;
   SET  ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfAllInterestPayments=ExistingNumber,TotalValueOfInterestReceived=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfAllInterestPayments=ExistingNumber,TotalValueOfInterestReceived=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
 
 
 IF InstalmentDueDate=CURDATE() THEN 
- SELECT ItemId,TotalNumberOfInterestPaymentsDueLoansOnly,TotalValueOfInterestPaymentsDueLoansOnly INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+ SELECT ItemId,TotalNumberOfInterestPaymentsDueLoansOnly,TotalValueOfInterestPaymentsDueLoansOnly INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   SET  ExistingNumber=ExistingNumber+1;
   SET  ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfInterestPaymentsDueLoansOnly=ExistingNumber,TotalValueOfInterestPaymentsDueLoansOnly=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfInterestPaymentsDueLoansOnly=ExistingNumber,TotalValueOfInterestPaymentsDueLoansOnly=ExistingValue WHERE ItemId=ItemIdu;
  SET   ExistingNumber=0;
   SET  ExistingValue=0;
 
@@ -1867,12 +1839,12 @@ END IF;
 
 IF InstalmentDueDate<CURDATE() THEN 
 
- SELECT ItemId,TotalNumberOfArrearsInterestPayments,TotalValueOfArrearsInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+ SELECT ItemId,TotalNumberOfArrearsInterestPayments,TotalValueOfArrearsInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   SET  ExistingNumber=ExistingNumber+1;
   SET  ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfArrearsInterestPayments=ExistingNumber,TotalValueOfArrearsInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfArrearsInterestPayments=ExistingNumber,TotalValueOfArrearsInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
@@ -1880,12 +1852,12 @@ UPDATE pmms.summurystats SET TotalNumberOfArrearsInterestPayments=ExistingNumber
 END IF;
 
 IF InstalmentDueDate>CURDATE() THEN 
- SELECT ItemId,TotalNumberOfEarlyInterestPayments,TotalValueOfEarlyInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+ SELECT ItemId,TotalNumberOfEarlyInterestPayments,TotalValueOfEarlyInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
  SET   ExistingNumber=ExistingNumber+1;
   SET  ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfEarlyInterestPayments=ExistingNumber,TotalValueOfEarlyInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfEarlyInterestPayments=ExistingNumber,TotalValueOfEarlyInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
@@ -1898,12 +1870,12 @@ END IF;
 
 IF typOfRepayment='updateNewLoanPenaltyNow' THEN 
 
-SELECT ItemId,TotalNumberOfAllLoanPenaltyPayments,TotalValueOfAllLoanPenaltyPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+SELECT ItemId,TotalNumberOfAllLoanPenaltyPayments,TotalValueOfAllLoanPenaltyPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
   SET  ExistingNumber=ExistingNumber+1;
   SET  ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfAllLoanPenaltyPayments=ExistingNumber,TotalValueOfAllLoanPenaltyPayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfAllLoanPenaltyPayments=ExistingNumber,TotalValueOfAllLoanPenaltyPayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
@@ -1911,23 +1883,23 @@ END IF;
 
  
 IF typOfRepayment='updateNewAccumulatedInterestNow' THEN 
-SELECT ItemId,TotalNumberOfAllAccumulatedInterestPayments,TotalValueOfAllAccumulatedInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+SELECT ItemId,TotalNumberOfAllAccumulatedInterestPayments,TotalValueOfAllAccumulatedInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
    SET ExistingNumber=ExistingNumber+1;
    SET ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfAllAccumulatedInterestPayments=ExistingNumber,TotalValueOfAllAccumulatedInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfAllAccumulatedInterestPayments=ExistingNumber,TotalValueOfAllAccumulatedInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
   SET  ExistingNumber=0;
   SET  ExistingValue=0;
 
 END IF;
 
-SELECT ItemId,TotalNumberOfAllInterestAndPrincipalLoanRepayments,TotalValueOfAllInterestAndPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+SELECT ItemId,TotalNumberOfAllInterestAndPrincipalLoanRepayments,TotalValueOfAllInterestAndPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
  SET ExistingNumber=ExistingNumber+1;
    SET ExistingValue=ExistingValue+amountPAI;
 
-UPDATE pmms.summurystats SET TotalNumberOfAllInterestAndPrincipalLoanRepayments=ExistingNumber,TotalValueOfAllInterestAndPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalNumberOfAllInterestAndPrincipalLoanRepayments=ExistingNumber,TotalValueOfAllInterestAndPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
    SET ExistingNumber=0;
   SET  ExistingValue=0;
 
@@ -1938,7 +1910,7 @@ UPDATE pmms.summurystats SET TotalNumberOfAllInterestAndPrincipalLoanRepayments=
 
 
 
- DROP PROCEDURE IF EXISTS pmms.creatingArrearsLoanSummury;
+ DROP PROCEDURE IF EXISTS creatingArrearsLoanSummury;
  
  	DELIMITER //
 
@@ -1966,8 +1938,8 @@ DECLARE l_done INT DEFAULT 0;
 
 
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
-SELECT ItemId INTO ItemIdu FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
-UPDATE pmms.summurystats SET TotalValueOfPrincipalOutStandingArrears=ExistingPrinOnlyArrears,TotalValueOfInterestOutStandingArrears=ExistingIntnOnlyArrears,TotalNumberOfLoansInArrears=ExistingNumberArrears,TotalValueOfPrincipalLoansInArrears=ExistingTotalPrinInArrears,TotalValueOfInterestInArrears=ExistingTotalIntInArrears WHERE ItemId=ItemIdu;
+SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
+UPDATE summurystats SET TotalValueOfPrincipalOutStandingArrears=ExistingPrinOnlyArrears,TotalValueOfInterestOutStandingArrears=ExistingIntnOnlyArrears,TotalNumberOfLoansInArrears=ExistingNumberArrears,TotalValueOfPrincipalLoansInArrears=ExistingTotalPrinInArrears,TotalValueOfInterestInArrears=ExistingTotalIntInArrears WHERE ItemId=ItemIdu;
 
 SET l_done=0;
 
@@ -1989,7 +1961,7 @@ SELECT SUM(PrincipalRemaining),SUM(InterestRemaing) INTO principalInArrears,inte
 
 SELECT SUM(PrincipalRemaining),SUM(InterestRemaing) INTO TotalprincipalInArrears,TotalinterestInArrears FROM pmms_loans.new_loan_appstoreamort WHERE master2_id=loanIds AND NOT instalment_status='P';
  
- SELECT TotalValueOfPrincipalOutStandingArrears,TotalValueOfInterestOutStandingArrears,TotalNumberOfLoansInArrears,TotalValueOfPrincipalLoansInArrears,TotalValueOfInterestInArrears INTO ExistingPrinOnlyArrears,ExistingIntnOnlyArrears,ExistingNumberArrears,ExistingTotalPrinInArrears,ExistingTotalIntInArrears  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+ SELECT TotalValueOfPrincipalOutStandingArrears,TotalValueOfInterestOutStandingArrears,TotalNumberOfLoansInArrears,TotalValueOfPrincipalLoansInArrears,TotalValueOfInterestInArrears INTO ExistingPrinOnlyArrears,ExistingIntnOnlyArrears,ExistingNumberArrears,ExistingTotalPrinInArrears,ExistingTotalIntInArrears  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
 
 
@@ -2005,7 +1977,7 @@ SET @NowExistingTotalPrinInArrears=ExistingTotalPrinInArrears+TotalprincipalInAr
 SET @NowExistingTotalIntInArrears=ExistingTotalIntInArrears+TotalinterestInArrears;
 
 /* SELECT  @NowExistingPrinOnlyArrears,@NowExistingIntnOnlyArrears,@NowExistingNumberArrears; */
-UPDATE pmms.summurystats SET TotalValueOfPrincipalOutStandingArrears=@NowExistingPrinOnlyArrears,TotalValueOfInterestOutStandingArrears=@NowExistingIntnOnlyArrears,TotalNumberOfLoansInArrears=@NowExistingNumberArrears,TotalValueOfPrincipalLoansInArrears=@NowExistingTotalPrinInArrears,TotalValueOfInterestInArrears=@NowExistingTotalIntInArrears WHERE ItemId=ItemIdu;
+UPDATE summurystats SET TotalValueOfPrincipalOutStandingArrears=@NowExistingPrinOnlyArrears,TotalValueOfInterestOutStandingArrears=@NowExistingIntnOnlyArrears,TotalNumberOfLoansInArrears=@NowExistingNumberArrears,TotalValueOfPrincipalLoansInArrears=@NowExistingTotalPrinInArrears,TotalValueOfInterestInArrears=@NowExistingTotalIntInArrears WHERE ItemId=ItemIdu;
 
 /* SET l_done=0; */
 SET ExistingPrinOnlyArrears=0;
@@ -2111,7 +2083,7 @@ TotalValueOfMainIncome=totalValueOfMainIncome,TotalValueOfOtherIncome=totalValue
 
 
 
-DROP PROCEDURE IF EXISTS pmms.InterestReceivable;
+DROP PROCEDURE IF EXISTS InterestReceivable;
  
  	DELIMITER //
 
@@ -2129,7 +2101,7 @@ END IF;
 
 
 
- DROP PROCEDURE IF EXISTS pmms.currentAssets;
+ DROP PROCEDURE IF EXISTS currentAssets;
  
  	DELIMITER //
 
@@ -2149,7 +2121,7 @@ END IF;
 
 
 
-DROP PROCEDURE IF EXISTS pmms.updateCountStatsCustomersReduce;
+DROP PROCEDURE IF EXISTS updateCountStatsCustomersReduce;
 
 DELIMITER //
 
@@ -2171,7 +2143,7 @@ UPDATE summurystats SET TotalNumberOfCustomers=existingAccounts WHERE ItemId=Ite
 
 
 
- DROP PROCEDURE IF EXISTS pmms.updateCountStatsAccountsReduce;
+ DROP PROCEDURE IF EXISTS updateCountStatsAccountsReduce;
 
 DELIMITER //
 
@@ -2237,6 +2209,11 @@ END//
 
 		DELIMITER ;
 
+
+
+
+
+
 DROP TRIGGER IF EXISTS UpdateSharesAddRemove;
 
  DELIMITER //
@@ -2283,7 +2260,7 @@ END//
 
 
 
- DROP PROCEDURE IF EXISTS pmms_loans.updateMoreLoanDetails;
+ DROP PROCEDURE IF EXISTS updateMoreLoanDetails;
 
 DELIMITER //
 
@@ -2299,6 +2276,8 @@ SET existingAccounts=existingAccounts-1;
 UPDATE summurystats SET TotalNumberOfAccounts=existingAccounts WHERE ItemId=ItemIdu;
 
 END //
+
+DELIMITER ;
 
 
 
@@ -2319,19 +2298,20 @@ DROP PROCEDURE IF EXISTS SummuryReportGenerator;
 
 DELIMITER //
 
- CREATE PROCEDURE SummuryReportGenerator(IN theStringGeneral VARCHAR(300),IN startDate DATE,IN endDate DATE,IN numStrng INT ) BEGIN
+ CREATE PROCEDURE SummuryReportGenerator(IN theStringGeneral MEDIUMTEXT,IN startDate DATE,IN endDate DATE,IN numStrng INT ) BEGIN
 DROP TABLE IF EXISTS temp_summuryReport;
-CREATE  TEMPORARY TABLE temp_summuryReport(id INTEGER,temp_NarrationC VARCHAR(200),temp_StartinFigure DOUBLE,temp_Difference DOUBLE,temp_FinalFigure DOUBLE,temp_Comment VARCHAR(200));
+CREATE  TEMPORARY TABLE temp_summuryReport(temp_id VARCHAR(10),temp_NarrationC VARCHAR(200),temp_StartinFigure DOUBLE,temp_Difference DOUBLE,temp_FinalFigure DOUBLE,temp_Comment VARCHAR(200));
 
 
   SET @n=1;
   STRINGLOOP:LOOP
-  
+    SET numStrng=numStrng-1;
   IF numStrng<=0 THEN
   
   LEAVE STRINGLOOP;
   
   END IF;
+  
   SET @A=-(@n);
 /*   SELECT @A; */
  SET @mainStrng= SUBSTRING_INDEX(SUBSTRING_INDEX(theStringGeneral, ';', @n), ';',-1);
@@ -2340,7 +2320,7 @@ CREATE  TEMPORARY TABLE temp_summuryReport(id INTEGER,temp_NarrationC VARCHAR(20
   
    SET @summuryString=SUBSTRING_INDEX(@mainStrng, ':', -1);
   
-  SELECT @mainStrng,@selectString,@summuryString;
+/*   SELECT @mainStrng,@selectString,@summuryString; */
   
   
   
@@ -2368,14 +2348,20 @@ DROP PREPARE stmt1;
 	IF ISNULL(@endingValueValue ) THEN
 	SET @endingValueValue=0;
 	END IF;
-	SELECT  @startingValue,@endingValueValue;
+	/* SELECT  @startingValue,@endingValueValue; */
 	
 	
 	SET @differenceNu=@endingValueValue-@startingValue;
-	SELECT @differenceNu;
+/* 	SELECT @differenceNu; */
 	IF @differenceNu<0 THEN
 	
-	SET @percentRe=ABS(@differenceNu)/@startingValue*100;
+
+	
+	IF @startingValue=0 THEN
+	SET @percentRe=100;
+	ELSE
+		SET @percentRe=ROUND((ABS(@differenceNu)/@startingValue*100),2);
+	END IF;
 	
 	 SET @indicatorNu=concat(@percentRe,CAST('%  Reduction' AS CHAR CHARACTER SET utf8));
  
@@ -2387,9 +2373,9 @@ DROP PREPARE stmt1;
 	
 	
 	IF @startingValue=0 THEN
-	@percentRe=100;
+	SET @percentRe=100;
 	ELSE
-	SET @percentRe=ABS(@differenceNu)/@startingValue*100;
+	SET @percentRe=ROUND((ABS(@differenceNu)/@startingValue*100),2);
 	END IF;
 	
 	
@@ -2403,20 +2389,20 @@ DROP PREPARE stmt1;
  
 	END IF;
 	
-	SET @n=@n;
+	SET @n1=@n;
   SET @n=@n+1;
-  SET numStrng=numStrng-1;
+
  
-INSERT INTO temp_summuryReport VALUES(@n,@summuryString,@startingValue,ABS(@differenceNu),@endingValueValue,@indicatorNu);
+INSERT INTO temp_summuryReport VALUES(@n1,@summuryString,@startingValue,ABS(@differenceNu),@endingValueValue,@indicatorNu);
   
   END LOOP STRINGLOOP;
 
 
-SELECT id,temp_NarrationC,temp_StartinFigure,temp_Difference,temp_FinalFigure,temp_Comment FROM  temp_summuryReport;
+
 
 SET @startingValue=null;
 SET @endingValueValue=null;
-
+SELECT temp_id,temp_NarrationC,temp_StartinFigure,temp_Difference,temp_FinalFigure,temp_Comment FROM  temp_summuryReport;
 END //
 
 DELIMITER ;
