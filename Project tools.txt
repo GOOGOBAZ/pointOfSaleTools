@@ -1,0 +1,6 @@
+Project tools:
+-Html5
+-bootstrap&css
+-angular 8
+-Express js 
+-Mysql and stored programs
