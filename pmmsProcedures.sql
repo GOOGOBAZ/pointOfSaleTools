@@ -565,7 +565,6 @@ SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate)
 SET monthlyTotals=0;
 
  END IF;
-
 END IF;
 
 SET theAccountDate1=@theAccountDate;
@@ -2431,7 +2430,6 @@ UPDATE summurystats SET TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly=Existin
 
 END IF;
 
-
 IF InstalmentDueDate<CURDATE() THEN
 
  SELECT ItemId,TotalNumberOfArrearsPrincipalLoanRepayments,TotalValueOfArrearsPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
@@ -2469,7 +2467,6 @@ UPDATE summurystats SET TotalNumberOfLoanRepaymentsMinusArrears=ExistingNumber,T
  SET   ExistingValue=0;
 END IF;
 
-
 END IF;
 
 
@@ -2501,7 +2498,6 @@ UPDATE summurystats SET TotalNumberOfInterestPaymentsDueLoansOnly=ExistingNumber
 
 
 END IF;
-
 
 IF InstalmentDueDate<CURDATE() THEN 
 
@@ -2549,7 +2545,6 @@ END IF;
 
  
 IF typOfRepayment='updateNewAccumulatedInterestNow' THEN 
-
 SELECT ItemId,TotalNumberOfAllAccumulatedInterestPayments,TotalValueOfAllAccumulatedInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
    SET ExistingNumber=ExistingNumber+1;
