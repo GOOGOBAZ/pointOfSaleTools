@@ -1,4 +1,4 @@
-/*=========================================================DAVIDED PAYMENT AND RUNNING BALANCE ON SHARES==================================================*/
+/* /*=========================================================DAVIDED PAYMENT AND RUNNING BALANCE ON SHARES==================================================*/
 
  DROP PROCEDURE IF EXISTS creatingRunningBalancesOfShares;
  
@@ -255,7 +255,30 @@ CREATE TABLE `interestComputed` (
   PRIMARY KEY (`TrnId`),
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+DROP TABLE IF EXISTS `savingssharescomputationparameters`;
+
+CREATE TABLE `savingssharescomputationparameters` (
+  `TrnId` int(11) NOT NULL AUTO_INCREMENT,
+  `SavingsStartDate` date NOT NULL DEFAULT '1970-01-01',
+  `ShareStartDate` date NOT NULL DEFAULT '1970-01-01',
+  `SharesRateUsed` double DEFAULT NULL,
+  `SavingsRateUsed` double DEFAULT NULL,
+  `SharesIncludUsed` int(11) DEFAULT NULL,
+  `ShareExclude` int(11) DEFAULT NULL,
+  `SavingsIncludUsed` int(11) DEFAULT NULL,
+  `SavingsExclude` int(11) DEFAULT NULL,
+  `OtherThree` varchar(45) DEFAULT 'NCO',
+  `OtherFour` varchar(45) DEFAULT 'NCO',
+  `OtherFive` varchar(45) DEFAULT 'NCO',
+  PRIMARY KEY (`TrnId`),
+  UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
  
+
+
 DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnSavings;
  
  	DELIMITER //
@@ -263,11 +286,14 @@ DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnSavings;
 
  CREATE PROCEDURE devidendPaymentOnSavings() READS SQL DATA BEGIN
 
- DECLARE accountNumber VARCHAR(30);DECLARE theAccountDate1 DATE; DECLARE anyDateInYear DATE;DECLARE rateUsed INTEGER;
+ DECLARE accountNumber VARCHAR(30);
+ DECLARE theAccountDate1, anyDateInYear,lastDate,TerminatiOnDate DATE;
 
- DECLARE ledgerBalance1 INTEGER;DECLARE amountComputed INTEGER;DECLARE monthlySummations INTEGER;DECLARE lastDate DATE;DECLARE TerminatiOnDate DATE;
- 
- DECLARE monthlyTotals INTEGER DEFAULT 0; DECLARE l_done INTEGER DEFAULT 0;DECLARE finalTotals INTEGER DEFAULT 0;
+ DECLARE ledgerBalance1,amountComputed,monthlySummations INTEGER;
+ DECLARE rateUsed DOUBLE;
+ DECLARE monthlyTotals INTEGER DEFAULT 0;
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE finalTotals INTEGER DEFAULT 0;
 
  DECLARE forSelectingAccountNumbers CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '05502%10';
 
@@ -293,26 +319,31 @@ LEAVE accounts_loop;
 
 SET @theAccountDate=MAKEDATE(year(anyDateInYear),1);
 
-
 Date_loop: LOOP 
-
 
 SET lastDate=LAST_DAY(DATE_ADD(@theAccountDate, INTERVAL 12-MONTH(@theAccountDate) MONTH));
 
 
 IF @theAccountDate=lastDate THEN
-SELECT @theAccountDate,lastDate,accountNumber;
-SET @tableName=CONCAT('bsanca',accountNumber);
+-- SELECT @theAccountDate,lastDate,accountNumber;
+-- SET @tableName=CONCAT('bsanca',accountNumber);
 
 CALL accountNma(accountNumber,@accountName);
 
 
-SET @sql_text1 = concat(CAST('SELECT ledger_balance INTO @ledgerBalance from  ' AS CHAR CHARACTER SET utf8),@tableName,CAST('  WHERE trn_date= 'AS CHAR CHARACTER SET utf8),@theAccountDate, CAST(' ORDER BY trn_id DESC LIMIT 1'AS CHAR CHARACTER SET utf8));
-
+SET @sql_text1 = concat(CAST("SELECT SavingsRunningBalance INTO @ledgerBalance from  newsavingsmembers" AS CHAR CHARACTER SET utf8), CAST("  WHERE TrnDate<=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND AccountNumber=" AS CHAR CHARACTER SET utf8), accountNumber,CAST(" ORDER BY TrnId DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+--  SELECT @sql_text1;
 
   PREPARE stmt1 FROM @sql_text1;
   EXECUTE stmt1;
 DROP PREPARE stmt1;
+
+-- SET @sql_text1 = concat(CAST("SELECT ledger_balance INTO @ledgerBalance from  " AS CHAR CHARACTER SET utf8),@tableName,CAST("  WHERE trn_date<=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+
+
+--   PREPARE stmt1 FROM @sql_text1;
+--   EXECUTE stmt1;
+-- DROP PREPARE stmt1;
 
 
 IF (@ledgerBalance IS NULL) THEN
@@ -321,7 +352,8 @@ SET @ledgerBalance=0;
 
 END IF;
 
-SET amountComputed=@ledgerBalance*(rateUsed/100);
+
+SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
  
  SET monthlyTotals=monthlyTotals+amountComputed;
 
@@ -344,33 +376,41 @@ LEAVE Date_loop;
 
 END IF;
 
-SET @tableName=CONCAT('bsanca',accountNumber);
-
+-- SET @tableName=CONCAT('bsanca',accountNumber);
+-- SELECT @tableName;
 CALL accountNma(accountNumber,@accountName);
 
 
-SET @sql_text1 = concat(CAST('SELECT ledger_balance INTO @ledgerBalance from  ' AS CHAR CHARACTER SET utf8),@tableName,CAST('  WHERE trn_date= 'AS CHAR CHARACTER SET utf8),@theAccountDate, CAST(' ORDER BY trn_id DESC LIMIT 1'AS CHAR CHARACTER SET utf8));
-
-
+SET @sql_text1 = concat(CAST("SELECT SavingsRunningBalance INTO @ledgerBalance from  newsavingsmembers" AS CHAR CHARACTER SET utf8), CAST("  WHERE TrnDate<=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND AccountNumber=" AS CHAR CHARACTER SET utf8), accountNumber,CAST(" ORDER BY TrnId DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+--  SELECT @sql_text1;
   PREPARE stmt1 FROM @sql_text1;
   EXECUTE stmt1;
 DROP PREPARE stmt1;
 
+-- SET @sql_text1 = concat(CAST("SELECT ledger_balance INTO @ledgerBalance from  " AS CHAR CHARACTER SET utf8),@tableName,CAST("  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
 
+-- SELECT @sql_text1;
+--   PREPARE stmt1 FROM @sql_text1;
+--   EXECUTE stmt1;
+-- DROP PREPARE stmt1;
+
+-- SELECT @ledgerBalance, @theAccountDate,@tableName;
 IF (@ledgerBalance IS NULL) THEN
 
 SET @ledgerBalance=0;
 
 END IF;
 
-SET amountComputed=@ledgerBalance*(rateUsed/100);
+SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
  
  SET monthlyTotals=monthlyTotals+amountComputed;
 
  SET finalTotals=finalTotals+amountComputed;
 
-
+IF @ledgerBalance>0 THEN 
  INSERT INTO SavingsInterestPaymentDaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
+
+ END IF;
 
  IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
  
@@ -382,30 +422,40 @@ SET monthlyTotals=0;
 
 
 SET theAccountDate1=@theAccountDate;
+
 SET ledgerBalance1=@ledgerBalance;
+
 SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
  
 
+SET @ledgerBalance =0;
 
  END LOOP Date_loop;
 
-  INSERT INTO SavingsInterestPaymentAnnually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
+IF ledgerBalance1 >0 THEN 
+INSERT INTO SavingsInterestPaymentAnnually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
+
+END IF;
+
+SET finalTotals=0;
 
 SET l_done=0;
 
  END LOOP accounts_loop;
 
-
-
  CLOSE forSelectingAccountNumbers;
-
-
 
 END//
 
  DELIMITER ;
+
 CALL devidendPaymentOnSavings();
  
+
+
+
+
+
 
 
 DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnShares;
@@ -415,10 +465,11 @@ DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnShares;
 
  CREATE PROCEDURE devidendPaymentOnShares() READS SQL DATA BEGIN
 
- DECLARE accountNumber VARCHAR(30);
+ DECLARE accountNumber VARCHAR(30); 
+
  DECLARE theAccountDate1 DATE;
   DECLARE anyDateInYear DATE;
-  DECLARE rateUsed INTEGER;
+  DECLARE rateUsed DOUBLE;
 
  DECLARE ledgerBalance1 INTEGER;
  DECLARE amountComputed INTEGER;
@@ -460,12 +511,13 @@ SET lastDate=LAST_DAY(DATE_ADD(@theAccountDate, INTERVAL 12-MONTH(@theAccountDat
 
 
 IF @theAccountDate=lastDate THEN
-SELECT @theAccountDate,lastDate,accountNumber;
+-- SELECT @theAccountDate,lastDate,accountNumber;
 CALL accountNma(accountNumber,@accountName);
 
 
-SET @sql_text1 = concat(CAST('SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date= 'AS CHAR CHARACTER SET utf8),@theAccountDate, CAST(' ORDER BY trn_id DESC LIMIT 1'AS CHAR CHARACTER SET utf8));
+SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
 
+SELECT @sql_text1;
 
   PREPARE stmt1 FROM @sql_text1;
   EXECUTE stmt1;
@@ -478,9 +530,11 @@ SET @ledgerBalance=0;
 
 END IF;
 
+SELECT @ledgerBalance,@accountName;
+
 IF @ledgerBalance>0 THEN
 
-SET amountComputed=@ledgerBalance*(rateUsed/100);
+SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
  
  SET monthlyTotals=monthlyTotals+amountComputed;
 
@@ -496,6 +550,7 @@ SET amountComputed=@ledgerBalance*(rateUsed/100);
 SET monthlyTotals=0;
 
  END IF;
+
 END IF;
 
 SET theAccountDate1=@theAccountDate;
@@ -504,12 +559,17 @@ LEAVE Date_loop;
 
 END IF;
 
-SELECT @theAccountDate,lastDate,accountNumber;
+
+
+
+-- SELECT @theAccountDate,lastDate,accountNumber;
 CALL accountNma(accountNumber,@accountName);
 
 
-SET @sql_text1 = concat(CAST('SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date= 'AS CHAR CHARACTER SET utf8),@theAccountDate, CAST(' ORDER BY trn_id DESC LIMIT 1'AS CHAR CHARACTER SET utf8));
 
+SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
+
+SELECT @sql_text1;
 
   PREPARE stmt1 FROM @sql_text1;
   EXECUTE stmt1;
@@ -522,16 +582,18 @@ SET @ledgerBalance=0;
 
 END IF;
 
+SELECT @ledgerBalance,@accountName;
+
 IF @ledgerBalance>0 THEN
 
-SET amountComputed=@ledgerBalance*(rateUsed/100);
- 
- SET amountComputed=amountComputed/DAY(LAST_DAY(@theAccountDate));
+SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
+
 
  SET monthlyTotals=monthlyTotals+amountComputed;
 
  SET finalTotals=finalTotals+amountComputed;
 
+-- SELECT @theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals;
 
  INSERT INTO sharesinterestpaymentdaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
 
@@ -549,12 +611,14 @@ END IF;
 SET theAccountDate1=@theAccountDate;
 SET ledgerBalance1=@ledgerBalance;
 SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
- 
 
+ SET @ledgerBalance=0;
 
  END LOOP Date_loop;
 
   INSERT INTO sharesinterestpaymentannually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
+
+SET finalTotals=0;
 
 SET l_done=0;
 
@@ -566,10 +630,13 @@ SET l_done=0;
 
 
 
-END//
+END //
 
  DELIMITER ;
  
+ CALL devidendPaymentOnShares();
+
+
  
  
  /*============================================================GENERAL SUMMURY REPORT====================================================================================*/
@@ -979,7 +1046,7 @@ SET @sql_text1 = concat(CAST('INSERT INTO operatingperiod1 (
 DROP PREPARE stmt1;
 
 
- END//
+ END //
  DELIMITER ;
 
 CALL createSummuryStat();
@@ -1396,11 +1463,16 @@ INSERT INTO summurystats (
   `TotalValueOf58`,
   `TotalNumberOf59`   FROM summurystats ORDER BY ItemId DESC LIMIT 1;
                     
-            END//
+            END //
+			
 			DELIMITER ;
 			
+			
+			
 DROP PROCEDURE IF EXISTS updateCountStatsCustomers;
+
 	DELIMITER //
+	
  CREATE PROCEDURE updateCountStatsCustomers( )
  BEGIN
  
@@ -1410,14 +1482,17 @@ SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
 SELECT COUNT(account_number) INTO existingAccounts FROM account_created_store WHERE  account_number like '05502%10';
 UPDATE summurystats SET TotalNumberOfCustomers=existingAccounts WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;	
 
 
 
 
 DROP PROCEDURE IF EXISTS 	countNumberValueOfActiveSavings;	
+
 DELIMITER //
+
 CREATE PROCEDURE countNumberValueOfActiveSavings( )
 BEGIN
  
@@ -1427,13 +1502,16 @@ SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
 SELECT SUM(running_balance),COUNT(running_balance) INTO totalValueSaving,totalNumberOfSavings FROM account_created_store WHERE  account_number like '05502%';
 UPDATE summurystats SET TotalValueOfSavings=totalValueSaving WHERE ItemId=ItemIdu;
 
-END//
+END //
+
 DELIMITER ;
 
 
 
  DROP PROCEDURE IF EXISTS 	countNumberValueOfActiveSavings2;	
+ 
 DELIMITER //
+
 CREATE PROCEDURE countNumberValueOfActiveSavings2( )
 BEGIN
  
@@ -1443,7 +1521,8 @@ SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
 SELECT SUM(running_balance),COUNT(running_balance) INTO totalValueSaving,totalNumberOfSavings FROM account_created_store WHERE running_balance>0 AND  account_number like '05502%';
 UPDATE summurystats SET TotalNumberOfActiveSavingsCustomers=totalNumberOfSavings WHERE ItemId=ItemIdu;
 
-END//
+END //
+
 DELIMITER ;
  
  
@@ -1451,6 +1530,7 @@ DELIMITER ;
   DROP PROCEDURE IF EXISTS updateSavingsMade;
  
  	DELIMITER //
+	
  CREATE PROCEDURE updateSavingsMade(IN  SavingsAdded INTEGER)
  BEGIN
  
@@ -1465,7 +1545,8 @@ SET existingValueSavingsMade=existingValueSavingsMade+SavingsAdded;
 
 UPDATE summurystats SET TotalNumberOfSavingsMade=existingNumberSavingsMade,TotalValueOfSavingsMade=existingValueSavingsMade WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
  
 
@@ -1494,7 +1575,8 @@ SET existingValueSavingsRemoved=existingValueSavingsRemoved+SavingsRemoved;
 
 UPDATE summurystats SET TotalNumberSavingsWithdraws=existingNumberSavingsRemoved,TotalValueSavingsWithdraws=existingValueSavingsRemoved WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
  
 
@@ -1502,6 +1584,7 @@ UPDATE summurystats SET TotalNumberSavingsWithdraws=existingNumberSavingsRemoved
 DROP PROCEDURE IF EXISTS totalNumberValueOfShares;
 
 		DELIMITER //
+		
  CREATE PROCEDURE totalNumberValueOfShares() BEGIN
  
  DECLARE memberAccountNumber VARCHAR(30);
@@ -1562,7 +1645,8 @@ SET noMoreAccounts=0;
 
 UPDATE summurystats SET TotalNumberOfActiveSharesCustomers=activeNumberOfCustomers,TotalValueOfShares=TotalValueOfSharesS,TotalNumberOfShares=TotalNumberOfSharesS WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
  
 
@@ -1575,6 +1659,7 @@ UPDATE summurystats SET TotalNumberOfActiveSharesCustomers=activeNumberOfCustome
  DROP PROCEDURE IF EXISTS updateSharesAdded;
  
  	DELIMITER //
+	
  CREATE PROCEDURE updateSharesAdded(IN  SharesAdded INTEGER)
  BEGIN
  
@@ -1597,13 +1682,15 @@ SET existingValueSharesMade=existingValueSharesMade+SharesAdded;
 
 UPDATE summurystats SET TotalNumberOfCapitalisations=existingNumberSharesMade,TotalValueOfSharesBought=existingValueSharesMade WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
  
 
  DROP PROCEDURE IF EXISTS updateSharesRemoved;
 
  	DELIMITER //
+	
  CREATE PROCEDURE updateSharesRemoved(IN  SharedRemoved INTEGER)
  BEGIN
  
@@ -1626,7 +1713,8 @@ SET existingValueSharesRemoved=existingValueSharesRemoved+SharedRemoved;
 
 UPDATE summurystats SET TotalNumberOfDecapitalisations=existingNumberSharesRemoved,TotalValueOfSharesRemoved=existingValueSharesRemoved WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -1634,7 +1722,9 @@ UPDATE summurystats SET TotalNumberOfDecapitalisations=existingNumberSharesRemov
   DROP PROCEDURE IF EXISTS countNumberValueOfActiveDeposits;
  
  	DELIMITER //
+	
  CREATE PROCEDURE countNumberValueOfActiveDeposits( )
+ 
  BEGIN
  
  
@@ -1653,7 +1743,8 @@ UPDATE summurystats SET TotalNumberOfDecapitalisations=existingNumberSharesRemov
 
 UPDATE summurystats SET TotalNumberOfActiveSavingsCustomers=totalNumberOfSavings,TotalValueOfSavings=totalValueSaving WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -1664,6 +1755,7 @@ UPDATE summurystats SET TotalNumberOfActiveSavingsCustomers=totalNumberOfSavings
  DROP PROCEDURE IF EXISTS countNumberValueOfActiveDeposits;
  
  	DELIMITER //
+	
  CREATE PROCEDURE countNumberValueOfActiveDeposits( )
  BEGIN
  
@@ -1682,13 +1774,15 @@ UPDATE summurystats SET TotalNumberOfActiveSavingsCustomers=totalNumberOfSavings
 
 UPDATE summurystats SET TotalValueOfDeposits=totalValueDeposits WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
  DROP PROCEDURE IF EXISTS countNumberValueOfActiveDeposits2;
  
  	DELIMITER //
+	
  CREATE PROCEDURE countNumberValueOfActiveDeposits2( )
  BEGIN
  
@@ -1707,7 +1801,8 @@ UPDATE summurystats SET TotalValueOfDeposits=totalValueDeposits WHERE ItemId=Ite
 
 UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -1715,6 +1810,7 @@ UPDATE summurystats SET TotalNumberOfCustomersWithDeposits=totalNumberOfDeposits
  DROP PROCEDURE IF EXISTS countNumberValueOfActiveLoans;
  
  	DELIMITER //
+	
  CREATE PROCEDURE countNumberValueOfActiveLoans( ) BEGIN
  
  DECLARE ItemIdu INTEGER;
@@ -1820,13 +1916,15 @@ TotalNumberOfActiveLoansCycle5=totalNumberOfLoansCycle5,TotalValueOfActiveLoansC
  TotalNumberOfActiveLoanCustomersCycle7=totalNumberOfCustomerLoansCycle7,TotalValueOfActiveLoanCustomersCycle7=totalValueCustomerLoansCycle7,
  TotalNumberOfActiveLoanCustomersCycleAboveCycle7=totalNumberOfCustomerLoansCycleAbove7,TotalValueOfActiveLoanCustomersCycleAboveCycle7=totalValueCustomerLoansCycleAbove7 WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
 DROP PROCEDURE IF EXISTS updateLoanAmountNumberDisbursements;
 
  	DELIMITER //
+	
  CREATE PROCEDURE updateLoanAmountNumberDisbursements(IN loanId VARCHAR(30), IN  principalAmount DOUBLE) BEGIN
    
  
@@ -2239,7 +2337,8 @@ SET existingValueOfLoans=0;
  END IF;
  END IF;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -2269,41 +2368,15 @@ SELECT COUNT(account_number) INTO existingAccounts FROM account_created_store WH
 UPDATE summurystats SET TotalNumberOfAccounts=existingAccounts WHERE ItemId=ItemIdu;
 
  END //
+ 
  DELIMITER ;	
-
-
-
- DROP PROCEDURE IF EXISTS countNumberValueOfCompletedWrittenOffLoans;
- 
- 	DELIMITER //
- CREATE PROCEDURE countNumberValueOfCompletedWrittenOffLoans() BEGIN
- 
- DECLARE ItemIdu INTEGER;DECLARE totalValueCompletedLoans INTEGER;DECLARE totalNumberOfCompltedLoans INTEGER;
-
-  DECLARE totalValueWrittenOffLoans INTEGER;DECLARE totalNumberOfWrittenOffLoans INTEGER;
-
-  SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
-
-  
-  SELECT COUNT(princimpal_amount),SUM(princimpal_amount) INTO totalNumberOfCompltedLoans, totalValueCompletedLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Completed';
-
-   SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfWrittenOffLoans, totalValueWrittenOffLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='WrittenOff';
-   
-
-UPDATE summurystats SET TotalNumberOfLoansCompleted=totalNumberOfCompltedLoans,TotalValueOfLoansCompleted=totalValueCompletedLoans,TotalNumberOfLoansWrittenOff=totalNumberOfWrittenOffLoans,TotalValueOfLoansWrittenOff=totalValueWrittenOffLoans WHERE ItemId=ItemIdu;
-
- END//
- DELIMITER ;
-
-
-
-
 
 
 
  DROP PROCEDURE IF EXISTS loanRepaymentsUpdatesAll;
  
  	DELIMITER //
+	
  CREATE PROCEDURE loanRepaymentsUpdatesAll(IN typOfRepayment VARCHAR(100),IN loanId VARCHAR(100),IN InstalmentNo INTEGER,IN amountPAI INTEGER) BEGIN
  
  DECLARE ItemIdu INTEGER;
@@ -2343,6 +2416,7 @@ UPDATE summurystats SET TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly=Existin
 
 END IF;
 
+
 IF InstalmentDueDate<CURDATE() THEN
 
  SELECT ItemId,TotalNumberOfArrearsPrincipalLoanRepayments,TotalValueOfArrearsPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
@@ -2380,6 +2454,7 @@ UPDATE summurystats SET TotalNumberOfLoanRepaymentsMinusArrears=ExistingNumber,T
  SET   ExistingValue=0;
 END IF;
 
+
 END IF;
 
 
@@ -2411,6 +2486,7 @@ UPDATE summurystats SET TotalNumberOfInterestPaymentsDueLoansOnly=ExistingNumber
 
 
 END IF;
+
 
 IF InstalmentDueDate<CURDATE() THEN 
 
@@ -2458,6 +2534,7 @@ END IF;
 
  
 IF typOfRepayment='updateNewAccumulatedInterestNow' THEN 
+
 SELECT ItemId,TotalNumberOfAllAccumulatedInterestPayments,TotalValueOfAllAccumulatedInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM summurystats ORDER BY ItemId DESC Limit 1;
 
    SET ExistingNumber=ExistingNumber+1;
@@ -2479,7 +2556,8 @@ UPDATE summurystats SET TotalNumberOfAllInterestAndPrincipalLoanRepayments=Exist
   SET  ExistingValue=0;
 
  
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -2566,7 +2644,7 @@ SET ExistingTotalIntInArrears=0;
 SET l_done=0;
  CLOSE ForSelectingIds;
 
-END//
+END //
 
  DELIMITER ;
 
@@ -2574,6 +2652,7 @@ END//
  DROP PROCEDURE IF EXISTS totalValueOfLoanBook;
  
  	DELIMITER //
+	
  CREATE PROCEDURE totalValueOfLoanBook( )
  BEGIN
  
@@ -2588,7 +2667,8 @@ END//
 
 UPDATE summurystats SET TotalValueOfLoanBook=totalValueOfLoanBook WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -2598,6 +2678,7 @@ UPDATE summurystats SET TotalValueOfLoanBook=totalValueOfLoanBook WHERE ItemId=I
  DROP PROCEDURE IF EXISTS accountSummuryStatsAccounts;
  
  	DELIMITER //
+	
  CREATE PROCEDURE accountSummuryStatsAccounts( )
  BEGIN
  
@@ -2622,15 +2703,15 @@ DECLARE totalValueOfLiabilities INTEGER;
 
   SELECT ItemId INTO ItemIdu FROM summurystats ORDER BY ItemId DESC Limit 1;
   
-  SELECT SUM(running_balance) INTO totalValueOfCash FROM account_created_store WHERE  account_number like '0112300%';
+  SELECT SUM(running_balance) INTO totalValueOfCash FROM account_created_store WHERE  account_number like '01123%';
   
-  SELECT SUM(running_balance) INTO totalValueOfBankBalance FROM account_created_store WHERE  account_number like '0112200%';
+  SELECT SUM(running_balance) INTO totalValueOfBankBalance FROM account_created_store WHERE  account_number like '01122%';
    
     SELECT SUM(running_balance) INTO totalValueOfAssets FROM account_created_store WHERE  account_number like '011%';
   
-  SELECT SUM(running_balance) INTO totalValueOfReceivables FROM account_created_store WHERE   account_number like '0113100%';
+  SELECT SUM(running_balance) INTO totalValueOfReceivables FROM account_created_store WHERE   account_number like '01131%';
    
-     SELECT SUM(running_balance) INTO totalValueOfPayables FROM account_created_store WHERE  account_number like '055000%';
+     SELECT SUM(running_balance) INTO totalValueOfPayables FROM account_created_store WHERE  account_number like '05500%';
    
     SELECT SUM(running_balance) INTO totalValueOfFixedAssets FROM account_created_store WHERE  (account_number like '01100%' OR account_number like  '01101%' OR account_number like   '01102%' OR account_number like   '01103%' OR account_number like   '01104%' OR  account_number like  '01105%' OR account_number like   '01106%' OR  account_number like  '01136%');
     
@@ -2653,7 +2734,8 @@ DECLARE totalValueOfLiabilities INTEGER;
 UPDATE summurystats SET TotalValueOfCashBalances=totalValueOfCash,TotalValueOfBankBalances=totalValueOfBankBalance,TotalValueOfAssets=totalValueOfAssets,TotalValueOfReceivables=totalValueOfReceivables,TotalValueOfPayables=totalValueOfPayables,TotalValueOfFixedAssets=totalValueOfFixedAssets,TotalValueOfCurrentAssetsIncludingInterestReceivable=totalCurrentAssetsIncludingInterestR,TotalValueOfCurrentAssetsMinusInterestReceivable=@totalCurrentAssets,
 TotalValueOfMainIncome=totalValueOfMainIncome,TotalValueOfOtherIncome=totalValueOfOtherIncome,TotalValueOfIncome=totalValueOfIncome,TotalValueOfExpenses=totalValueOfExpenses,TotalValueOfLiabilities=totalValueOfLiabilities,TotalValueOfCapital=totalValueOfCapital WHERE ItemId=ItemIdu;
 
- END//
+ END //
+ 
  DELIMITER ;
 
 
@@ -2671,7 +2753,8 @@ IF (interestReceivable IS NULL) THEN
 SET interestReceivable=0.0;
 END IF;
 
-     END//
+     END //
+	 
  DELIMITER ;
 
 
@@ -2689,7 +2772,8 @@ IF (currentAssets IS NULL) THEN
 SET currentAssets=0.0;
 END IF;
 
-     END//
+     END //
+	 
  DELIMITER ;
 
 
@@ -2712,7 +2796,7 @@ SET existingAccounts=existingAccounts-1;
 
 UPDATE summurystats SET TotalNumberOfCustomers=existingAccounts WHERE ItemId=ItemIdu;
 
- END//
+ END //
 
  DELIMITER ;
 
@@ -2757,7 +2841,7 @@ END IF;*/
 
 CALL deleteFromMaster(OLD.account_number);
 
-END//
+END //
 		DELIMITER ;
 
 
@@ -2779,7 +2863,7 @@ CALL updateCountStatsAccounts();
 
 END IF;
 
-END//
+END //
 
 
 		DELIMITER ;
@@ -2808,7 +2892,7 @@ CALL updateSharesRemoved(NEW.value_shares_removed);
 
 END IF;
 
-END//
+END //
 		DELIMITER ;
 
 
@@ -2829,7 +2913,7 @@ CALL updateSavingsRemoved(NEW.SavingsRemoved);
 
 END IF;
 
-END//
+END //
 		DELIMITER ;
 
 
@@ -2856,7 +2940,52 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS deleteFromMaster;		
+
+
+
+
+DROP PROCEDURE IF EXISTS countNumberValueOfCompletedWrittenOffLoans;
+ 
+ 	DELIMITER //
+	
+ CREATE PROCEDURE countNumberValueOfCompletedWrittenOffLoans() BEGIN
+
+ DECLARE totalValueCompletedLoans INTEGER;
+ 
+ DECLARE totalNumberOfCompltedLoans INTEGER;
+
+  DECLARE totalValueWrittenOffLoans INTEGER;
+  
+  DECLARE totalNumberOfWrittenOffLoans INTEGER;
+
+  SELECT ItemId INTO @ItemIdux FROM summurystats ORDER BY ItemId DESC Limit 1;
+  
+    SELECT COUNT(princimpal_amount),SUM(princimpal_amount) INTO totalNumberOfCompltedLoans, totalValueCompletedLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='Completed';
+
+   SELECT COUNT(TotalPrincipalRemaining),SUM(TotalPrincipalRemaining) INTO totalNumberOfWrittenOffLoans, totalValueWrittenOffLoans FROM pmms_loans.new_loan_appstore1  WHERE loan_cycle_status='WrittenOff';
+   
+   IF totalValueCompletedLoans IS NULL THEN
+   SET totalValueCompletedLoans=0;
+   END IF;
+   
+     IF totalValueWrittenOffLoans IS NULL THEN
+      SET totalValueWrittenOffLoans=0;
+   END IF;
+   
+SELECT totalNumberOfCompltedLoans,totalValueCompletedLoans,totalNumberOfWrittenOffLoans,totalValueWrittenOffLoans;
+
+UPDATE summurystats SET TotalNumberOfLoansCompleted=totalNumberOfCompltedLoans,TotalValueOfLoansCompleted=totalValueCompletedLoans,TotalNumberOfLoansWrittenOff=totalNumberOfWrittenOffLoans,TotalValueOfLoansWrittenOff=totalValueWrittenOffLoans WHERE ItemId=@ItemIdux;
+
+
+ END //
+ 
+ DELIMITER ;
+
+
+ 
+
+DROP PROCEDURE IF EXISTS deleteFromMaster;	
+	
 DELIMITER //
 
 CREATE PROCEDURE deleteFromMaster(IN accountNumber VARCHAR(30)) BEGIN
@@ -3048,7 +3177,11 @@ CREATE TABLE `AdminCostIndividualTrackerStatic` (
 
 
 
-/*==============================GENERAL LEDGER ADJUSTMENTS=========================================================================*/
+
+
+
+
+/*==============================Posting Enntry Stuff=========================================================================*/
 
 
 
@@ -3056,10 +3189,11 @@ CREATE TABLE `AdminCostIndividualTrackerStatic` (
  
  	DELIMITER //
 
-   CREATE PROCEDURE  adjustTrnIdS (IN bsancaAccountNumber VARCHAR(30),IN dateInQuestion DATE,OUT trId INTEGER) BEGIN
+   CREATE PROCEDURE  adjustTrnIdS (IN bsancaAccountNumber VARCHAR(30),IN dateInQuestion DATE,OUT trId INTEGER, OUT lastTrnId INTEGER) BEGIN
    
-     SET @sql_text9 = concat(CAST(" SELECT  trn_id INTO @trIdV FROM  " AS CHAR CHARACTER SET utf8),bsancaAccountNumber,CAST("  WHERE trn_date='"AS CHAR CHARACTER SET utf8),dateInQuestion,CAST("'  ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-SELECT @sql_text9;
+     SET @sql_text9 = concat(CAST(" SELECT  trn_id INTO @trIdV FROM  " AS CHAR CHARACTER SET utf8),bsancaAccountNumber,CAST("  WHERE trn_date<='"AS CHAR CHARACTER SET utf8),dateInQuestion,CAST("'  ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+
+/* SELECT @sql_text9; */
 PREPARE stmt9 FROM @sql_text9;
   EXECUTE stmt9;
 DROP PREPARE stmt9;
@@ -3069,14 +3203,34 @@ PREPARE stmt FROM @sql_text;
   EXECUTE stmt;
 DROP PREPARE stmt;
 
-SELECT @trIdV ,@LasttrId ;
+/* SELECT @trIdV ,@LasttrId ; */
+
+IF @trIdV<>@LasttrId THEN
+SET @trIdV=@trIdV+1;
+END IF;
+
+IF @trIdV IS NULL THEN 
+
+SET @trIdV=@LasttrId;
+
+END IF;
 
 SET trId=@trIdV;
-	  
+
+SET lastTrnId=@LasttrId ;	 
+ 
 	  TxIdsXX:LOOP
 	  
 	  
-	/*   SELECT @LasttrId; */
+IF @trIdV=@LasttrId THEN
+		
+		SET trId=@trIdV+1;
+		
+		  LEAVE TxIdsXX;
+	  
+	  END IF;
+	  
+	  
 	  
 	SET   @oldIdC=@LasttrId+1;
 	  
@@ -3097,8 +3251,9 @@ SET trId=@trIdV;
 		SET @LasttrId=@newIdC;
 		
 		/*   SELECT @LasttrId; */
-	  
-	  IF @newIdC=trId OR @newIdC=1000 THEN
+		
+		
+		IF @newIdC=trId OR @newIdC=1000 THEN
 	  
 	  LEAVE TxIdsXX;
 	  
@@ -3109,77 +3264,618 @@ SET trId=@trIdV;
    
 
 
-     END//
- DELIMITER ;
+
+     END //
+	 
+       DELIMITER ;
+	   
+
  
- 
- /*===============TRIGGER TESTING======================================*/
- 
- 
-DROP TRIGGER IF EXISTS TSANCA01123000110;
+
+        DROP PROCEDURE IF EXISTS postingTxnsX;
+
+
+        DELIMITER //
+
+
+        CREATE PROCEDURE  postingTxnsX(IN trn_idX INT(11), IN trn_dateX DATE, IN narrationX VARCHAR(200), IN value_dateX  DATE, IN  debitX VARCHAR(50), IN creditX VARCHAR(50) ,IN ledger_balanceX VARCHAR(50),IN credit_account_noX VARCHAR(50),IN credit_account_nameX VARCHAR(50) ,IN tra_ref_numberX VARCHAR(50),IN  chq_numberX VARCHAR(50), IN trn_typeX VARCHAR(50) ,IN staff_idX  VARCHAR(50), IN trn_timeX TIME, IN trn_sq_noX VARCHAR(10), IN account_numberX VARCHAR(100),IN  master_numberX VARCHAR(100),IN other_oneX VARCHAR(100),IN other_twoX VARCHAR(100) ,IN other_threeX VARCHAR(100) )  BEGIN
+
+
+
+
+        IF trn_typeX <>'GenXX' THEN 
+
+
+        IF(other_oneX LIKE '%Cr%') THEN 
+
+        SET @creditAccount=account_numberX;
+
+        SET @debitAccount=credit_account_noX;
+
+        CALL accountNma(@creditAccount,@accountName);
+
+
+        INSERT INTO general_ledger  VALUES (null, trn_dateX, narrationX, value_dateX,debitX, creditX, @creditAccount,@debitAccount,@accountName,tra_ref_numberX ,chq_numberX ,trn_typeX ,staff_idX ,trn_timeX ,trn_sq_noX);
+
+
+        SET @qryA = concat(CAST("INSERT INTO BSANCA" AS CHAR CHARACTER SET utf8),@creditAccount,CAST(" VALUES( NULL"AS CHAR CHARACTER SET utf8),CAST(",'"AS CHAR CHARACTER SET utf8),trn_dateX,CAST("','"AS CHAR CHARACTER SET utf8),narrationX,CAST("','"AS CHAR CHARACTER SET utf8),value_dateX,CAST("','"AS CHAR CHARACTER SET utf8),debitX,CAST("','"AS CHAR CHARACTER SET utf8),creditX,CAST("','"AS CHAR CHARACTER SET utf8),ledger_balanceX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_noX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_nameX,CAST("','" AS CHAR CHARACTER SET utf8),tra_ref_numberX,CAST("','" AS CHAR CHARACTER SET utf8),chq_numberX,CAST("','"AS CHAR CHARACTER SET utf8),trn_typeX,CAST("','"AS CHAR CHARACTER SET utf8),staff_idX,CAST("','"AS CHAR CHARACTER SET utf8),trn_timeX,CAST("','"AS CHAR CHARACTER SET utf8),trn_sq_noX,CAST("','"AS CHAR CHARACTER SET utf8),account_numberX,CAST("','"AS CHAR CHARACTER SET utf8),master_numberX,CAST("','"AS CHAR CHARACTER SET utf8),other_oneX,CAST("','"AS CHAR CHARACTER SET utf8),other_twoX,CAST("','"AS CHAR CHARACTER SET utf8),other_threeX, CAST("')"AS CHAR CHARACTER SET utf8));
+        SELECT @qryA;
+
+        PREPARE stm FROM @qryA;
+        EXECUTE stm;
+        DROP PREPARE stm;
+
+        END IF;
+
+
+
+        IF(other_oneX LIKE '%Dr%') THEN 
+
+        SET @creditAccount=credit_account_noX;
+
+        SET @debitAccount=account_numberX;
+
+        CALL accountNma(@debitAccount,@accountName);
+
+        INSERT INTO general_ledger  VALUES (null, trn_dateX, narrationX, value_dateX,debitX, creditX, @debitAccount ,@creditAccount ,@accountName,tra_ref_numberX ,chq_numberX ,trn_typeX ,staff_idX ,trn_timeX ,trn_sq_noX);    
+
+
+        SET @qryB = concat(CAST("INSERT INTO BSANCA" AS CHAR CHARACTER SET utf8),@debitAccount,CAST(" VALUES( NULL"AS CHAR CHARACTER SET utf8),CAST(",'"AS CHAR CHARACTER SET utf8),trn_dateX,CAST("','"AS CHAR CHARACTER SET utf8),narrationX,CAST("','"AS CHAR CHARACTER SET utf8),value_dateX,CAST("','"AS CHAR CHARACTER SET utf8),debitX,CAST("','"AS CHAR CHARACTER SET utf8),creditX,CAST("','"AS CHAR CHARACTER SET utf8),ledger_balanceX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_noX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_nameX,CAST("','" AS CHAR CHARACTER SET utf8),tra_ref_numberX,CAST("','" AS CHAR CHARACTER SET utf8),chq_numberX,CAST("','"AS CHAR CHARACTER SET utf8),trn_typeX,CAST("','"AS CHAR CHARACTER SET utf8),staff_idX,CAST("','"AS CHAR CHARACTER SET utf8),trn_timeX,CAST("','"AS CHAR CHARACTER SET utf8),trn_sq_noX,CAST("','"AS CHAR CHARACTER SET utf8),account_numberX,CAST("','"AS CHAR CHARACTER SET utf8),master_numberX,CAST("','"AS CHAR CHARACTER SET utf8),other_oneX,CAST("','"AS CHAR CHARACTER SET utf8),other_twoX,CAST("','"AS CHAR CHARACTER SET utf8),other_threeX, CAST("')"AS CHAR CHARACTER SET utf8));
+
+        SELECT @qryB;
+        PREPARE stm FROM @qryB;
+        EXECUTE stm;
+        DROP PREPARE stm;
+
+        END IF;
+
+
+
+        UPDATE account_created_store SET running_balance=ledger_balanceX,trn_date=trn_dateX  WHERE account_number=account_numberX;
+
+        CALL   updateMasterX(trn_dateX,account_numberX,ledger_balanceX,staff_idX);
+
+
+
+
+
+        ELSE
+
+
+
+
+        IF(other_oneX LIKE '%Cr%') THEN 
+		
+SET @trnId=NULL;SET @lastId=NULL;
+
+        SET @creditAccount=account_numberX;
+
+        SET @debitAccount=credit_account_noX;
+
+        CALL accountNma(@creditAccount,@accountName);
+/* SELECT @creditAccount,@debitAccount; */
+ SET @bsancaAccountCr=CONCAT(CAST("bsanca" AS CHAR CHARACTER SET utf8),CAST("" AS CHAR CHARACTER SET utf8),@creditAccount,CAST("" AS CHAR CHARACTER SET utf8));
+
+
+    /*       SELECT @bsancaAccountCr,trn_dateX,@trnId,@lastId;
+		   */
+		  
+        CALL  adjustTrnIdS (@bsancaAccountCr,trn_dateX,@trnId,@lastId);
+
+       /*  SELECT @trnId,@lastId; */
+		
+		SET @qryB = concat(CAST("INSERT INTO BSANCA" AS CHAR CHARACTER SET utf8),@creditAccount,CAST(" VALUES(" AS CHAR CHARACTER SET utf8),@trnId,CAST(",'"AS CHAR CHARACTER SET utf8),trn_dateX,CAST("','"AS CHAR CHARACTER SET utf8),narrationX,CAST("','"AS CHAR CHARACTER SET utf8),value_dateX,CAST("','"AS CHAR CHARACTER SET utf8),debitX,CAST("','"AS CHAR CHARACTER SET utf8),creditX,CAST("','"AS CHAR CHARACTER SET utf8),ledger_balanceX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_noX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_nameX,CAST("','" AS CHAR CHARACTER SET utf8),tra_ref_numberX,CAST("','" AS CHAR CHARACTER SET utf8),chq_numberX,CAST("','"AS CHAR CHARACTER SET utf8),trn_typeX,CAST("','"AS CHAR CHARACTER SET utf8),staff_idX,CAST("','"AS CHAR CHARACTER SET utf8),trn_timeX,CAST("','"AS CHAR CHARACTER SET utf8),trn_sq_noX,CAST("','"AS CHAR CHARACTER SET utf8),account_numberX,CAST("','"AS CHAR CHARACTER SET utf8),master_numberX,CAST("','"AS CHAR CHARACTER SET utf8),other_oneX,CAST("','"AS CHAR CHARACTER SET utf8),other_twoX,CAST("','"AS CHAR CHARACTER SET utf8),other_threeX, CAST("')"AS CHAR CHARACTER SET utf8));
+
+       /*  SELECT @qryB; */
+        PREPARE stm FROM @qryB;
+        EXECUTE stm;
+        DROP PREPARE stm;
+
+        CALL adjustAccountBalances(@creditAccount,@bsancaAccountCr,creditX,@trnId,@lastId);
+		
+	
+		        /* UPDATE account_created_store SET running_balance=ledger_balanceX,trn_date=trn_dateX  WHERE account_number=account_numberX; */
+
+               CALL updateAccountCreatedStoreBalance(@creditAccount);
+
+      
+
+         SET @trnId=NULL;SET @lastId=NULL;
+		 
+        END IF;
+
+
+
+       IF(other_oneX LIKE '%Dr%') THEN 
+		
+SET @trnId=NULL;SET @lastId=NULL;
+
+        SET @creditAccount=account_numberX;
+
+        SET @debitAccount=credit_account_noX;
+
+        CALL accountNma(@creditAccount,@accountName);
+SELECT @creditAccount,@creditAccount;
+ SET @bsancaAccountDr=CONCAT(CAST("bsanca" AS CHAR CHARACTER SET utf8),CAST("" AS CHAR CHARACTER SET utf8),@creditAccount,CAST("" AS CHAR CHARACTER SET utf8));
+
+
+          SELECT @bsancaAccountDr,trn_dateX,@trnId,@lastId;
+		  
+		  
+        CALL  adjustTrnIdS (@bsancaAccountDr,trn_dateX,@trnId,@lastId);
+
+        SELECT @trnId,@lastId;
+		
+		SET @qryB = concat(CAST("INSERT INTO BSANCA" AS CHAR CHARACTER SET utf8),@creditAccount,CAST(" VALUES(" AS CHAR CHARACTER SET utf8),@trnId,CAST(",'"AS CHAR CHARACTER SET utf8),trn_dateX,CAST("','"AS CHAR CHARACTER SET utf8),narrationX,CAST("','"AS CHAR CHARACTER SET utf8),value_dateX,CAST("','"AS CHAR CHARACTER SET utf8),debitX,CAST("','"AS CHAR CHARACTER SET utf8),creditX,CAST("','"AS CHAR CHARACTER SET utf8),ledger_balanceX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_noX,CAST("','"AS CHAR CHARACTER SET utf8),credit_account_nameX,CAST("','" AS CHAR CHARACTER SET utf8),tra_ref_numberX,CAST("','" AS CHAR CHARACTER SET utf8),chq_numberX,CAST("','"AS CHAR CHARACTER SET utf8),trn_typeX,CAST("','"AS CHAR CHARACTER SET utf8),staff_idX,CAST("','"AS CHAR CHARACTER SET utf8),trn_timeX,CAST("','"AS CHAR CHARACTER SET utf8),trn_sq_noX,CAST("','"AS CHAR CHARACTER SET utf8),account_numberX,CAST("','"AS CHAR CHARACTER SET utf8),master_numberX,CAST("','"AS CHAR CHARACTER SET utf8),other_oneX,CAST("','"AS CHAR CHARACTER SET utf8),other_twoX,CAST("','"AS CHAR CHARACTER SET utf8),other_threeX, CAST("')"AS CHAR CHARACTER SET utf8));
+
+       /*  SELECT @qryB; */
+        PREPARE stm FROM @qryB;
+        EXECUTE stm;
+        DROP PREPARE stm;
+
+        CALL adjustAccountBalances(@creditAccount,@bsancaAccountDr,creditX,@trnId,@lastId);
+		
+        
+         SET @trnId=NULL;SET @lastId=NULL;
+		 
+        END IF;
+
+
+
+        END IF;
+
+
+
+
+
+        END //
+
+        DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS accountNma;
 
 DELIMITER //
 
-CREATE TRIGGER  TSANCA01123000110 BEFORE INSERT ON BSANCA01123000110 FOR EACH ROW BEGIN
+    CREATE PROCEDURE accountNma(IN accountNumber VARCHAR(30),OUT accountName VARCHAR(30))
+             BEGIN
 
-IF(NEW.other_one LIKE '%Cr%') THEN 
-        
-SET @creditAccount=NEW.account_number;
-        
- SET @debitAccount=NEW.credit_account_no;
+            SELECT account_name FROM account_created_store where account_number=accountNumber INTO accountName;
+                    
+            END //
+			
+			DELIMITER ;
 
-CALL accountNma(@creditAccount,@accountName);
+        DROP PROCEDURE IF EXISTS accountMasterX;
 
-INSERT INTO general_ledger (trn_id ,trn_date ,narration ,value_date ,debit ,credit,debit_account_no,credit_account_no,credit_account_name,tra_ref_number ,chq_number ,trn_type ,staff_id ,trn_time ,trn_sq_no)
+        DELIMITER //
 
-VALUES (null, NEW.trn_date, NEW.narration, NEW.value_date,NEW.debit, NEW.credit, @creditAccount,@debitAccount,@accountName,NEW.tra_ref_number ,NEW.chq_number ,NEW.trn_type ,NEW.staff_id ,NEW.trn_time ,NEW.trn_sq_no);
-        
- END IF;
-        
-IF(NEW.other_one LIKE '%Dr%') THEN 
+        CREATE PROCEDURE accountMasterX(IN accountNumber VARCHAR(30),OUT accountMaster VARCHAR(30)) BEGIN
 
-SET @creditAccount=NEW.credit_account_no;
+         
 
-SET @debitAccount=NEW.account_number;
-        
-CALL accountNma(@debitAccount,@accountName);
+        SET accountMaster=CAST(CONCAT(SUBSTR(accountNumber,1,5),'000010') AS CHAR CHARACTER SET utf8);
 
-INSERT INTO general_ledger (trn_id ,trn_date ,narration ,value_date ,debit ,credit,debit_account_no,credit_account_no,credit_account_name,tra_ref_number ,chq_number ,trn_type ,staff_id ,trn_time ,trn_sq_no)
+        END //
 
- VALUES (null, NEW.trn_date, NEW.narration, NEW.value_date,NEW.debit, NEW.credit, @debitAccount ,@creditAccount ,@accountName,NEW.tra_ref_number ,NEW.chq_number ,NEW.trn_type ,NEW.staff_id ,NEW.trn_time ,NEW.trn_sq_no);    
-
-END IF;
+        DELIMITER ;
 
 
 
-UPDATE account_created_store SET running_balance=NEW.ledger_balance,trn_date=NEW.trn_date  WHERE account_number=NEW.account_number;
+        DROP PROCEDURE IF EXISTS priviousBalanceX;
 
-CALL   updateMaster01123000110(NEW.trn_date,NEW.account_number,NEW.ledger_balance,NEW.staff_id);
-
-END;
-
-DELIMITER ;
+        DELIMITER //
 
 
-CREATE PROCEDURE updateMaster01123000110(IN TrnDate DATE,IN accountNumber VARCHAR(20),IN NewLedgerBalance VARCHAR(20),IN StaffId VARCHAR(8))
-BEGIN
+        CREATE PROCEDURE  priviousBalanceX(IN accountNumberIn VARCHAR(30),OUT priviousBal VARCHAR(30))
+        BEGIN
 
-CALL priviousBalance01123000110(accountNumber,@previouslyAdded);
+        CALL accountMasterX(accountNumberIn,@accountMaster);
+/* SELECT accountNumberIn,@accountMaster; */
 
-CALL currentMasterBalance0112300010(@currentlAdded);
 
-CALL accountNma(accountNumber,@accountName);
+        SET @sQr=CONCAT(CAST("SELECT account_balance INTO @priviousBalX FROM BSANCA" AS CHAR CHARACTER SET utf8),@accountMaster,CAST(" WHERE  account_number=" AS CHAR CHARACTER SET utf8),accountNumberIn,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+       /*  SELECT  @sQr; */
+        PREPARE stm FROM @sQr;	 EXECUTE  stm;  DROP PREPARE stm;
+
+            
+
+
+        IF (@priviousBalX IS NULL) THEN
+
+        SET @priviousBalX='0.0';
+
+        END IF;
 		
- SET @newMasterBalance=(@currentlAdded-@previouslyAdded)+NewLedgerBalance;
+		/* SELECT @priviousBalX; */
 
-INSERT INTO BSANCA0112300010(trn_id,trn_date,value_date,account_name,account_number,account_balance,master_balance,staff_id) 
+SET priviousBal=@priviousBalX;
 
-VALUES (null, TrnDate,TrnDate,@accountName,accountNumber,NewLedgerBalance,@newMasterBalance,StaffId); 
-END;
- 
+        END //
+
+        DELIMITER ;
+		
+		
+
+        DROP PROCEDURE IF EXISTS currentMasterBalanceX;
+
+        DELIMITER //
+
+        CREATE PROCEDURE  currentMasterBalanceX(IN accountNumberIn VARCHAR(30), OUT theBalance VARCHAR(30))
+        BEGIN
+
+        CALL accountMasterX(accountNumberIn,@accountMaster);
+
+        SET @qr=CONCAT(CAST("SELECT  master_balance  INTO @theBalanceX  FROM BSANCA" AS CHAR CHARACTER SET utf8),@accountMaster,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+      
+	  PREPARE st FROM @qr; EXECUTE st; DROP PREPARE st;
+
+          
+		   IF (@theBalanceX IS NULL) THEN
+
+        SET @theBalanceX='0.0';
+
+        END IF;
+SET theBalance=@theBalanceX;
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+        DROP PROCEDURE IF EXISTS updateMasterX;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE updateMasterX(IN TrnDate DATE,IN accountNumber VARCHAR(20),IN NewLedgerBalance VARCHAR(20),IN StaffId VARCHAR(8))
+        BEGIN
+
+        CALL priviousBalanceX(accountNumber,@previouslyAdded);
+/* SELECT @previouslyAdded; */
+        CALL currentMasterBalanceX(accountNumber,@currentlAdded);
+/* SELECT @currentlAdded; */
+        CALL accountNma(accountNumber,@accountName);
+/* SELECT @accountName; */
+        SET @newMasterBalance=(@currentlAdded-@previouslyAdded)+NewLedgerBalance;
+/* SELECT @newMasterBalance; */
+         CALL accountMasterX(accountNumber,@accountMaster);
+/*           SELECT @accountMaster; */
+		  
+		  SET @qry=CONCAT(CAST("INSERT INTO BSANCA" AS CHAR CHARACTER SET utf8),@accountMaster,CAST(" VALUES(NULL" AS CHAR CHARACTER SET utf8),CAST(",'" AS CHAR CHARACTER SET utf8),TrnDate,CAST("','" AS CHAR CHARACTER SET utf8),TrnDate,CAST("','" AS CHAR CHARACTER SET utf8),@accountName,CAST("','" AS CHAR CHARACTER SET utf8),accountNumber,CAST("','" AS CHAR CHARACTER SET utf8),NewLedgerBalance,CAST("','" AS CHAR CHARACTER SET utf8),@newMasterBalance,CAST("','" AS CHAR CHARACTER SET utf8),StaffId,CAST("')" AS CHAR CHARACTER SET utf8) );
+/*         SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+
+        END //
+
+        DELIMITER ;
+
+	   
+/*  CALL postingTxnsX(33000,'2019-05-20','Cash At Hand Dated20/05/2019 Processed on 20/05/2019   From Centenary Bank','2019-05-20','-','1.58E7','-1.5E7','01123000110','Cash At Hand','0002','BTN187047','GenXX','10002','08:32:40','17','01122000110','01122000010','Cr','Main','NA');
+
+SELECT trn_id,trn_date,debit,credit,ledger_balance from bsanca05502000110;
+ */
+
+
+
+ DROP PROCEDURE IF EXISTS adjustAccountBalancesDR;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE adjustAccountBalancesDR(IN accountNumber VARCHAR(40),IN bsancaAccount VARCHAR(40),IN amountIn DOUBLE,IN trnId INT, IN lastId INT)
+        BEGIN
+          
+		 /*  SELECT accountNumber,bsancaAccount,amountIn,trnId,lastId; */
+		 
+		 
+		  SET @accountCat=SUBSTR(accountNumber,1,3);
+		
+		
+		    SET @startId=trnId-1;
+			
+			
+		   SET @qry=CONCAT(CAST("SELECT ledger_balance INTO @runngbal  FROM " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+		
+		  IF @runngbal IS NULL THEN 
+		SET @runngbal=0;
+		END IF;
+		 
+
+SELECT @accountCat,@runngbal;
+		  
+		  
+		  IF   @accountCat='011' OR  @accountCat='022' THEN
+		  
+		 
+		CreditsRepeats:REPEAT
+		
+			SELECT "in1";
+			
+		SET @startId=@startId+1;
+		
+	   SET @qry=CONCAT(CAST("SELECT debit,credit INTO @runDebit,@runCredit  FROM " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+	
+	       IF @runCredit='-' THEN
+		   
+		   SET @runCredit=0;
+		   
+		   END IF;
+		   
+		     IF @runDebit='-' THEN
+		   
+		   SET @runDebit=0;
+		   
+		   END IF;
+	
+	
+		SET @runngbal=@runngbal-@runCredit+@runDebit;
+		
+		
+		SET @qry=CONCAT(CAST("UPDATE " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" SET  ledger_balance=" AS CHAR CHARACTER SET utf8),@runngbal,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+                SET @runCredit=0;SET @runDebit=0;
+		UNTIL @startId>lastId END REPEAT CreditsRepeats;
+		
+		   CALL   updateMasterBalancesDRasset(trn_dateX,account_numberX,ledger_balanceX,staff_idX);
+		
+		END IF;
+		
+		
+		
+			SELECT "in313";
+		
+		
+		
+		  IF  @accountCat='055' OR  @accountCat='033' OR  @accountCat='044' THEN 
+		  
+		  
+		  
+		  
+		  
+		  
+		  DebitssRepeats:REPEAT
+		  
+			SET @startId=@startId+1;
+			
+		SELECT "in31";
+		  SET @qry=CONCAT(CAST("SELECT debit,credit INTO @runDebit1,@runCredit1  FROM " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+	
+		       IF @runCredit1='-' THEN
+		   
+		   SET @runCredit1=0;
+		   
+		   END IF;
+		   
+		     IF @runDebit='-' THEN
+		   
+		   SET @runDebit=0;
+		   
+		   END IF;
+		   
+		SET @runngbal=(@runngbal-@runDebit1)+@runCredit1;
+		
+		
+		SET @qry=CONCAT(CAST("UPDATE " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" SET  ledger_balance=" AS CHAR CHARACTER SET utf8),@runngbal,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+		
+		
+		
+		  SET @runCredit1=0;SET @runDebit1=0;
+		  
+		UNTIL @startId>lastId END REPEAT DebitssRepeats;
+
+		    CALL   updateMasterBalancesDRliability(trn_dateX,account_numberX,ledger_balanceX,staff_idX);
+
+		 END IF;
+		 
+		 
+		 
+		 
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+
+
+
+ DROP PROCEDURE IF EXISTS adjustAccountBalancesCR;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE adjustAccountBalancesCR(IN accountNumber VARCHAR(40),IN bsancaAccount VARCHAR(40),IN amountIn DOUBLE,IN trnId INT, IN lastId INT)
+        BEGIN
+          
+		 /*  SELECT accountNumber,bsancaAccount,amountIn,trnId,lastId; */
+		 
+		  SET @accountCat=SUBSTR(accountNumber,1,3);
+		
+		
+		    SET @startId=trnId-1;
+			
+			
+		   SET @qry=CONCAT(CAST("SELECT ledger_balance INTO @runngbal  FROM " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+		
+		  IF @runngbal IS NULL THEN 
+		SET @runngbal=0;
+		END IF;
+		 
+
+SELECT @accountCat,@runngbal;
+		  
+		  
+		  IF   @accountCat='011' OR  @accountCat='022' THEN
+		  
+		 
+		CreditsRepeats:REPEAT
+		
+			SELECT "in1";
+			
+		SET @startId=@startId+1;
+		
+	   SET @qry=CONCAT(CAST("SELECT debit,credit INTO @runDebit,@runCredit  FROM " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+	
+	       IF @runCredit='-' THEN
+		   
+		   SET @runCredit=0;
+		   
+		   END IF;
+		   
+		     IF @runDebit='-' THEN
+		   
+		   SET @runDebit=0;
+		   
+		   END IF;
+	
+	
+		SET @runngbal=@runngbal-@runCredit+@runDebit;
+		
+		
+		SET @qry=CONCAT(CAST("UPDATE " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" SET  ledger_balance=" AS CHAR CHARACTER SET utf8),@runngbal,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+                SET @runCredit=0;SET @runDebit=0;
+		UNTIL @startId>lastId END REPEAT CreditsRepeats;
+		
+		
+		   CALL   updateMasterBalancesCRasset(trn_dateX,account_numberX,ledger_balanceX,staff_idX);
+		   
+		
+		END IF;
+		
+		
+		
+			SELECT "in313";
+		
+		
+		
+		  IF  @accountCat='055' OR  @accountCat='033' OR  @accountCat='044' THEN 
+		  
+		  
+		  
+		  
+		  
+		  
+		  DebitssRepeats:REPEAT
+		  
+			SET @startId=@startId+1;
+			
+		SELECT "in31";
+		  SET @qry=CONCAT(CAST("SELECT debit,credit INTO @runDebit1,@runCredit1  FROM " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+	
+		       IF @runCredit1='-' THEN
+		   
+		   SET @runCredit1=0;
+		   
+		   END IF;
+		   
+		     IF @runDebit='-' THEN
+		   
+		   SET @runDebit=0;
+		   
+		   END IF;
+		   
+		SET @runngbal=(@runngbal-@runDebit1)+@runCredit1;
+		
+		
+		SET @qry=CONCAT(CAST("UPDATE " AS CHAR CHARACTER SET utf8),bsancaAccount,CAST(" SET  ledger_balance=" AS CHAR CHARACTER SET utf8),@runngbal,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),@startId);
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+		
+		
+		
+		  SET @runCredit1=0;SET @runDebit1=0;
+		  
+		UNTIL @startId>lastId END REPEAT DebitssRepeats;
+
+		   CALL   updateMasterBalancesCRliability(trn_dateX,account_numberX,ledger_balanceX,staff_idX);
+
+		 END IF;
+		 
+		 
+		 
+		 
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+ DROP PROCEDURE IF EXISTS updateAccountCreatedStoreBalance;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE updateAccountCreatedStoreBalance(IN creditAccountnO VARCHAR(40))
+        BEGIN
+          
+	 SET @bsancaAccount=CONCAT(CAST("bsanca" AS CHAR CHARACTER SET utf8),CAST("" AS CHAR CHARACTER SET utf8),creditAccountnO,CAST("" AS CHAR CHARACTER SET utf8));
+	
+	SET @qry=CONCAT(CAST("SELECT ledger_balance INTO @balL FROM " AS CHAR CHARACTER SET utf8),@bsancaAccount,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+        /* SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+		 
+
+      UPDATE account_created_store SET  running_balance=@balL  WHERE account_number=creditAccountnO;
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+
+
+
+
+ DROP PROCEDURE IF EXISTS updateMasterBalancesCRliability;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE updateMasterBalancesCRliability(IN creditAccountnO VARCHAR(40)))
+        BEGIN
+          
+		
+		 
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
  
  /*=========================================SEQUENCE NUMBERING SYSTEM======================================================*/
-
 
 
 DROP TABLE IF EXISTS `sequenceNumbers`;
@@ -3310,4 +4006,132 @@ CALL TheTrnSequencyNumber();
 CALL resetTxnSeqNumber();
 CALL TheTrnSequencyNumber(); 
  
- 
+
+
+
+
+
+
+/* LOAN RECEIPT PRINTING */
+DROP PROCEDURE IF EXISTS loanPrintingDetails;
+
+DELIMITER ##
+
+CREATE PROCEDURE   loanPrintingDetails(IN batchNumber VARCHAR(45),IN staffId VARCHAR(45))
+BEGIN
+
+ DECLARE l_done INT;
+ DECLARE AmountPaidL,AmountRemainL,loan_takenL,princimpalL,interestL DOUBLE;
+  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus VARCHAR(60);
+DECLARE date_takenL DATE;
+
+DROP TABLE IF EXISTS loanPrintDetails;
+
+CREATE TEMPORARY  TABLE loanPrintDetails(
+id_1 INTEGER, -- 0
+company_name VARCHAR(60),-- 1
+company_branch VARCHAR(60),-- 2
+company_box_number VARCHAR(60),-- 3
+customer_name VARCHAR(60),-- 4
+staff_name VARCHAR(60),-- 5
+loan_taken VARCHAR(60),-- 6
+date_taken DATE,-- 7
+loans_paid VARCHAR(60),-- 8
+loan_remaining VARCHAR(60),-- 9
+batchNumber  VARCHAR(60),-- 10
+loanID  VARCHAR(60),-- 11
+trn_date VARCHAR(60),-- 12
+trn_time TIME,-- 13
+LoanStatus VARCHAR(60),-- 14
+princimpal_amount VARCHAR(60),-- 15
+interest_amount VARCHAR(60));-- 16
+
+
+SELECT loanTrnId,AmountPaid,LoanBalance,AccountNumber,LoanStatusReport INTO loanTrnIdL,AmountPaidL,AmountRemainL,accountNumberL ,LoanStatus FROM   loandisburserepaystatement WHERE BatchCode=batchNumber;
+
+SELECT the_company_name, the_company_branch,the_company_box_number INTO companyName,companyBranch, companyBoxNumber FROM the_company_datails;
+
+SELECT ExpectedTotalAmount,TrnDate,AmountDisbursed,ExpectedInterest INTO loan_takenL,date_takenL,princimpalL,interestL  FROM loandisburserepaystatement WHERE loanTrnId=loanTrnIdL ORDER BY TrnId ASC LIMIT 1;
+
+select trn_id into l_done from general_ledger where chq_number=batchNumber ORDER BY trn_id ASC LIMIT 1;
+-- select AmountRemainL;
+INSERT INTO loanPrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(accountNumberL),staffName(staffId),FORMAT(loan_takenL,0),date_takenL,FORMAT(AmountPaidL,0),FORMAT(AmountRemainL,0),batchNumber,loanTrnIdL,DATE_FORMAT(DATE(NOW()),'%d/%m/%Y'),TIME(NOW()),LoanStatus,FORMAT(princimpalL,0),FORMAT(interestL,0));
+
+
+   SELECT * FROM loanPrintDetails;
+
+END
+
+##
+DELIMITER ;
+
+CALL loanPrintingDetails('BTN5160',10019);
+
+
+
+
+/* CURRENT SHIFT FUNCTION */
+
+DROP FUNCTION IF EXISTS customerNameL;
+DELIMITER ##
+CREATE FUNCTION customerNameL(accounNumber VARCHAR(30)) 
+RETURNS VARCHAR(60)
+DETERMINISTIC
+BEGIN
+DECLARE customerNameNow VARCHAR(40);
+
+SELECT account_name INTO customerNameNow FROM account_created_store WHERE  account_number=accounNumber;
+IF ISNULL(customerNameNow) THEN
+ SET customerNameNow='MISSING';
+ END IF;
+RETURN customerNameNow;
+END ##
+DELIMITER ;
+
+
+/* CURRENT SHIFT FUNCTION */
+DROP FUNCTION IF EXISTS staffName;
+DELIMITER ##
+CREATE FUNCTION staffName(staffId INT) 
+RETURNS VARCHAR(40)
+DETERMINISTIC
+BEGIN
+DECLARE staffNameNow VARCHAR(40);
+
+SELECT account_name INTO staffNameNow FROM log_in WHERE  user_id=staffId;
+ IF ISNULL(staffNameNow) THEN
+ SET staffNameNow='MISSING';
+ END IF;
+RETURN staffNameNow;
+END ##
+DELIMITER ;
+
+
+/* CURRENT SHIFT FUNCTION */
+DROP FUNCTION IF EXISTS staffName1;
+DELIMITER ##
+CREATE FUNCTION staffName1(staffId INT) 
+RETURNS VARCHAR(40)
+DETERMINISTIC
+BEGIN
+DECLARE staffNameNow VARCHAR(40);
+
+SELECT account_name INTO staffNameNow FROM pmms.log_in WHERE  user_id=staffId;
+ IF ISNULL(staffNameNow) THEN
+ SET staffNameNow='MISSING';
+ END IF;
+RETURN staffNameNow;
+END ##
+DELIMITER ;
+--  INSERT INTO the_company_datails VALUES(NULL,'PALMA MICROFINANCE LITD','KAMPALA HEAD OFFICE BRANCH','P.O BOX 28886 KAMPALA UGANDA',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+
+
+CREATE TABLE `the_company_datails` (
+  `the_company_details_id` int(11) NOT NULL AUTO_INCREMENT,
+  `the_company_name` varchar(100) DEFAULT 'Edad Coin SMS-Ltd',
+  `the_company_branch` varchar(100) DEFAULT 'Edad Coin SMS-Ltd',
+  `the_company_box_number` varchar(100) DEFAULT 'Edad Coin SMS-Ltd',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `update_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`the_company_details_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=16001 DEFAULT CHARSET=utf8;
