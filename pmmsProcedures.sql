@@ -89,13 +89,25 @@ END//
 
 
 
+-- DROP TABLE IF EXISTS `interestComputed`;
+
+-- CREATE TABLE `interestComputed` (
+--   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
+--   `loanId` varchar(45) DEFAULT '0',
+--   `DueDate` date NOT NULL DEFAULT '1970-01-01',
+--   `PrincimpalInvolved`  double DEFAULT NULL,
+--   `InterestInvolved`  double DEFAULT NULL,
+--   `loanStatusI` varchar(45) DEFAULT 'NCO',
+--   PRIMARY KEY (`TrnId`),
+--   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
+-- ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
 /*=======DEVIDEND PAYMENT =====================*/
 
 
 
-
+DROP TABLE IF EXISTS `SavingsInterestPaymentDaily`;
 
 CREATE TABLE `SavingsInterestPaymentDaily` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -121,6 +133,8 @@ CREATE TABLE `SavingsInterestPaymentDaily` (
 
 
 
+DROP TABLE IF EXISTS `SavingsInterestPaymentMonthly`;
+
 CREATE TABLE `SavingsInterestPaymentMonthly` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
   `TrnDate` date NOT NULL DEFAULT '1970-01-01',
@@ -142,6 +156,8 @@ CREATE TABLE `SavingsInterestPaymentMonthly` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
+DROP TABLE IF EXISTS `SavingsInterestPaymentAnnually`;
+
 CREATE TABLE `SavingsInterestPaymentAnnually` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
   `TrnDate` date NOT NULL DEFAULT '1970-01-01',
@@ -162,6 +178,7 @@ CREATE TABLE `SavingsInterestPaymentAnnually` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
+DROP TABLE IF EXISTS `SavingsAndSharesInterestPaymentSummury`;
 
 CREATE TABLE `SavingsAndSharesInterestPaymentSummury` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -183,6 +200,8 @@ CREATE TABLE `SavingsAndSharesInterestPaymentSummury` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
+DROP TABLE IF EXISTS `sharesinterestpaymentannually`;
+
 CREATE TABLE `sharesinterestpaymentannually` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
   `TrnDate` date NOT NULL DEFAULT '1970-01-01',
@@ -201,6 +220,9 @@ CREATE TABLE `sharesinterestpaymentannually` (
   PRIMARY KEY (`TrnId`),
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+
+DROP TABLE IF EXISTS `sharesinterestpaymentdaily`;
 
 CREATE TABLE `sharesinterestpaymentdaily` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -221,6 +243,8 @@ CREATE TABLE `sharesinterestpaymentdaily` (
   PRIMARY KEY (`TrnId`),
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+DROP TABLE IF EXISTS `sharesinterestpaymentmonthly`;
 
 CREATE TABLE `sharesinterestpaymentmonthly` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -243,46 +267,35 @@ CREATE TABLE `sharesinterestpaymentmonthly` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
-DROP TABLE IF EXISTS interestComputed;
 
-CREATE TABLE `interestComputed` (
-  `TrnId` int(11) NOT NULL AUTO_INCREMENT,
-  `loanId` varchar(45) DEFAULT '0',
-  `DueDate` date NOT NULL DEFAULT '1970-01-01',
-  `PrincimpalInvolved`  double DEFAULT NULL,
-  `InterestInvolved`  double DEFAULT NULL,
-  `loanStatusI` varchar(45) DEFAULT 'NCO',
-  PRIMARY KEY (`TrnId`),
-  UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+-- DROP TABLE IF EXISTS `savingssharescomputationparameters`;
 
-
-DROP TABLE IF EXISTS `savingssharescomputationparameters`;
-
-CREATE TABLE `savingssharescomputationparameters` (
-  `TrnId` int(11) NOT NULL AUTO_INCREMENT,
-  `SavingsStartDate` date NOT NULL DEFAULT '1970-01-01',
-  `ShareStartDate` date NOT NULL DEFAULT '1970-01-01',
-  `SharesRateUsed` double DEFAULT NULL,
-  `SavingsRateUsed` double DEFAULT NULL,
-  `SharesIncludUsed` int(11) DEFAULT NULL,
-  `ShareExclude` int(11) DEFAULT NULL,
-  `SavingsIncludUsed` int(11) DEFAULT NULL,
-  `SavingsExclude` int(11) DEFAULT NULL,
-  `OtherThree` varchar(45) DEFAULT 'NCO',
-  `OtherFour` varchar(45) DEFAULT 'NCO',
-  `OtherFive` varchar(45) DEFAULT 'NCO',
-  PRIMARY KEY (`TrnId`),
-  UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+-- CREATE TABLE `savingssharescomputationparameters` (
+--   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
+--   `SavingsStartDate` date NOT NULL DEFAULT '1970-01-01',
+--   `ShareStartDate` date NOT NULL DEFAULT '1970-01-01',
+--   `SharesRateUsed` double DEFAULT NULL,
+--   `SavingsRateUsed` double DEFAULT NULL,
+--   `SharesIncludUsed` int(11) DEFAULT NULL,
+--   `ShareExclude` int(11) DEFAULT NULL,
+--   `SavingsIncludUsed` int(11) DEFAULT NULL,
+--   `SavingsExclude` int(11) DEFAULT NULL,
+--   `OtherThree` varchar(45) DEFAULT 'NCO',
+--   `OtherFour` varchar(45) DEFAULT 'NCO',
+--   `OtherFive` varchar(45) DEFAULT 'NCO',
+--   PRIMARY KEY (`TrnId`),
+--   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
+-- ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
  
+
+
+--INSERT INTO  savingssharescomputationparameters VALUES(1,	'2019-02-23'	,'2019-03-23',	10.67,	5.33	,1	,1	,1	,1	,'NA',	'NA'	,'NA');
 
 
 DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnSavings;
  
  	DELIMITER //
-
 
  CREATE PROCEDURE devidendPaymentOnSavings() READS SQL DATA BEGIN
 
@@ -432,10 +445,10 @@ SET @ledgerBalance =0;
 
  END LOOP Date_loop;
 
-IF ledgerBalance1 >0 THEN 
+-- IF ledgerBalance1 >0 THEN 
 INSERT INTO SavingsInterestPaymentAnnually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
 
-END IF;
+-- END IF;
 
 SET finalTotals=0;
 
@@ -541,11 +554,13 @@ SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate)
  SET finalTotals=finalTotals+amountComputed;
 
 
- INSERT INTO SavingsInterestPaymentDaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
+
+ INSERT INTO sharesinterestpaymentdaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
 
  IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
  
- INSERT INTO SavingsInterestPaymentMonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
+ INSERT INTO sharesinterestpaymentmonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
+
 
 SET monthlyTotals=0;
 
@@ -3278,7 +3293,7 @@ IF @trIdV=@LasttrId THEN
         DELIMITER //
 
 
-        CREATE PROCEDURE  postingTxnsX(IN trn_idX INT(11), IN trn_dateX DATE, IN narrationX VARCHAR(200), IN value_dateX  DATE, IN  debitX VARCHAR(50), IN creditX VARCHAR(50) ,IN ledger_balanceX VARCHAR(50),IN credit_account_noX VARCHAR(50),IN credit_account_nameX VARCHAR(50) ,IN tra_ref_numberX VARCHAR(50),IN  chq_numberX VARCHAR(50), IN trn_typeX VARCHAR(50) ,IN staff_idX  VARCHAR(50), IN trn_timeX TIME, IN trn_sq_noX VARCHAR(10), IN account_numberX VARCHAR(100),IN  master_numberX VARCHAR(100),IN other_oneX VARCHAR(100),IN other_twoX VARCHAR(100) ,IN other_threeX VARCHAR(100) )  BEGIN
+        CREATE PROCEDURE  postingTxnsX(IN trn_idX INT(11), IN trn_dateX DATE, IN narrationX VARCHAR(200), IN value_dateX  DATE, IN  debitX VARCHAR(50), IN creditX VARCHAR(50) ,IN ledger_balanceX VARCHAR(50),IN credit_account_noX VARCHAR(50),IN credit_account_nameX VARCHAR(200) ,IN tra_ref_numberX VARCHAR(50),IN  chq_numberX VARCHAR(50), IN trn_typeX VARCHAR(50) ,IN staff_idX  VARCHAR(50), IN trn_timeX TIME, IN trn_sq_noX VARCHAR(10), IN account_numberX VARCHAR(100),IN  master_numberX VARCHAR(100),IN other_oneX VARCHAR(100),IN other_twoX VARCHAR(100) ,IN other_threeX VARCHAR(100) )  BEGIN
 
 
 
@@ -4065,7 +4080,62 @@ END
 ##
 DELIMITER ;
 
-CALL loanPrintingDetails('BTN5160',10019);
+CALL loanPrintingDetails('NL0378',10019);
+
+
+
+
+
+
+/* LOAN RECEIPT PRINTING */
+DROP PROCEDURE IF EXISTS loanStatementDetails;
+
+DELIMITER ##
+
+CREATE PROCEDURE   loanStatementDetails(IN SloanTrnId VARCHAR(45))
+BEGIN
+
+-- SELECT SloanTrnId;
+
+DROP TABLE IF EXISTS loanStatementtDetailsTable;
+
+CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
+`id` INTEGER NOT NULL AUTO_INCREMENT, -- 0
+`trn_date` DATE,-- 1
+`amount_paid` VARCHAR(60),-- 4
+`princimpal_paid` VARCHAR(60),-- 5
+`interest_paid` VARCHAR(60),-- 6
+`amount_remaining` VARCHAR(60),-- 9
+`princimpal_remaining`  VARCHAR(60),-- 10
+`interest_remaining`  VARCHAR(60),-- 11
+ PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT =0
+DEFAULT CHARACTER SET = utf8;
+
+  --  SELECT * FROM loanStatementtDetails;
+-- SELECT SloanTrnId;
+INSERT INTO  loanStatementtDetailsTable( 
+  `id` ,
+  `trn_date` ,
+      `amount_paid`,
+     `princimpal_paid`,
+  `interest_paid`,
+        `amount_remaining`,
+          `princimpal_remaining`,
+          `interest_remaining`
+  ) SELECT  null,`TrnDate` ,FORMAT(`AmountPaid`,0) ,  FORMAT(`PrincipalPaid`,0) ,  FORMAT(`InterestPaid`,0) ,  FORMAT(`LoanBalance`,0) ,  FORMAT(`PrincipalBalance`,0) ,  FORMAT(`InterestBalance`,0)  FROM loandisburserepaystatement WHERE loanTrnId=SloanTrnId LIMIT 1,20000;
+
+
+   SELECT * FROM loanStatementtDetailsTable;
+
+END ##
+DELIMITER ;
+
+CALL loanStatementDetails('NL0378');
+
+
+
 
 
 
@@ -4123,7 +4193,7 @@ SELECT account_name INTO staffNameNow FROM pmms.log_in WHERE  user_id=staffId;
 RETURN staffNameNow;
 END ##
 DELIMITER ;
---  INSERT INTO the_company_datails VALUES(NULL,'PALMA MICROFINANCE LITD','KAMPALA HEAD OFFICE BRANCH','P.O BOX 28886 KAMPALA UGANDA',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+--  INSERT INTO the_company_datails VALUES(NULL,'EL-WILL FINANCIAL SERVICES LTD','KIBULI BRANCH','P.O BOX 28886 KAMPALA UGANDA',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 
 
 CREATE TABLE `the_company_datails` (
@@ -4135,3 +4205,96 @@ CREATE TABLE `the_company_datails` (
   `update_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`the_company_details_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=16001 DEFAULT CHARSET=utf8;
+
+
+/* CURRENT SHIFT FUNCTION */
+
+DROP FUNCTION IF EXISTS customerNameL;
+DELIMITER ##
+CREATE FUNCTION customerNameL(accounNumber VARCHAR(30)) 
+RETURNS VARCHAR(60)
+DETERMINISTIC
+BEGIN
+DECLARE customerNameNow VARCHAR(40);
+
+SELECT account_name INTO customerNameNow FROM account_created_store WHERE  account_number=accounNumber;
+IF ISNULL(customerNameNow) THEN
+ SET customerNameNow='MISSING';
+ END IF;
+RETURN customerNameNow;
+END ##
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS runningLoansDetails;
+DELIMITER ##
+CREATE PROCEDURE runningLoansDetails() BEGIN
+
+DROP TABLE IF EXISTS runningLoanAnalysis;
+
+CREATE TEMPORARY TABLE  runningLoanAnalysis(id INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_account VARCHAR(60), PRIMARY KEY (`id`))ENGINE = InnoDB
+AUTO_INCREMENT =0
+DEFAULT CHARACTER SET = utf8;
+
+   INSERT INTO  runningLoanAnalysis( 
+  `id` ,
+  `customer_name` ,
+  `customer_account`  
+  ) SELECT 
+   DISTINCT null,
+  customerNameL(AccountNumber),
+  AccountNumber
+       FROM loandisburserepaystatement;
+       
+       SELECT * FROM runningLoanAnalysis;
+END ##
+DELIMITER ;
+CALL runningLoansDetails();
+
+
+DROP PROCEDURE `savingsPrintingDetails`;
+
+DELIMITER ##
+
+CREATE  PROCEDURE `savingsPrintingDetails`(IN accountNumberlx VARCHAR(45),IN staffId VARCHAR(45))
+BEGIN
+
+ DECLARE l_done INT;
+ DECLARE savingsMade,savingsWithdrawn,savingsRemaing DOUBLE;
+  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus VARCHAR(60);
+DECLARE date_takenL DATE;
+
+DROP TABLE IF EXISTS savePrintDetails;
+
+CREATE TEMPORARY  TABLE savePrintDetails(
+
+
+id_1 INTEGER,
+company_name VARCHAR(60),
+company_branch VARCHAR(60),
+company_box_number VARCHAR(60),
+customer_name VARCHAR(60),
+staff_name VARCHAR(60),
+savings_made VARCHAR(60),
+savings_withdrawn VARCHAR(60),
+savings_remaining VARCHAR(60),
+accountNumber1  VARCHAR(60),
+trn_date VARCHAR(60),
+trn_time TIME);
+
+
+SELECT the_company_name, the_company_branch,the_company_box_number INTO companyName,companyBranch, companyBoxNumber FROM the_company_datails;
+
+ SELECT SavingsAdded , SavingsRemoved , SavingsRunningBalance INTO savingsMade,savingsWithdrawn,savingsRemaing  FROM newsavingsmembers WHERE AccountNumber=accountNumberlx ORDER BY TrnId DESC LIMIT 1;
+
+select trn_id into l_done from general_ledger  ORDER BY trn_id ASC LIMIT 1;
+
+
+
+
+INSERT INTO savePrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(accountNumberlx),staffName(staffId),FORMAT(savingsMade,0),FORMAT(savingsWithdrawn,0),FORMAT(savingsRemaing,0),accountNumberlx,DATE_FORMAT(DATE(NOW()),'%d/%m/%Y'),TIME(NOW()));
+
+   SELECT * FROM savePrintDetails;
+
+END  ##
+DELIMITER ;
