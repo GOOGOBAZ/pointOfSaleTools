@@ -8975,7 +8975,7 @@ SET savingDepositWith=@cash;
 END IF;
 
 
-END OUTER_BLOCK//
+END OUTER_BLOCK //
 
 DELIMITER ;
 
@@ -11573,7 +11573,7 @@ DELIMITER ;
 
 DROP EVENT IF EXISTS `manage_penalty`;
 
-CREATE  EVENT `manage_penalty` ON SCHEDULE EVERY 20 MINUTE STARTS CURRENT_TIMESTAMP() ON COMPLETION NOT PRESERVE ENABLE DO CALL compute_penalty();
+CREATE  EVENT IF NOT EXISTS  `manage_penalty` ON SCHEDULE EVERY 20 MINUTE STARTS CURRENT_TIMESTAMP() ON COMPLETION NOT PRESERVE ENABLE DO CALL compute_penalty();
 
 
 
@@ -11585,17 +11585,20 @@ CREATE PROCEDURE compute_penalty() READS SQL DATA
 
 OUTER_BLOCK:BEGIN
 
-DECLARE pStatus,pRecoverPeriod,pChargeOn,pChargeAs,pDeadlineForP,pDeadlineMeasureIn,pAccruePOnceRecurrent INT;
+DECLARE pStatus,pRecoverPeriod,pChargeOn,pChargeAs,pDeadlineForP,pDeadlineMeasureIn,pAccruePOnceRecurrent,accruePenaltyTimesX INT;
 
 DECLARE pTheActualCharge DOUBLE; 
 
-SELECT  penaltyStatus , recoeryPeriod , chargeOnLoan , chargedAs , theActuaCharge , deadlineForPenalty , deadlineMeasuredIn , accruePenaltyTimes INTO pStatus,pRecoverPeriod,pChargeOn,pChargeAs,pTheActualCharge,pDeadlineForP, pDeadlineMeasureIn,accruePenaltyTimes FROM loanarrearssettings
-
-IF pStatus=1 THEN
+SELECT  penaltyStatus , recoeryPeriod , chargeOnLoan , chargedAs , theActuaCharge , deadlineForPenalty , deadlineMeasuredIn , accruePenaltyTimes INTO pStatus,pRecoverPeriod,pChargeOn,pChargeAs,pTheActualCharge,pDeadlineForP, pDeadlineMeasureIn,accruePenaltyTimesX FROM loanarrearssettings
 
 
-IF pChargeOn=1 THEN
-INNER_BLOCK1: BEGIN
+
+-- IF pStatus=1 THEN
+
+
+-- IF pChargeOn=1 THEN
+
+INNER_BLOCK: BEGIN
 
 DECLARE moreIds INT;
 DECLARE loanIds VARCHAR(50);
@@ -11624,26 +11627,26 @@ END INNER_BLOCK1;
 
 
 
-ELSEIF pChargeOn=2 THEN
+-- ELSEIF pChargeOn=2 THEN
 
-BEGIN
-
-
-END;
-
-ELSEIF pChargeOn=3 THEN
-
-BEGIN
+-- BEGIN
 
 
-END;
-ELSEIF pChargeOn=4 THEN
+-- END;
+
+-- ELSEIF pChargeOn=3 THEN
+
+-- BEGIN
 
 
+-- END;
+-- ELSEIF pChargeOn=4 THEN
 
 
 
-END IF;
+
+
+-- END IF;
 
 END //
 
