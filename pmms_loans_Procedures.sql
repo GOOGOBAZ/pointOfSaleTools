@@ -1029,71 +1029,7 @@ CALL dailyCollectionInstalmentStatement('2019-05-23');
 
 
 
-DROP PROCEDURE IF EXISTS grossLoanPortfolio;
 
-DELIMITER //
-
-
-
-CREATE PROCEDURE grossLoanPortfolio() READS SQL DATA BEGIN
-
- DECLARE txnIdS VARCHAR(30);
-
- DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
- 
- 
-DECLARE forSelectingTxnIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore WHERE loan_cycle_status='Disbursed';
- 
- DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
- 
-
-
-DROP TABLE IF EXISTS temp_grossPortFolio;
-
-CREATE TEMPORARY  TABLE temp_grossPortFolio(id INTEGER,temp_Borrower VARCHAR(200),temp_outStandingPrici DOUBLE,temp_OutStandingInterst DOUBLE,temp_OutStandingAccum DOUBLE,temp_OutStandingPenalty VARCHAR(200),temp_OutStandingTotal VARCHAR(200));
-
-
- OPEN forSelectingTxnIds;
-
-
-accounts_loop: LOOP 
-
-
-
- FETCH forSelectingTxnIds into txnIdS;
- 
- 
- IF l_done=1 THEN
-
-LEAVE accounts_loop;
-
- END IF;
- 
- SELECT  applicant_account_name, TotalPrincipalRemaining,TotalInterestRemaining,TotalAccumulatedInterestRemaining,TotalLoanPenaltyRemaining  INTO @borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty FROM new_loan_appstore WHERE trn_id=txnIdS;
- 
- SET Ids=Ids+1;
-   
-   SET @totalAll=@remPrinc+@remInt+@remAccumI+@remaPenalty;
-   
- INSERT INTO temp_grossPortFolio VALUES(Ids,@borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty,@totalAll);
-
-
-SET l_done=0;
-
- END LOOP accounts_loop;
-
- CLOSE forSelectingTxnIds;
- 
-
-
-SELECT id,temp_Borrower,temp_outStandingPrici,temp_OutStandingInterst,temp_OutStandingAccum,temp_OutStandingPenalty,temp_OutStandingTotal  FROM temp_grossPortFolio;
-
-
-END //
-
-DELIMITER ;
-
-CALL grossLoanPortfolio();
 
 
 DROP PROCEDURE IF EXISTS dailyCollectionInstalmentStatementArrears;
@@ -11567,6 +11503,148 @@ UPDATE loanarrearssettings SET accruePenaltyTimes=theDealineM;
 END //
 
 DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS grossLoanPortfolio;
+
+DELIMITER //
+
+
+
+CREATE PROCEDURE grossLoanPortfolio() READS SQL DATA BEGIN
+
+ DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore WHERE loan_cycle_status='Disbursed';
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+
+
+DROP TABLE IF EXISTS temp_grossPortFolio;
+
+CREATE TEMPORARY  TABLE temp_grossPortFolio(id INTEGER,temp_Borrower VARCHAR(200),temp_outStandingPrici DOUBLE,temp_OutStandingInterst DOUBLE,temp_OutStandingAccum DOUBLE,temp_OutStandingPenalty VARCHAR(200),temp_OutStandingTotal VARCHAR(200));
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+ SELECT  applicant_account_name, TotalPrincipalRemaining,TotalInterestRemaining,TotalAccumulatedInterestRemaining,TotalLoanPenaltyRemaining  INTO @borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty FROM new_loan_appstore WHERE trn_id=txnIdS;
+ 
+ SET Ids=Ids+1;
+   
+   SET @totalAll=@remPrinc+@remInt+@remAccumI+@remaPenalty;
+   
+ INSERT INTO temp_grossPortFolio VALUES(Ids,@borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty,@totalAll);
+
+ 
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+
+--  SELECT  SUM(temp_outStandingPrici) ,SUM(temp_OutStandingInterst),SUM(temp_OutStandingAccum) ,SUM(temp_OutStandingPenalty) ,SUM(temp_OutStandingTotal) INTO @TremPrinc,@TremInt,@TremAccumI,@TremaPenalty,@TtotalAll FROM temp_grossPortFolio;
+ 
+-- INSERT INTO temp_grossPortFolio VALUES(0,'Total',@TremPrinc,@TremInt,@TremAccumI,@TremaPenalty,@TtotalAll);
+
+SELECT id,temp_Borrower,temp_outStandingPrici,temp_OutStandingInterst,temp_OutStandingAccum,temp_OutStandingPenalty,temp_OutStandingTotal  FROM temp_grossPortFolio;
+
+
+END //
+
+DELIMITER ;
+
+CALL grossLoanPortfolio();
+
+
+
+
+
+DROP PROCEDURE IF EXISTS grossLoanPortfolioPdf;
+
+DELIMITER //
+
+
+
+CREATE PROCEDURE grossLoanPortfolioPdf() READS SQL DATA BEGIN
+
+ DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore WHERE loan_cycle_status='Disbursed';
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+
+
+DROP TABLE IF EXISTS temp_grossPortFolio;
+
+CREATE TEMPORARY  TABLE temp_grossPortFolio(id INTEGER,temp_Borrower VARCHAR(200),temp_outStandingPrici DOUBLE,temp_OutStandingInterst DOUBLE,temp_OutStandingAccum DOUBLE,temp_OutStandingPenalty VARCHAR(200),temp_OutStandingTotal VARCHAR(200));
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+ SELECT  applicant_account_name, TotalPrincipalRemaining,TotalInterestRemaining,TotalAccumulatedInterestRemaining,TotalLoanPenaltyRemaining  INTO @borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty FROM new_loan_appstore WHERE trn_id=txnIdS;
+ 
+ SET Ids=Ids+1;
+   
+   SET @totalAll=@remPrinc+@remInt+@remAccumI+@remaPenalty;
+   
+ INSERT INTO temp_grossPortFolio VALUES(Ids,@borrower,@remPrinc,@remInt,@remAccumI,@remaPenalty,@totalAll);
+
+ 
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+
+ SELECT  SUM(temp_outStandingPrici) ,SUM(temp_OutStandingInterst),SUM(temp_OutStandingAccum) ,SUM(temp_OutStandingPenalty) ,SUM(temp_OutStandingTotal) INTO @TremPrinc,@TremInt,@TremAccumI,@TremaPenalty,@TtotalAll FROM temp_grossPortFolio;
+ 
+INSERT INTO temp_grossPortFolio VALUES(0,'Total',@TremPrinc,@TremInt,@TremAccumI,@TremaPenalty,@TtotalAll);
+
+SELECT id,temp_Borrower,temp_outStandingPrici,temp_OutStandingInterst,temp_OutStandingAccum,temp_OutStandingPenalty,temp_OutStandingTotal  FROM temp_grossPortFolio;
+
+
+END //
+
+DELIMITER ;
+
+CALL grossLoanPortfolioPdf();
 
 
 
