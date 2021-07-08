@@ -105,7 +105,7 @@ END//
 
 /*=======DEVIDEND PAYMENT =====================*/
 
-
+/* 
 
 DROP TABLE IF EXISTS `SavingsInterestPaymentDaily`;
 
@@ -264,7 +264,7 @@ CREATE TABLE `sharesinterestpaymentmonthly` (
   `OtherFive` varchar(45) DEFAULT 'NCO',
   PRIMARY KEY (`TrnId`),
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1; */
 
 
 
@@ -3888,7 +3888,7 @@ SELECT @accountCat,@runngbal;
  /*=========================================SEQUENCE NUMBERING SYSTEM======================================================*/
 
 
-DROP TABLE IF EXISTS `sequenceNumbers`;
+/* DROP TABLE IF EXISTS `sequenceNumbers`; */
 
 CREATE TABLE `sequenceNumbers` (
   `trn_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -4022,62 +4022,6 @@ CALL TheTrnSequencyNumber();
 
 
 
-/* LOAN RECEIPT PRINTING */
-DROP PROCEDURE IF EXISTS loanPrintingDetails;
-
-DELIMITER ##
-
-CREATE PROCEDURE   loanPrintingDetails(IN batchNumber VARCHAR(45),IN staffId VARCHAR(45))
-BEGIN
-
- DECLARE l_done INT;
- DECLARE AmountPaidL,AmountRemainL,loan_takenL,princimpalL,interestL DOUBLE;
-  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus VARCHAR(60);
-DECLARE date_takenL DATE;
-
-DROP TABLE IF EXISTS loanPrintDetails;
-
-CREATE TEMPORARY  TABLE loanPrintDetails(
-id_1 INTEGER, -- 0
-company_name VARCHAR(60),-- 1
-company_branch VARCHAR(60),-- 2
-company_box_number VARCHAR(60),-- 3
-customer_name VARCHAR(60),-- 4
-staff_name VARCHAR(60),-- 5
-loan_taken VARCHAR(60),-- 6
-date_taken DATE,-- 7
-loans_paid VARCHAR(60),-- 8
-loan_remaining VARCHAR(60),-- 9
-batchNumber  VARCHAR(60),-- 10
-loanID  VARCHAR(60),-- 11
-trn_date VARCHAR(60),-- 12
-trn_time TIME,-- 13
-LoanStatus VARCHAR(60),-- 14
-princimpal_amount VARCHAR(60),-- 15
-interest_amount VARCHAR(60));-- 16
-
-
-SELECT loanTrnId,AmountPaid,LoanBalance,AccountNumber,LoanStatusReport INTO loanTrnIdL,AmountPaidL,AmountRemainL,accountNumberL ,LoanStatus FROM   loandisburserepaystatement WHERE BatchCode=batchNumber;
-
-SELECT the_company_name, the_company_branch,the_company_box_number INTO companyName,companyBranch, companyBoxNumber FROM the_company_datails;
-
-SELECT ExpectedTotalAmount,TrnDate,AmountDisbursed,ExpectedInterest INTO loan_takenL,date_takenL,princimpalL,interestL  FROM loandisburserepaystatement WHERE loanTrnId=loanTrnIdL ORDER BY TrnId ASC LIMIT 1;
-
-select trn_id into l_done from general_ledger where chq_number=batchNumber ORDER BY trn_id ASC LIMIT 1;
--- select AmountRemainL;
-INSERT INTO loanPrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(accountNumberL),staffName(staffId),FORMAT(loan_takenL,0),date_takenL,FORMAT(AmountPaidL,0),FORMAT(AmountRemainL,0),batchNumber,loanTrnIdL,DATE_FORMAT(DATE(NOW()),'%d/%m/%Y'),TIME(NOW()),LoanStatus,FORMAT(princimpalL,0),FORMAT(interestL,0));
-
-
-   SELECT * FROM loanPrintDetails;
-
-END
-
-##
-DELIMITER ;
-
-CALL loanPrintingDetails('NL0378',10019);
-
-
 
 
 
@@ -4108,8 +4052,8 @@ ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
-  --  SELECT * FROM loanStatementtDetails;
--- SELECT SloanTrnId;
+   SELECT * FROM loanStatementtDetails;
+SELECT SloanTrnId;
 INSERT INTO  loanStatementtDetailsTable( 
   `id` ,
   `trn_date` ,
@@ -4188,7 +4132,7 @@ SELECT account_name INTO staffNameNow FROM pmms.log_in WHERE  user_id=staffId;
 RETURN staffNameNow;
 END ##
 DELIMITER ;
---  INSERT INTO the_company_datails VALUES(NULL,'EL-WILL FINANCIAL SERVICES LTD','KIBULI BRANCH','P.O BOX 28886 KAMPALA UGANDA',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+--  INSERT INTO the_company_datails VALUES(NULL,'UBOS SACCO LTD','STATISTICS HOUSE','P.O BOX 28886 KAMPALA UGANDA','0782602544',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 
 
 CREATE TABLE `the_company_datails` (
@@ -4196,6 +4140,7 @@ CREATE TABLE `the_company_datails` (
   `the_company_name` varchar(100) DEFAULT 'Edad Coin SMS-Ltd',
   `the_company_branch` varchar(100) DEFAULT 'Edad Coin SMS-Ltd',
   `the_company_box_number` varchar(100) DEFAULT 'Edad Coin SMS-Ltd',
+  `office_number` varchar(100) DEFAULT '0782231039',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `update_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`the_company_details_id`)
@@ -4247,6 +4192,10 @@ DELIMITER ;
 CALL runningLoansDetails();
 
 
+
+
+
+
 DROP PROCEDURE `savingsPrintingDetails`;
 
 DELIMITER ##
@@ -4256,7 +4205,7 @@ BEGIN
 
  DECLARE l_done INT;
  DECLARE savingsMade,savingsWithdrawn,savingsRemaing DOUBLE;
-  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus VARCHAR(60);
+  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus,officeNumber  VARCHAR(60);
 DECLARE date_takenL DATE;
 
 DROP TABLE IF EXISTS savePrintDetails;
@@ -4275,10 +4224,11 @@ savings_withdrawn VARCHAR(60),
 savings_remaining VARCHAR(60),
 accountNumber1  VARCHAR(60),
 trn_date VARCHAR(60),
-trn_time TIME);
+trn_time TIME,
+office_number VARCHAR(60));
 
 
-SELECT the_company_name, the_company_branch,the_company_box_number INTO companyName,companyBranch, companyBoxNumber FROM the_company_datails;
+SELECT the_company_name, the_company_branch,the_company_box_number,office_number INTO companyName,companyBranch, companyBoxNumber,officeNumber FROM the_company_datails;
 
  SELECT SavingsAdded , SavingsRemoved , SavingsRunningBalance INTO savingsMade,savingsWithdrawn,savingsRemaing  FROM newsavingsmembers WHERE AccountNumber=accountNumberlx ORDER BY TrnId DESC LIMIT 1;
 
@@ -4287,7 +4237,7 @@ select trn_id into l_done from general_ledger  ORDER BY trn_id ASC LIMIT 1;
 
 
 
-INSERT INTO savePrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(accountNumberlx),staffName(staffId),FORMAT(savingsMade,0),FORMAT(savingsWithdrawn,0),FORMAT(savingsRemaing,0),accountNumberlx,DATE_FORMAT(DATE(NOW()),'%d/%m/%Y'),TIME(NOW()));
+INSERT INTO savePrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(accountNumberlx),staffName(staffId),FORMAT(savingsMade,0),FORMAT(savingsWithdrawn,0),FORMAT(savingsRemaing,0),accountNumberlx,DATE_FORMAT(DATE(NOW()),'%d/%m/%Y'),TIME(NOW()),officeNumber);
 
    SELECT * FROM savePrintDetails;
 
@@ -4295,6 +4245,523 @@ END  ##
 DELIMITER ;
 
 
-update the_company_datails SET  the_company_box_number ='0757112048/0781698950(Steven), 0706036176/0784097939(Emma)';
+
+use pmms
+
+/* ALTER TABLE the_company_datails ADD COLUMN  `office_number`  varchar(100) DEFAULT '0782231039'; */
+/* 
+update the_company_datails SET  office_number ='0706221396/0787511344(Company Mobile)'; */
+
+
+
+
+
+--  INSERT INTO loanArrearsSettings VALUES (NULL,0,4,1,1,10.0,2,1,1);
+-- DROP TABLE IF EXISTS loanArrearsIndividualSettings;
+/* DROP TABLE IF EXISTS backUpDetails; */
+CREATE TABLE backUpDetails (
+   id INT(11) NOT NULL AUTO_INCREMENT,
+  backUpAccount VARCHAR(50) NOT NULL, 
+  tTime  VARCHAR(50) NOT NULL, 
+  tDate  VARCHAR(50) NOT NULL, 
+  backUpMessage VARCHAR(500) NULL, 
+  userId INT NOT NULL,
+  backupTime timestamp,
+  PRIMARY KEY(id)
+)
+
+ENGINE=innoDB AUTO_INCREMENT=1 DEFAULT CHARACTER SET=utf8;
+
+/* DROP TABLE IF EXISTS backUpContact; */
+
+CREATE TABLE backUpContact(
+   id INT(11) NOT NULL AUTO_INCREMENT, 
+   enabled INT NOT NULL,
+   contactName1 VARCHAR(50)  NULL, 
+  backUpContactNotification1 VARCHAR(50) NULL,
+    PRIMARY KEY(id)
+)
+
+ENGINE=innoDB AUTO_INCREMENT=1 DEFAULT CHARACTER SET=utf8;
+
+
+ /* INSERT INTO backUpContact VALUES(NULL,1, 'GODFREY','0778066146'); 1=false,2=true  */
+ 
+
+ 
+ 
+ 
+DROP PROCEDURE IF EXISTS isItBackeup;
+DELIMITER ##
+CREATE PROCEDURE isItBackeup(IN account VARCHAR(50)) BEGIN
+
+SELECT COUNT(id) AS backed FROM backUpDetails WHERE DATE(backUpTime)=DATE(NOW()) AND backUpAccount=account;
+
+END ##
+DELIMITER ;
+/* CALL isItBackeup('pmms'); */
+
+
+
+
+DROP PROCEDURE IF EXISTS disableSms;
+DELIMITER ##
+CREATE PROCEDURE disableSms(IN contact VARCHAR(50)) BEGIN
+
+UPDATE backupcontact SET enabled=1 WHERE backUpContactNotification1=contact;
+
+END ##
+DELIMITER ;
+/* CALL disableSms('0781331616'); */
+
+
+
+DROP PROCEDURE IF EXISTS enableSms;
+DELIMITER ##
+CREATE PROCEDURE enableSms(IN contact VARCHAR(50)) BEGIN
+
+UPDATE backupcontact SET enabled=2 WHERE backUpContactNotification1=contact;
+
+END ##
+DELIMITER ;
+/* CALL enableSms('0773227895'); */
+
+
+
+
+
+
+DROP PROCEDURE IF EXISTS getAllSendingDetails;
+DELIMITER ##
+CREATE PROCEDURE getAllSendingDetails() BEGIN
+
+SELECT contactName1 AS name,backUpContactNotification1 AS contact,TIME(CURRENT_TIMESTAMP) AS theTime,DATE_FORMAT(DATE(CURRENT_TIMESTAMP),"%d/%m/%Y") AS theDate FROM  backupcontact WHERE enabled=2;
+
+END ##
+DELIMITER ;
+CALL getAllSendingDetails();
+
+
+
+
+
+DROP PROCEDURE IF EXISTS createBackUpRecord;
+DELIMITER ##
+CREATE PROCEDURE createBackUpRecord(IN backUpAccountIN VARCHAR(50),IN TIMEIN VARCHAR(50),IN DATEIN VARCHAR(50), IN THEMESSAGE VARCHAR(500),IN userId INT) BEGIN
+
+INSERT INTO backUpDetails VALUES(NULL,backUpAccountIN,TIMEIN,DATEIN,THEMESSAGE,userId,CURRENT_TIMESTAMP);
+END ##
+DELIMITER ;
+
+
+
+
+/* LOAN RECEIPT PRINTING */
+DROP PROCEDURE IF EXISTS loanStatementDetails;
+
+DELIMITER ##
+
+CREATE PROCEDURE   loanStatementDetails(IN SloanTrnId VARCHAR(45))
+BEGIN
+
+-- SELECT SloanTrnId;
+
+DROP TABLE IF EXISTS loanStatementtDetailsTable;
+
+CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
+`id` INTEGER NOT NULL AUTO_INCREMENT, -- 0
+`trn_date` DATE,-- 1
+`amount_paid` VARCHAR(60),-- 4
+`princimpal_paid` VARCHAR(60),-- 5
+`interest_paid` VARCHAR(60),-- 6
+`amount_remaining` VARCHAR(60),-- 9
+`princimpal_remaining`  VARCHAR(60),-- 10
+`interest_remaining`  VARCHAR(60),-- 11
+ PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT =0
+DEFAULT CHARACTER SET = utf8;
+
+  --  SELECT * FROM loanStatementtDetails;
+-- SELECT SloanTrnId;
+INSERT INTO  loanStatementtDetailsTable( 
+  `id` ,
+  `trn_date` ,
+      `amount_paid`,
+     `princimpal_paid`,
+  `interest_paid`,
+        `amount_remaining`,
+          `princimpal_remaining`,
+          `interest_remaining`
+  ) SELECT  null,`TrnDate` ,FORMAT(`AmountPaid`,0) ,  FORMAT(`PrincipalPaid`,0) ,  FORMAT(`InterestPaid`,0) ,  FORMAT(`LoanBalance`,0) ,  FORMAT(`PrincipalBalance`,0) ,  FORMAT(`InterestBalance`,0)  FROM loandisburserepaystatement WHERE loanTrnId=SloanTrnId LIMIT 1,20000;
+
+
+   SELECT * FROM loanStatementtDetailsTable;
+
+END ##
+DELIMITER ;
+
+/* CALL loanStatementDetails('NL0378'); */
+
+
+
+/* ALL CONTINENTAL REGIONS */
+DROP PROCEDURE IF EXISTS testingLoanPay;
+
+DELIMITER ##
+
+CREATE PROCEDURE   testingLoanPay()
+BEGIN
+   
+ DECLARE l_done INT;
+  DECLARE  staffIds  VARCHAR(50);
+ 
+DECLARE forSelectingStaffIds CURSOR FOR SELECT DISTINCT(trn_id)   FROM pmms_loans.new_loan_appstore where loan_cycle_status='Disbursed';
+ 
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+ OPEN forSelectingStaffIds;
+
+accounts_loop: LOOP 
+ FETCH forSelectingStaffIds into staffIds;
+ SELECT staffIds;
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+CALL loanStatementDetails(staffIds);
+
+    SET l_done=0;
+ END LOOP accounts_loop;
+ CLOSE forSelectingStaffIds;
+
+
+END
+
+##
+DELIMITER ;
+
+
+-- DROP TABLE IF EXISTS accountNameController;
+
+CREATE   TABLE accountNameController(
+`id` INTEGER NOT NULL AUTO_INCREMENT, -- 0
+`includePhone` INT,-- 1
+ PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT =1
+DEFAULT CHARACTER SET = utf8;
+
+
+
+/* CURRENT SHIFT FUNCTION */
+
+DROP FUNCTION IF EXISTS statusExistsControl;
+DELIMITER ##
+CREATE FUNCTION statusExistsControl() 
+RETURNS INT
+DETERMINISTIC
+BEGIN
+DECLARE status INT;
+SELECT COUNT(id) INTO status FROM accountNameController;
+RETURN status;
+END ##
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS controlNameStatus;
+DELIMITER ##
+CREATE PROCEDURE controlNameStatus(IN theStatus INT) BEGIN
+
+IF statusExistsControl()>0 THEN
+UPDATE accountNameController SET includePhone=theStatus;
+END IF;
+
+IF statusExistsControl()<=0 THEN
+INSERT INTO accountNameController VALUES(NULL,theStatus);
+END IF;
+
+END ##
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS getTheNameStatus;
+DELIMITER ##
+CREATE PROCEDURE getTheNameStatus() BEGIN
+DECLARE theStat INT;
+SELECT includePhone INTO theStat FROM accountNameController;
+
+IF ISNULL(theStat) THEN
+SET theStat=0;
+END IF;
+SELECT theStat;
+END ##
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS updateAccountName;
+DELIMITER ##
+
+CREATE PROCEDURE updateAccountName(IN theAccountNumber VARCHAR(100),In theAccountName VARCHAR(100)) BEGIN
+DECLARE loanId VARCHAR(100);
+
+SET loanId=concat(CAST("newloan" AS CHAR CHARACTER SET utf8),theAccountNumber);
+
+UPDATE newsavingsmembers SET AccountName=theAccountName WHERE AccountNumber=theAccountNumber;
+
+UPDATE shares_run_bal SET account_name=theAccountName WHERE account_number=theAccountNumber;
+
+UPDATE sharesreturnoninvestment SET account_name=theAccountName WHERE account_number=theAccountNumber;
+
+ UPDATE sharesinterestpaymentmonthly SET AccountNmae=theAccountName WHERE AccountNumber=theAccountNumber;
+ 
+  UPDATE sharesinterestpaymentdaily SET AccountNmae=theAccountName WHERE AccountNumber=theAccountNumber;
+ 
+
+  UPDATE savingsandsharesinterestpaymentsummury SET AccountNmae=theAccountName WHERE AccountNumber=theAccountNumber;
+
+ UPDATE loan_savings_shares SET account_name=theAccountName WHERE account_number=theAccountNumber;
+ 
+ 
+ 
+ 
+  UPDATE borrow_guarantee SET account_name=theAccountName WHERE  account_number=theAccountNumber;
+  
+  
+  UPDATE account_created_store SET account_name=theAccountName WHERE account_number=theAccountNumber;
+  
+  
+    UPDATE log_in SET account_name=theAccountName WHERE account_number=theAccountNumber;
+    
+    
+UPDATE master SET account_name=theAccountName WHERE account_number=theAccountNumber;
+    
+ /* UPDATE pmms_loans.dailycollection SET accountName=theAccountName WHERE loanID=loanId; */
+ 
+  UPDATE pmms_loans.loan_arrears_tracker SET account_name=theAccountName WHERE account_number=theAccountNumber;
+   
+UPDATE pmms_loans.loan_due_writeoff SET account_name=theAccountName WHERE account_number=theAccountNumber;
+     
+ UPDATE pmms_loans.loan_portfolio SET account_name=theAccountName WHERE account_number=theAccountNumber;
+         
+   UPDATE pmms_loans.loan_portfolio_atrisk SET account_name=theAccountName WHERE account_number=theAccountNumber;
+   
+      UPDATE pmms_loans.loanerrorqueue SET BorrowerName=theAccountName WHERE BorrowerAccount=theAccountNumber;
+      
+         UPDATE pmms_loans.loanprocessingstore SET account_name=theAccountName WHERE account_number=theAccountNumber;
+         
+              UPDATE pmms_loans.new_loan_appstore SET applicant_account_name=theAccountName WHERE applicant_account_number=theAccountNumber;
+              
+                UPDATE pmms_loans.new_loan_appstore1 SET applicant_account_name=theAccountName WHERE applicant_account_number=theAccountNumber;
+                
+                  UPDATE pmms_loans.new_loan_appstore2 SET applicant_account_name=theAccountName WHERE applicant_account_number=theAccountNumber;
+                  
+                   UPDATE pmms_loans.performing_loan_portfolio SET account_name=theAccountName WHERE account_number=theAccountNumber;
+
+SELECT loanId;
+END ##
+DELIMITER ;
+
+/* CALL updateAccountName('05502006110','GOOGO BAZI'); */
+
+
+
+
+DROP PROCEDURE `savingsHistoricalPrintingDetails`;
+
+DELIMITER ##
+
+CREATE  PROCEDURE `savingsHistoricalPrintingDetails`(IN batchNumber VARCHAR(60),IN theAccountNumber VARCHAR(60),IN staffId VARCHAR(45))
+BEGIN
+
+
+
+ DECLARE l_done INT;
+ DECLARE savingsMade,savingsWithdrawn,savingsRemaing DOUBLE;
+  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus,officeNumber,theAccount  VARCHAR(60);
+DECLARE date_takenL DATE;
+
+
+
+SET theAccount=concat(CAST("bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber);
+
+DROP TABLE IF EXISTS savePrintDetails;
+
+CREATE TEMPORARY  TABLE savePrintDetails(
+
+
+id_1 INT,
+company_name VARCHAR(60),
+company_branch VARCHAR(60),
+company_box_number VARCHAR(60),
+customer_name VARCHAR(60),
+staff_name VARCHAR(60),
+savings_made VARCHAR(60),
+savings_withdrawn VARCHAR(60),
+savings_remaining VARCHAR(60),
+accountNumber1  VARCHAR(60),
+trn_date VARCHAR(60),
+trn_time TIME,
+office_number VARCHAR(60));
+
+
+SELECT the_company_name, the_company_branch,the_company_box_number,office_number INTO companyName,companyBranch, companyBoxNumber,officeNumber FROM the_company_datails;
+
+ /* SELECT credit , debit , ledger_balance INTO savingsMade,savingsWithdrawn,savingsRemaing  FROM theAccount WHERE chq_number=batchNumber; */
+ 
+   SET @sql_text = concat(CAST("SELECT  credit, debit,ledger_balance,trn_date,trn_time INTO @savingsMade,@savingsWithdrawn,@savingsRemaing,@trnDate,@trnTime FROM  " AS CHAR CHARACTER SET utf8),theAccount,CAST(" WHERE chq_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),batchNumber,CAST("'" AS CHAR CHARACTER SET utf8));
+   /* SELECT @sql_text; */
+PREPARE stmt FROM @sql_text;
+  EXECUTE stmt;
+DROP PREPARE stmt;
+
+select trn_id into l_done from general_ledger  ORDER BY trn_id ASC LIMIT 1;
+
+SET savingsMade=@savingsMade;
+SET savingsWithdrawn=@savingsWithdrawn;
+SET savingsRemaing=@savingsRemaing;
+
+/* SELECT l_done; */
+
+INSERT INTO savePrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(theAccountNumber),staffName(staffId),FORMAT(savingsMade,0),FORMAT(savingsWithdrawn,0),FORMAT(savingsRemaing,0),theAccountNumber,DATE_FORMAT(@trnDate,'%d/%m/%Y'),@trnTime,officeNumber);
+
+   SELECT * FROM savePrintDetails;
+
+END  ##
+DELIMITER ;
+
+
+
+
+
+/* LOAN RECEIPT PRINTING */
+DROP PROCEDURE IF EXISTS loanPrintingDetails;
+
+DELIMITER ##
+
+CREATE PROCEDURE   loanPrintingDetails(IN batchNumber VARCHAR(45),IN staffId VARCHAR(45))
+BEGIN
+
+ DECLARE l_done INT;
+ DECLARE AmountPaidL,AmountRemainL,loan_takenL,princimpalL,interestL DOUBLE;
+  DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus,officeNumber VARCHAR(60);
+DECLARE date_takenL,theTrn_date DATE;
+
+DROP TABLE IF EXISTS loanPrintDetails;
+
+CREATE TEMPORARY  TABLE loanPrintDetails(
+id_1 INTEGER, -- 0
+company_name VARCHAR(60),-- 1
+company_branch VARCHAR(60),-- 2
+company_box_number VARCHAR(60),-- 3
+customer_name VARCHAR(60),-- 4
+staff_name VARCHAR(60),-- 5
+loan_taken VARCHAR(60),-- 6
+date_taken DATE,-- 7
+loans_paid VARCHAR(60),-- 8
+loan_remaining VARCHAR(60),-- 9
+batchNumber  VARCHAR(60),-- 10
+loanID  VARCHAR(60),-- 11
+trn_date VARCHAR(60),-- 12
+trn_time TIME,-- 13
+LoanStatus VARCHAR(60),-- 14
+princimpal_amount VARCHAR(60),-- 15
+interest_amount VARCHAR(60),-- 16
+office_number VARCHAR(60));-- 17
+
+
+SELECT loanTrnId,AmountPaid,LoanBalance,AccountNumber,LoanStatusReport,TrnDate  INTO loanTrnIdL,AmountPaidL,AmountRemainL,accountNumberL ,LoanStatus ,theTrn_date FROM   loandisburserepaystatement WHERE BatchCode=batchNumber;
+
+SELECT the_company_name, the_company_branch,the_company_box_number,office_number INTO companyName,companyBranch, companyBoxNumber,officeNumber FROM the_company_datails;
+
+SELECT ExpectedTotalAmount,TrnDate,AmountDisbursed,ExpectedInterest INTO loan_takenL,date_takenL,princimpalL,interestL  FROM loandisburserepaystatement WHERE loanTrnId=loanTrnIdL ORDER BY TrnId ASC LIMIT 1;
+
+select trn_id into l_done from general_ledger where chq_number=batchNumber ORDER BY trn_id ASC LIMIT 1;
+-- select AmountRemainL;
+INSERT INTO loanPrintDetails VALUES (l_done,companyName,companyBranch,companyBoxNumber,customerNameL(accountNumberL),staffName(staffId),FORMAT(loan_takenL,0),date_takenL,FORMAT(AmountPaidL,0),FORMAT(AmountRemainL,0),batchNumber,loanTrnIdL,DATE_FORMAT(theTrn_date,'%d/%m/%Y'),TIME(NOW()),LoanStatus,FORMAT(princimpalL,0),FORMAT(interestL,0),officeNumber);
+
+
+   SELECT * FROM loanPrintDetails;
+
+END
+
+##
+DELIMITER ;
+
+/* CALL loanPrintingDetails('BTN17003',10000)\G */
+
+DROP PROCEDURE `phoneNumberExists`;
+DELIMITER $$
+CREATE  PROCEDURE `phoneNumberExists`(IN account VARCHAR(50))
+BEGIN
+
+SELECT COUNT(TrnId) AS phoneExists FROM master WHERE mobile1=account;
+
+END $$
+DELIMITER ;
+
+
+
+DROP PROCEDURE `updatePhoneNumber`;
+DELIMITER $$
+CREATE  PROCEDURE `updatePhoneNumber`(IN account VARCHAR(50),IN phoneNumber VARCHAR(50))
+BEGIN
+
+UPDATE master SET mobile1=phoneNumber WHERE account_number=account;
+
+END $$
+DELIMITER ;
+
+
+
+
+
+-- SELECT SloanTrnId;
+
+-- DROP TABLE IF EXISTS printerDrivers;
+
+CREATE  TABLE printerDrivers(
+`id` INTEGER NOT NULL AUTO_INCREMENT, -- 0
+`theDrivesers` VARCHAR(500),-- 1
+`theDriverStatus` INT,-- 4
+`stampStatus` INT,-- 4
+ PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT =0
+DEFAULT CHARACTER SET = utf8;
+
+
+
+DROP PROCEDURE `getThePrintDrivers`;
+DELIMITER $$
+CREATE  PROCEDURE `getThePrintDrivers`()
+BEGIN
+
+SELECT theDrivesers FROM printerDrivers WHERE theDriverStatus=2;
+
+END $$
+DELIMITER ;
+
+
+
+DROP PROCEDURE `getTheStampStatus`;
+DELIMITER $$
+CREATE  PROCEDURE `getTheStampStatus`()
+BEGIN
+
+SELECT stampStatus FROM printerDrivers WHERE theDriverStatus=2;
+
+END $$
+DELIMITER ;
+
+
+/* 
+INSERT INTO printerDrivers VALUES(NULL,'E-PoS printer driver',1,1),(NULL,'EPSON TM-U220 Receipt',1,1),(NULL,'EPSON TM-T20 ReceiptE4 (1)',1,1),(NULL,'XP-80C',2,2); */
 
 
