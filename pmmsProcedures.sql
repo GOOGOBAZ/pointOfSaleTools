@@ -5,7 +5,7 @@
  	DELIMITER //
 
 
- CREATE PROCEDURE creatingRunningBalancesOfShares( ) READS SQL DATA BEGIN
+ CREATE PROCEDURE creatingRunningBalancesOfShares() READS SQL DATA BEGIN
 
  DECLARE accountNumber VARCHAR(30);
 
@@ -91,23 +91,23 @@ END//
 
 -- DROP TABLE IF EXISTS `interestComputed`;
 
--- CREATE TABLE `interestComputed` (
---   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
---   `loanId` varchar(45) DEFAULT '0',
---   `DueDate` date NOT NULL DEFAULT '1970-01-01',
---   `PrincimpalInvolved`  double DEFAULT NULL,
---   `InterestInvolved`  double DEFAULT NULL,
---   `loanStatusI` varchar(45) DEFAULT 'NCO',
---   PRIMARY KEY (`TrnId`),
---   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
--- ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+CREATE TABLE `interestComputed` (
+  `TrnId` int(11) NOT NULL AUTO_INCREMENT,
+  `loanId` varchar(45) DEFAULT '0',
+  `DueDate` date NOT NULL DEFAULT '1970-01-01',
+  `PrincimpalInvolved`  double DEFAULT NULL,
+  `InterestInvolved`  double DEFAULT NULL,
+  `loanStatusI` varchar(45) DEFAULT 'NCO',
+  PRIMARY KEY (`TrnId`),
+  UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
 /*=======DEVIDEND PAYMENT =====================*/
 
 /* 
 
-DROP TABLE IF EXISTS `SavingsInterestPaymentDaily`;
+DROP TABLE IF EXISTS `SavingsInterestPaymentDaily`; */
 
 CREATE TABLE `SavingsInterestPaymentDaily` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -133,7 +133,7 @@ CREATE TABLE `SavingsInterestPaymentDaily` (
 
 
 
-DROP TABLE IF EXISTS `SavingsInterestPaymentMonthly`;
+-- DROP TABLE IF EXISTS `SavingsInterestPaymentMonthly`;
 
 CREATE TABLE `SavingsInterestPaymentMonthly` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -156,7 +156,7 @@ CREATE TABLE `SavingsInterestPaymentMonthly` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
-DROP TABLE IF EXISTS `SavingsInterestPaymentAnnually`;
+-- DROP TABLE IF EXISTS `SavingsInterestPaymentAnnually`;
 
 CREATE TABLE `SavingsInterestPaymentAnnually` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -178,7 +178,7 @@ CREATE TABLE `SavingsInterestPaymentAnnually` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
-DROP TABLE IF EXISTS `SavingsAndSharesInterestPaymentSummury`;
+-- DROP TABLE IF EXISTS `SavingsAndSharesInterestPaymentSummury`;
 
 CREATE TABLE `SavingsAndSharesInterestPaymentSummury` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -200,7 +200,7 @@ CREATE TABLE `SavingsAndSharesInterestPaymentSummury` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
-DROP TABLE IF EXISTS `sharesinterestpaymentannually`;
+-- DROP TABLE IF EXISTS `sharesinterestpaymentannually`;
 
 CREATE TABLE `sharesinterestpaymentannually` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -222,7 +222,7 @@ CREATE TABLE `sharesinterestpaymentannually` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 
-DROP TABLE IF EXISTS `sharesinterestpaymentdaily`;
+-- DROP TABLE IF EXISTS `sharesinterestpaymentdaily`;
 
 CREATE TABLE `sharesinterestpaymentdaily` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -244,7 +244,7 @@ CREATE TABLE `sharesinterestpaymentdaily` (
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS `sharesinterestpaymentmonthly`;
+-- DROP TABLE IF EXISTS `sharesinterestpaymentmonthly`;
 
 CREATE TABLE `sharesinterestpaymentmonthly` (
   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
@@ -270,22 +270,22 @@ CREATE TABLE `sharesinterestpaymentmonthly` (
 
 -- DROP TABLE IF EXISTS `savingssharescomputationparameters`;
 
--- CREATE TABLE `savingssharescomputationparameters` (
---   `TrnId` int(11) NOT NULL AUTO_INCREMENT,
---   `SavingsStartDate` date NOT NULL DEFAULT '1970-01-01',
---   `ShareStartDate` date NOT NULL DEFAULT '1970-01-01',
---   `SharesRateUsed` double DEFAULT NULL,
---   `SavingsRateUsed` double DEFAULT NULL,
---   `SharesIncludUsed` int(11) DEFAULT NULL,
---   `ShareExclude` int(11) DEFAULT NULL,
---   `SavingsIncludUsed` int(11) DEFAULT NULL,
---   `SavingsExclude` int(11) DEFAULT NULL,
---   `OtherThree` varchar(45) DEFAULT 'NCO',
---   `OtherFour` varchar(45) DEFAULT 'NCO',
---   `OtherFive` varchar(45) DEFAULT 'NCO',
---   PRIMARY KEY (`TrnId`),
---   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
--- ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+CREATE TABLE `savingssharescomputationparameters` (
+  `TrnId` int(11) NOT NULL AUTO_INCREMENT,
+  `SavingsStartDate` date NOT NULL DEFAULT '1970-01-01',
+  `ShareStartDate` date NOT NULL DEFAULT '1970-01-01',
+  `SharesRateUsed` double DEFAULT NULL,
+  `SavingsRateUsed` double DEFAULT NULL,
+  `SharesIncludUsed` int(11) DEFAULT NULL,
+  `ShareExclude` int(11) DEFAULT NULL,
+  `SavingsIncludUsed` int(11) DEFAULT NULL,
+  `SavingsExclude` int(11) DEFAULT NULL,
+  `OtherThree` varchar(45) DEFAULT 'NCO',
+  `OtherFour` varchar(45) DEFAULT 'NCO',
+  `OtherFive` varchar(45) DEFAULT 'NCO',
+  PRIMARY KEY (`TrnId`),
+  UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
  
 
@@ -3280,7 +3280,11 @@ IF @trIdV=@LasttrId THEN
        DELIMITER ;
 	   
 
- 
+--  (1013,'2021-06-21','Provision for bad loans ,\n  Dated  21/06/2021','2021-06-21','3093225.7940000296','-','3.6965227214299995E8','05509000110','Provision for Bad Debts','000zib','BTN8576','System','10000','10:09:29','20','02235000110','02235000010','Dr','Main','NA')
+
+--  postingTxnsX(NULL,'2021-06-21','Provision for bad loans ,\n  Dated  21/06/2021','2021-06-21','-','3093225.7940000296','369652272','02235000110','Provision for Bad And Doubtful Debts Expense','000zib','BTN8576','System','10000','10:09:29','20','05509000110','05509000010','Cr','Main','NA');
+
+CALL postingTxnsX(1037,'2021-07-05','Muramuzi Barts Savings for Loan Payment\n  Dated 05/07/2021','2021-07-05','1600000.0','-','2075151.0','05502002810','MURAMUZI BART','000zib','BTN32450','LoanR','10000','09:27:10','5','01122000110','01122000010','Dr','Main','NA');
 
         DROP PROCEDURE IF EXISTS postingTxnsX;
 
@@ -3289,8 +3293,6 @@ IF @trIdV=@LasttrId THEN
 
 
         CREATE PROCEDURE  postingTxnsX(IN trn_idX INT(11), IN trn_dateX DATE, IN narrationX VARCHAR(200), IN value_dateX  DATE, IN  debitX VARCHAR(50), IN creditX VARCHAR(50) ,IN ledger_balanceX VARCHAR(50),IN credit_account_noX VARCHAR(50),IN credit_account_nameX VARCHAR(200) ,IN tra_ref_numberX VARCHAR(50),IN  chq_numberX VARCHAR(50), IN trn_typeX VARCHAR(50) ,IN staff_idX  VARCHAR(50), IN trn_timeX TIME, IN trn_sq_noX VARCHAR(10), IN account_numberX VARCHAR(100),IN  master_numberX VARCHAR(100),IN other_oneX VARCHAR(100),IN other_twoX VARCHAR(100) ,IN other_threeX VARCHAR(100) )  BEGIN
-
-
 
 
         IF trn_typeX <>'GenXX' THEN 
@@ -3560,12 +3562,6 @@ SET theBalance=@theBalanceX;
         END //
 
         DELIMITER ;
-
-	   
-/*  CALL postingTxnsX(33000,'2019-05-20','Cash At Hand Dated20/05/2019 Processed on 20/05/2019   From Centenary Bank','2019-05-20','-','1.58E7','-1.5E7','01123000110','Cash At Hand','0002','BTN187047','GenXX','10002','08:32:40','17','01122000110','01122000010','Cr','Main','NA');
-
-SELECT trn_id,trn_date,debit,credit,ledger_balance from bsanca05502000110;
- */
 
 
 
@@ -3866,25 +3862,92 @@ SELECT @accountCat,@runngbal;
 
 
 
- DROP PROCEDURE IF EXISTS updateMasterBalancesCRliability;
+--  DROP PROCEDURE IF EXISTS updateMasterBalancesCRliability;
 
-        DELIMITER //
+--         DELIMITER //
 		
-        CREATE PROCEDURE updateMasterBalancesCRliability(IN creditAccountnO VARCHAR(40)))
-        BEGIN
+--         CREATE PROCEDURE updateMasterBalancesCRliability(IN creditAccountnO VARCHAR(40)))
+--         BEGIN
           
 		
 		 
+
+--         END //
+
+--         DELIMITER ;
+
+ DROP PROCEDURE IF EXISTS adjustIds;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE adjustIds(IN startinId INT,IN theAccountNumber VARCHAR(100))
+        BEGIN
+        DECLARE numberOfIds,lastId,mostLast,oneX,twoX,counter INT;
+          
+        SET @qry1=CONCAT(CAST("SELECT COUNT(trn_id) INTO @numberOfIdsX  FROM bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" WHERE trn_id>=" AS CHAR CHARACTER SET utf8),startinId);
+        SELECT @qry1;
+         PREPARE stmt2 FROM @qry1;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+		SELECT @numberOfIdsX;
+		    SET @qry2=CONCAT(CAST("SELECT trn_id INTO @lastIdX  FROM bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" WHERE trn_id>=" AS CHAR CHARACTER SET utf8),startinId,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+ PREPARE stmt2 FROM @qry2;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+        SET lastId=@lastIdX;
+        SET counter=lastId;
+        SET mostLast=lastId+1;
+        SET onex=lastId-1;
+
+        SELECT lastId,counter,mostLast,onex;
+
+     SET @theData = concat(CAST("UPDATE  bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" SET trn_id=" AS CHAR CHARACTER SET utf8),mostLast,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),lastId);
+/* select @theData; */
+  PREPARE stmt2 FROM @theData;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+
+       REPEAT 
+
+SET @theData = concat(CAST("UPDATE  bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" SET trn_id=" AS CHAR CHARACTER SET utf8),lastId,CAST(" WHERE  trn_id=" AS CHAR CHARACTER SET utf8),onex);
+/* select @theData; */
+  PREPARE stmt2 FROM @theData;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+SET lastId=lastId-1;
+  SET onex=onex-1;                
+      
+ SET counter=counter-1;       
+        --  SELECT counter;
+UNTIL counter=(startinId) END REPEAT;
+
+  SET @theData = concat(CAST("UPDATE  bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" SET trn_id=" AS CHAR CHARACTER SET utf8),startinId,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),mostLast);
+/* select @theData; */
+  PREPARE stmt2 FROM @theData;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
 
         END //
 
         DELIMITER ;
 
+	   
+
+-- UPDATE  bsanca05502049110 SET trn_id=1025 WHERE trn_id= 1024;
+
+-- CALL postingTxnsX(1023,'2021-04-07','Ahimbisibwe Anthonnys Principal and Interest PaymentDATED 07/04/2021\n  LOAN PAYMENT','2021-04-07','-','550000.0','668900.0','01123000110','Cash At Hand','0002','BTN31841','LoanR','10000','14:57:00','2','05502049110','05502000010','Cr','Main','NA');
+
+--  (22433,'2021-04-23','Kabagambe Angellas Savings Processed on 23/04/2021\n  From Kabagambe Angella','2021-04-23','200000.0','-','01122000110','05502043010','Centenary Bank','0002','BTN31944','Save2','10000','09:50:12','2')
+
+-- CALL postingTxnsX(1022,'2021-04-23','Kabagambe Angellas Savings Processed on 23/04/2021\n  From Kabagambe Angella','2021-04-23','-','200000.0','2514500.0','01122000110','Centenary Bank','0002','BTN31944','Save2','10000','09:50:12','2','05502043010','05502000010','Cr','Main','NA');
 
 
+-- (23599,'2021-05-31','Tusaasirwe Jonards Account Deposit for Loan Payment\n  Dated 31/05/2021','2021-05-31','780000.0','-','01123000110','05502029910','Cash At Hand','000zib','BTN32271','LoanR','10000','12:26:48','4')
 
 
- 
+-- CALL postingTxnsX(1022,'2021-05-31','Tusaasirwe Jonards Account Deposit for Loan Payment\n  Dated 31/05/2021','2021-05-31','-','780000.0','785000.0','01123000110','Cash At Hand','0002','BTN32271','LoanR','10000','12:26:48','2','05502029910','05502000010','Cr','Main','NA');
+
  /*=========================================SEQUENCE NUMBERING SYSTEM======================================================*/
 
 
@@ -3904,7 +3967,7 @@ CREATE TABLE `sequenceNumbers` (
   UNIQUE KEY `trn_id` (`trn_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
-INSERT INTO sequenceNumbers VALUES(null,10000,1,30000,40000,50000,60000,70000,80000);
+-- INSERT INTO sequenceNumbers VALUES(null,10000,1,30000,40000,50000,60000,70000,80000);
 
 
 DROP PROCEDURE IF EXISTS groupNumber;
@@ -4036,7 +4099,7 @@ BEGIN
 
 -- SELECT SloanTrnId;
 
-DROP TABLE IF EXISTS loanStatementtDetailsTable;
+-- DROP TABLE IF EXISTS loanStatementtDetailsTable;
 
 CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
 `id` INTEGER NOT NULL AUTO_INCREMENT, -- 0
@@ -4653,7 +4716,7 @@ BEGIN
   DECLARE loanTrnIdL,companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus,officeNumber VARCHAR(60);
 DECLARE date_takenL,theTrn_date DATE;
 
-DROP TABLE IF EXISTS loanPrintDetails;
+-- DROP TABLE IF EXISTS loanPrintDetails;
 
 CREATE TEMPORARY  TABLE loanPrintDetails(
 id_1 INTEGER, -- 0

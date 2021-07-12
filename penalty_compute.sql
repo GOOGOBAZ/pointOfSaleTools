@@ -996,3 +996,58 @@ RETURN thePenalty;
 
 END ##
 DELIMITER ;
+
+
+
+
+DROP PROCEDURE IF EXISTS theAMDAPenaltyAdd;
+DELIMITER //
+CREATE PROCEDURE theAMDAPenaltyAdd() READS SQL DATA 
+
+BEGIN
+
+DECLARE lDone1 INTEGER DEFAULT 0;
+
+DECLARE instalmentNo,theInstalmentNo,existsIn1,instalmentStatus,theInstalmentStatus,counter,firstInstalment,idExists INT; 
+
+DECLARE newBalance,oldBalance,computedPenalty,newPenaltyRemaining,oldPenaltyRemaining,newInstalmentAmount,oldInstalmentAmount,newLoanPenalty,oldLoanPenalty,newLoanPenaltyRemaining,oldLoanPenaltyRemaining,newInstalmnetAmount,oldInstalmnetAmount DOUBLE;
+
+DECLARE penaltyStatusN,thePenaltyS,numberOfItems  INTEGER;
+DECLARE endDate DATE;
+DECLARE trnId VARCHAR(20);
+DECLARE forselectingLoanTrnId CURSOR FOR SELECT trn_id  FROM new_loan_appstore  WHERE loan_cycle_status='WrittenOff' AND  NOT (loan_tenure='1.0 MONTHS' OR  loan_tenure='1 MONTHS') ;
+
+/* AND isInArrearsAMDA(trn_id)>0 AND typeOfInstalment(trn_id)>0  */
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET lDone1=1;
+ 
+
+OPEN forselectingLoanTrnId; 
+
+loanTrnIdLoop: LOOP 
+
+FETCH forselectingLoanTrnId INTO trnId;
+/* SELECT trnId;  */
+ IF lDone1=1 THEN
+LEAVE loanTrnIdLoop;
+ END IF;
+ 
+
+ SELECT instalment_no INTO firstInstalment FROM new_loan_appstoreamort WHERE NOT instalment_status='P' AND master1_id=trnId ORDER BY instalment_no DESC LIMIT 1;
+
+
+SELECT TotalLoanPenaltyRemaining INTO oldPenaltyRemaining FROM new_loan_appstore WHERE trn_id=trnId;
+
+
+SELECT  InstalmentRemaining INTO oldInstalmnetAmount FROM new_loan_appstoreamort WHERE master1_id=trnId AND instalment_no=firstInstalment;
+
+SET newInstalmnetAmount=oldInstalmnetAmount+oldPenaltyRemaining;
+
+UPDATE new_loan_appstoreamort SET LoanPenalty=oldPenaltyRemaining, LoanPenaltyRemaining=oldPenaltyRemaining, InstalmentRemaining=newInstalmnetAmount WHERE instalment_no=firstInstalment AND master1_id=trnId;
+
+
+
+SET lDone1=0;
+END LOOP loanTrnIdLoop;
+CLOSE forselectingLoanTrnId;
+END //
+DELIMITER ;

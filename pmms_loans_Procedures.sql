@@ -314,7 +314,7 @@ SET l_done=0;
 
 
 
- CALL migrateDateNewOnes();
+--  CALL migrateDateNewOnes();
 
 
 
@@ -323,7 +323,7 @@ SET l_done=0;
 
 
 
-DROP TABLE IF EXISTS DailyCollection;
+-- DROP TABLE IF EXISTS DailyCollection;
 
 CREATE TABLE DailyCollection (
   CollectionId int(11) NOT NULL AUTO_INCREMENT,
@@ -389,7 +389,7 @@ CREATE PROCEDURE prepareDailyReport() READS SQL DATA BEGIN
 SET @N=0;
 LedgerIds_loop: LOOP 
 
-SELECT ledgerIds;
+-- SELECT ledgerIds;
 
  FETCH selectTrnIds into ledgerIds;
 
@@ -497,7 +497,7 @@ SET  @interest=null,@princimpal=null,@accumInterest=null,@loanPenalty=null,@inst
 SET  @totalprincimpal=null,@totalinterest=null,@totalAccuminterest=null,@totalPenalty=null,@totalInstalmnets=null;
 
 SET @N=@N+1;
-SELECT @N;
+-- SELECT @N;
 
 SET l_done=0;
 
@@ -521,7 +521,7 @@ END //
 
 DELIMITER ;
 
- CALL prepareDailyReport(); 
+--  CALL prepareDailyReport(); 
 
 
 
@@ -1025,7 +1025,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionInstalmentStatement('2019-05-23');
+-- CALL dailyCollectionInstalmentStatement('2019-05-23');
 
 
 
@@ -1114,7 +1114,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionInstalmentStatementArrears('2019-05-23');
+-- CALL dailyCollectionInstalmentStatementArrears('2019-05-23');
 
 
 
@@ -1201,7 +1201,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionPrincipal('2019-05-23');
+-- CALL dailyCollectionPrincipal('2019-05-23');
 
 
 
@@ -1287,7 +1287,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionPrincipalArrears('2019-06-05');
+-- CALL dailyCollectionPrincipalArrears('2019-06-05');
 
 
 
@@ -1375,7 +1375,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionPrincipalArrears('2019-06-05');
+-- CALL dailyCollectionPrincipalArrears('2019-06-05');
 
 
 
@@ -1565,13 +1565,13 @@ INSERT INTO temp_dailySummuryCollection VALUES(2,"ACCOUNT SUMMURIES",0,0,0,0);
 
 CALL OpeningCashBalance(theDate,@OpeningCahdBala);
 
-SELECT @OpeningCahdBala;
+-- SELECT @OpeningCahdBala;
 
 INSERT INTO temp_dailySummuryCollection VALUES(2.1,"Opening Cash Balance",0,0,@OpeningCahdBala,0);
 
 CALL princimpalLoanRepaymentsMade(theDate,@princimpalRepaymentsMade);
 
-SELECT @princimpalRepaymentsMade; 
+-- SELECT @princimpalRepaymentsMade; 
 
 SET @OpeningCahdBala=@OpeningCahdBala+@princimpalRepaymentsMade;
 
@@ -1581,7 +1581,7 @@ END IF;
 
 CALL InterestRecover(theDate,@InterestR);
 
- SELECT @InterestR; 
+--  SELECT @InterestR; 
 
 SET @OpeningCahdBala=@OpeningCahdBala+@InterestR;
 
@@ -1592,7 +1592,7 @@ END IF;
 
 CALL ProcessingFeesCollected(theDate,@processingFees);
 
- SELECT @processingFees; 
+--  SELECT @processingFees; 
 
 SET @OpeningCahdBala=@OpeningCahdBala+@processingFees;
 
@@ -1603,7 +1603,7 @@ END IF;
 
 
 CALL LedgerFees(theDate,@ledgerFessCol);
- SELECT @ledgerFessCol; 
+--  SELECT @ledgerFessCol; 
 
 SET @OpeningCahdBala=@OpeningCahdBala+@ledgerFessCol;
 
@@ -1616,7 +1616,7 @@ END IF;
 
 
 CALL MembershipFees(theDate,@memberShipFessCol);
- SELECT @memberShipFessCol; 
+--  SELECT @memberShipFessCol; 
 SET @OpeningCahdBala=@OpeningCahdBala+@memberShipFessCol;
 
 IF @memberShipFessCol>0 THEN 
@@ -1674,7 +1674,7 @@ END IF;
 
 
  CALL SavingsDepositsMade(theDate,@savingsC); 
-SELECT @savingsC;
+-- SELECT @savingsC;
 SET @OpeningCahdBala=@OpeningCahdBala+@savingsC;
 
 IF @savingsC>0 THEN 
@@ -1932,7 +1932,7 @@ END //
 DELIMITER ;
 
 
-CALL  grandSummryDailyReport('2021-02-19') ;
+-- CALL  grandSummryDailyReport('2021-02-19') ;
 
 
 
@@ -2622,7 +2622,7 @@ OPEN cursor_forSelectingProcessingFeesAccounts;
  
 ACCOUNTS_LOOP: LOOP 
 FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-select processindFeesAccountRep;
+-- select processindFeesAccountRep;
 IF processindFeesAccountRep IS NULL THEN
 SET processindFeesAccountRep=0;
 END IF;
@@ -2653,7 +2653,7 @@ OPEN cursor_forSelectingBatchNumbers;
 BATCH_LOOP:LOOP
 
 FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-SELECT batchNumbersReps;
+-- SELECT batchNumbersReps;
 IF batchNumbersReps IS NULL THEN
 SET batchNumbersReps=0;
 END IF;
@@ -8697,7 +8697,7 @@ END //
 
 DELIMITER ;
 
-CALL changeDueDate();
+-- CALL changeDueDate();
 
 
 
@@ -9449,7 +9449,7 @@ END OUTER_BLOCK //
 DELIMITER ;
 
 
-CALL  selectctionInterestComputed('newloan05502000110');
+-- CALL  selectctionInterestComputed('newloan05502000110');
 
 
 
@@ -9945,7 +9945,7 @@ END
 DELIMITER ;
 
 
-call officerPortfolio();
+-- call officerPortfolio();
 
 
 
@@ -10633,7 +10633,7 @@ END
 ##
 DELIMITER ;
 
-CALL agingAnalysis();
+-- CALL agingAnalysis();
 
 
 
@@ -11182,7 +11182,7 @@ END
 ##
 DELIMITER ;
 
-CALL agingAnalysisStaff(10022);
+-- CALL agingAnalysisStaff(10022);
 
 
 
@@ -11311,7 +11311,7 @@ END //
 
 DELIMITER ;
 
-CALL grossLoanPortfolio();
+-- CALL grossLoanPortfolio();
 
 
 
@@ -11383,7 +11383,7 @@ END //
 
 DELIMITER ;
 
-CALL grossLoanPortfolioPdf();
+-- CALL grossLoanPortfolioPdf();
 
 
 
@@ -11659,7 +11659,7 @@ LedgerIds_loop: LOOP
 
  FETCH selectTrnIds into boxId;
 
-SELECT boxId;
+-- SELECT boxId;
  
 SELECT edad_box_type_sub_category_id INTO boxIdX FROM edad_box WHERE fk_user_id_edad_box=boxId;
 -- SELECT boxIdX;
@@ -12008,7 +12008,7 @@ DELIMITER ; */
         
        
        
-DROP TABLE IF EXISTS `new_loan_appstore2`;
+-- DROP TABLE IF EXISTS `new_loan_appstore2`;
 
 CREATE TABLE `new_loan_appstore2` (
   `trn_id` varchar(10) NOT NULL,
@@ -12053,7 +12053,7 @@ CREATE TABLE `new_loan_appstore2` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
-DROP TABLE IF EXISTS `new_loan_appstoreamort2`;
+-- DROP TABLE IF EXISTS `new_loan_appstoreamort2`;
 
 CREATE TABLE `new_loan_appstoreamort2` (
   `trn_id` int(11) NOT NULL ,
@@ -12110,10 +12110,10 @@ BEGIN
 
 DECLARE balance1,newBal DOUBLE ;
 
-SELECT 
+-- SELECT 
 
 SELECT balance_due  FROM new_loan_appstore WHERE trn_id=trnId; 
- SELECT balance1;
+--  SELECT balance1;
 SET newBal=balance+penalty;
 
 SELECT newBal; 
@@ -13769,7 +13769,7 @@ END
 ##
 DELIMITER ;
 
-CALL agingAnalysisG();
+-- CALL agingAnalysisG();
 
 
 
@@ -14574,7 +14574,7 @@ END
 ##
 DELIMITER ;
 
-CALL agingAnalysisStaffG();
+-- CALL agingAnalysisStaffG();
 
 -- SELECT SloanTrnId;
 
