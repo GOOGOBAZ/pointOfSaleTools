@@ -50,7 +50,7 @@ IF endDate>=(NOW()-INTERVAL 1 DAY) THEN
 
  SELECT COUNT(instalment_no) INTO numberOfItems FROM new_loan_appstoreamort WHERE instalment_due_date<=(NOW()-INTERVAL 1 DAY) AND NOT instalment_status='P' AND master1_id=trnId;
 
-/* SELECT numberOfItems; */
+--  SELECT numberOfItems; 
 
  SELECT instalment_no INTO firstInstalment FROM new_loan_appstoreamort WHERE instalment_due_date<=(NOW()-INTERVAL 1 DAY) AND NOT instalment_status='P' AND master1_id=trnId ORDER BY instalment_no ASC LIMIT 1;
 
@@ -62,23 +62,23 @@ instalmentNoLoop:REPEAT
 SET counter=counter+1;  
 
 SELECT instalmentComputeStatus INTO theInstalmentStatus FROM amdapenaltycomputenowdetails WHERE loanTrnId=trnId AND instalmentNo=firstInstalment LIMIT 1;
-
+SET @theInstalmentStatus=NULL;
    SET @theData = CONCAT(CAST("SELECT instalmentComputeStatus INTO @theInstalmentStatus FROM amdapenaltycomputenowdetails WHERE loanTrnId= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),trnId,CAST("'" AS CHAR CHARACTER SET utf8),CAST("AND instalmentNo=" AS CHAR CHARACTER SET utf8),firstInstalment);
-/* select @theData; */
+--  select @theData; 
   PREPARE stmt2 FROM @theData;
   EXECUTE stmt2;
 DROP PREPARE stmt2;
 
-SELECT trnId,firstInstalment,@theInstalmentStatus,"2",counter;
+-- SELECT trnId,firstInstalment,@theInstalmentStatus,"2",counter;
 
 IF ISNULL(@theInstalmentStatus) THEN 
 SET @theInstalmentStatus=1;
 END IF;
-/* SELECT trnId,instalmentNo,theInstalmentStatus,"3";*/ 
+--  SELECT trnId,instalmentNo,@theInstalmentStatus,"3";
  IF @theInstalmentStatus=1 THEN 
 
 
-/* SELECT theInstalmentStatus,"4"; */
+-- SELECT theInstalmentStatus,"4"; 
 SELECT balance_due,TotalLoanPenaltyRemaining,instalment_amount INTO oldBalance,oldPenaltyRemaining,oldInstalmentAmount FROM new_loan_appstore WHERE trn_id=trnId;
 
 SELECT LoanPenalty, LoanPenaltyRemaining, InstalmentRemaining INTO oldLoanPenalty,oldLoanPenaltyRemaining,oldInstalmnetAmount FROM new_loan_appstoreamort WHERE master1_id=trnId AND instalment_no=firstInstalment;
@@ -87,15 +87,15 @@ SELECT LoanPenalty, LoanPenaltyRemaining, InstalmentRemaining INTO oldLoanPenalt
 
 SET computedPenalty=(oldInstalmnetAmount*.01);
 
-/* SELECT computedPenalty,trnId,instalmentNo,"6"; */
+-- SELECT computedPenalty,trnId,instalmentNo,"6"; 
 
 SET newBalance=oldBalance+computedPenalty,newPenaltyRemaining=oldPenaltyRemaining+computedPenalty,newInstalmentAmount=oldInstalmentAmount+computedPenalty,newLoanPenalty=oldLoanPenalty+computedPenalty,newLoanPenaltyRemaining=oldLoanPenaltyRemaining+computedPenalty,newInstalmnetAmount=oldInstalmnetAmount+computedPenalty;
 
- 
+--  ( SELECT 'trn_id','trn_date','loan_id','total_instalments','remaining_instalments','princimpal_amount','total_interest','total_loanAmount','balance_due','instalment_start_date','instalment_next_due_date','instalment_end_date','interest_rate','applicant_account_name','loan_cycle_status','trn_time','instalments_paid','instalment_amount','loan_tenure','applicant_account_number','inputter_id','authoriser_id','gruop_id','GroupId','GroupName','SecurityLoan','OtherGroups2','OtherGroups3','OtherGroups4','TotalInterestPaid','TotalInterestRemaining','TotalPrincipalPaid','TotalPrincipalRemaining','TotalAccumulatedInterestPaid','TotalAccumulatedInterestRemaining','TotalLoanPenaltyPaid','TotalLoanPenaltyRemaining','TotalAccruedInterestRemaining','TotalAccruedInterestPaid','TrnId','trn_date','account_master','title','first_name','sir_name','sex','birth_date','marital_status','highest_educ_level','home_parish','centre','hiika','mobile1','mobile2','email','kampala_residence','occupation','employer','category_of_membership','value_of_shares','number_of_shares','kin_first_name','kin_sir_name','kin_mobile_1','kin_mobile_2','kin_email','notes','introducing_capacity','intro_first_name','intro_sir_name','intro_sacco_status','intro_mob_1','intro_mob_2','intro_sacco_member_since','approval_status','approval_date','approved_by','account_number','account_name','time','last_updated_date','last_updated_time','updated_approval','UserPhoto')  UNION ALL (select * from pmms_loans.new_loan_appstore AS loan INNER JOIN pmms.master AS account ON loan.applicant_account_number=account.account_number WHERE loan.loan_cycle_status='Disbursed' INTO OUTFILE 'aOverAll1.sql' FIELDS TERMINATED BY '#'  ENCLOSED BY '"' LINES TERMINATED BY '\n');
  SELECT COUNT(id) INTO idExists FROM amdapenaltycomputenowdetails WHERE loanTrnId=trnId AND instalmentNo=firstInstalment;
 
 IF idExists<=0 THEN 
-SELECT trnId,firstInstalment,@theInstalmentStatus,"2",counter;
+-- SELECT trnId,firstInstalment,@theInstalmentStatus,"2",counter;
 INSERT INTO  amdapenaltycomputenowdetails VALUES(NULL,trnId,firstInstalment,2,2,DATE(NOW()));
 
 END IF;
@@ -405,9 +405,10 @@ RETURN existsIn;
 END ##
 DELIMITER ;
 
+UPDATE allocations_total AS ft, (SELECT alloTotalComp(amount,branch.branch_id,userId,'ALLOCTOTALMADE',lastAmountAllocatedId,allocations_total.allocations_total_id) AS totalAllocation,alloTotalComp(amount,branch.branch_id,userId,'ALLOCBALANCE',lastAmountAllocatedId,allocations_total.allocations_total_id) AS balanceAllocation,branch_id as idX  FROM branch INNER JOIN allocations_total ON  branch.branch_id=allocations_total.fk_branch_id_allocations_total) AS b SET ft.allocations_total_made=b.totalAllocation,ft.allocations_total_balance=b.balanceAllocation WHERE ft.fk_branch_id_allocations_total=b.idX;
 
 
-
+-- UPDATE new_loan_appstore AS nla,(SELECT SUM(new_loan_appstoreamort.InstalmentRemaining) AS bDue,SUM(new_loan_appstoreamort.PrincipalRemaining) AS pDue,SUM(new_loan_appstoreamort.InterestRemaing) AS iDue, SUM(new_loan_appstoreamort.LoanPenaltyRemaining) AS peDue,new_loan_appstoreamort.master1_id as theId FROM new_loan_appstoreamort INNER JOIN new_loan_appstore ON new_loan_appstoreamort.master1_id=new_loan_appstore.trn_id WHERE NOT new_loan_appstoreamort.instalment_status='P'  GROUP BY new_loan_appstoreamort.master1_id ) AS nlaam SET nla.balance_due=nlaam.bDue, nla.TotalPrincipalRemaining=nlaam.pDue,nla.TotalInterestRemaining=nlaam.iDue,nla.TotalLoanPenaltyRemaining=nlaam.peDue WHERE nla.loan_cycle_status='Disbursed' AND nla.trn_id=nlaam.theId;
 
 DROP FUNCTION IF EXISTS isInArrearsAMDA;
 
@@ -841,10 +842,12 @@ LEAVE accounts_loop;
 IF theTenure= '1.0 MONTHS' THEN   /*Only single monthly isntalment loans should be considered */
 
  SELECT instalment_next_due_date, interest_rate,TotalPrincipalRemaining INTO lastDate,InterestRate,princinpalRemaining FROM new_loan_appstore WHERE loan_id=loanIdZ; /*The due date since the last instalment is stored in the instalment_next_due_date column */
-agingSELECT  lastDate,InterestRate,princinpalRemaining;
+SELECT  lastDate,InterestRate,princinpalRemaining;
 SELECT instalment_due_date INTO originalDueDate FROM new_loan_appstoreamort WHERE master2_id=loanIdZ; /* The instalment due date is the last due date */
 
- SELECT interestinvoRemaining INTO totalInterest FROM interestcomputed WHERE loanId=loanIdZ AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1; /*The last interest computed */
+ SELECT interestinvoRemaining INTO totalInterest FROM interestcomputed WHERE loanId=loanIdZ AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1; 
+ 
+ /*  The last interest computed */
 
 /* SELECT totalInterest ,loanIdZ; */
 
@@ -901,7 +904,6 @@ SET l_done=0;
 END //
 
 DELIMITER ; /* */ 
-
 
 
 

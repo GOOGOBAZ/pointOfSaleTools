@@ -1,0 +1,33 @@
+
+-- -----------------------------------------------------
+-- updateLoggedInDetails
+
+/* This is for updating the employee profile*/
+-- -----------------------------------------------------
+
+
+DROP PROCEDURE IF EXISTS updateLoggedInDetails;
+
+DELIMITER $$
+CREATE PROCEDURE   updateLoggedInDetails(IN theIpAddress VARCHAR(100),IN employee INT,IN ttl INT) 
+BEGIN
+DECLARE setSuccessfully INT;
+
+IF loggedInAlready(theIpAddress,employee)<=0 THEN
+
+INSERT INTO loggedinemployees VALUES(NULL,CURRENT_TIMESTAMP,DATE_ADD(CURRENT_TIMESTAMP(),INTERVAL ttl SECOND),theIpAddress,1,employee);
+
+ELSEIF loggedInAlready(theIpAddress,employee)>0 THEN
+
+UPDATE loggedInemployees SET logOutTime=DATE_ADD(CURRENT_TIMESTAMP(),INTERVAL ttl SECOND) WHERE fkemployeeloggedInemployees=employee AND logInStatus=1;
+
+END IF;
+
+SET setSuccessfully=1;
+
+SELECT setSuccessfully;
+
+END $$
+DELIMITER ;
+
+

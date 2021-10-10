@@ -9330,7 +9330,6 @@ CREATE PROCEDURE createFirstInterestIntalment(IN loanIdUsed VARCHAR(30),IN dueDa
 
 INSERT INTO interestComputed VALUES(null,loanIdUsed,dueDate,princinpalRemaining,interestInvo,0.0,interestInvo,interestInvo,0.0,interestInvo,'Pending'); 
 
-
 END //
 
 DELIMITER ;
@@ -12194,7 +12193,6 @@ INSERT INTO smsSummury VALUES("NumberOfCustomersSaved:",@activeCustomersSave);
 
   END IF;
 
-  
   CALL countNumberOfDisbursements(@numberOfDibusements);
 
 IF @numberOfDibusements>0 THEN
@@ -12326,8 +12324,6 @@ INSERT INTO smsSummury VALUES("OtherIncomes:",@otherIncomesCollectedX);
 END IF;
  
 
-
-
  CALL SavingsDepositsMade(DATE(NOW()),@savingsC); 
 
 SET @OpeningCahdBala=@OpeningCahdBala+@savingsC;
@@ -12426,9 +12422,6 @@ IF @fixedAssetsAndInvestmentDisp>0 THEN
 INSERT INTO smsSummury VALUES("FixedAssets:",@fixedAssetsAndInvestmentDisp);
 END IF;
 
-
-
-
 CALL ExpensesMade(DATE(NOW()),@ExpensesMa);
 
 SET @OpeningCahdBala=@OpeningCahdBala-@ExpensesMa;
@@ -12462,6 +12455,7 @@ SET @OpeningCahdBala=@OpeningCahdBala-@accumuIntereWrittenOff;
 IF @accumuIntereWrittenOff>0 THEN 
 INSERT INTO smsSummury VALUES("AccumulatedInterestWrittenOff:",@accumuIntereWrittenOff);
 END IF;
+
 
 CALL processingFeesWrittenOff(DATE(NOW()),@processFeesWriteOff);
 
@@ -12557,6 +12551,8 @@ CALL DecapitalisationsMade(DATE(NOW()),@Decapitlise);
 
 SET @OpeningCahdBala=@OpeningCahdBala-@Decapitlise;
 
+
+
 IF @Decapitlise>0 THEN 
 INSERT INTO smsSummury VALUES("CapitalRemoved:",@Decapitlise);
 END IF;
@@ -12576,7 +12572,6 @@ SET @OpeningCahdBala=@OpeningCahdBala-@savingDepositWith;
 IF @savingDepositWith>0 THEN 
 INSERT INTO smsSummury VALUES("SavingsWithdraws:",@savingDepositWith);
 END IF;
-
 
 INSERT INTO smsSummury VALUES("ClosingCash:",@OpeningCahdBala);
 

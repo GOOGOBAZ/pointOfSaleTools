@@ -3284,7 +3284,10 @@ IF @trIdV=@LasttrId THEN
 
 --  postingTxnsX(NULL,'2021-06-21','Provision for bad loans ,\n  Dated  21/06/2021','2021-06-21','-','3093225.7940000296','369652272','02235000110','Provision for Bad And Doubtful Debts Expense','000zib','BTN8576','System','10000','10:09:29','20','05509000110','05509000010','Cr','Main','NA');
 
-CALL postingTxnsX(1037,'2021-07-05','Muramuzi Barts Savings for Loan Payment\n  Dated 05/07/2021','2021-07-05','1600000.0','-','2075151.0','05502002810','MURAMUZI BART','000zib','BTN32450','LoanR','10000','09:27:10','5','01122000110','01122000010','Dr','Main','NA');
+-- CALL postingTxnsX(NULL,'2021-07-05','Muramuzi Barts Savings for Loan Payment\n  Dated 05/07/2021','2021-07-05','1600000.0','-','2075151.0','05502002810','MURAMUZI BART','000zib','BTN32450','LoanR','10000','09:27:10','5','01122000110','01122000010','Dr','Main','NA');
+
+-- select  trn_id,trn_date,debit,credit, ledger_balance from   bsanca01122000110 WHERE trn_date>='2021-06-01' INTO OUTFILE 'aadesk1.sql' FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
+-- select * from bsanca01122000010 INTO OUTFILE 'AAFIE.sql'  FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
 
         DROP PROCEDURE IF EXISTS postingTxnsX;
 
@@ -3870,11 +3873,29 @@ SELECT @accountCat,@runngbal;
 --         BEGIN
           
 		
-		 
+		--  READ UNCOMMITTED: The lowest level of isolation, often referred to as dirty read, which allows a transaction to read data that has not been committed, which may improve performance, but dirty read may not be what we want.
+-- READ COMMITTED: Only records that have been committed are visible in a transaction. If the select in the session is still in the query and another session inserts a record at this time, the newly added data is not visible.
+-- REPEATABLE READ: After a transaction starts, other session modifications to the database are not visible in this transaction until the transaction commits or rolls back. Repeating the result of a select in a transaction is the same, unless the database is updated in this transaction.
+-- SERIALIZABLE: The highest level of isolation, allowing only transactions to be executed serially. In order to achieve this, the database will lock the records that have been read in each row. Other sessions cannot modify the data until the previous transaction ends, and the lock is released when the transaction commits or cancels.
+
 
 --         END //
 
 --         DELIMITER ;
+
+
+-- START TRANSACTION: Start the transaction, autocommit is set to 0, if a transaction is already running, it will trigger a hidden COMMIT
+-- COMMIT: commit the transaction, save the changes, release the lock
+-- ROLLBACK: Roll back all changes to the database by this transaction, then end the transaction, release the lock
+-- SAVEPOINT savepoint_name: Create a savepoint identifier to ROLLBACK TO SAVEPOINT
+-- ROLLBACK TO SAVEPOINT savepoint_name: Roll back to all changes to the database starting from savepoint_name, which allows a part of the transaction to be rolled back, ensuring that a subset of the changes are committed
+-- SET TRANSACTION: Allows you to set the isolation level of the transaction
+-- LOCK TABLES: Allows explicit locking of one or more tables, implicitly closing the currently open transaction. It is recommended to explicitly commit or rollback before executing the LOCK TABLES statement. We generally do not use LOCK TABLES in transaction code.
+
+-- SELECT Year, Product, SUM(Sale) AS Total_Sales FROM Sales GROUP BY Year ORDER BY Product;  
+
+-- SELECT Year, Product, Sale, SUM(Sale) OVER(PARTITION BY Year) AS Total_Sales FROM Sales;  
+-- CALL adjustIds(14651,'01123000110');
 
  DROP PROCEDURE IF EXISTS adjustIds;
 
@@ -3936,7 +3957,7 @@ DROP PREPARE stmt2;
 
 -- UPDATE  bsanca05502049110 SET trn_id=1025 WHERE trn_id= 1024;
 
--- CALL postingTxnsX(1023,'2021-04-07','Ahimbisibwe Anthonnys Principal and Interest PaymentDATED 07/04/2021\n  LOAN PAYMENT','2021-04-07','-','550000.0','668900.0','01123000110','Cash At Hand','0002','BTN31841','LoanR','10000','14:57:00','2','05502049110','05502000010','Cr','Main','NA');
+-- CALL postingTxnsX(NULL,'2021-08-04','Moses Barigyes loan Cashed out\n  Dated 04/08/2021','2021-08-04','-','3000000.0','0','05502013710','Cash At Hand','000zib','BTN19591','Gen','10001','09:30:03','129','01123000110','01123000010','Cr','Main','NA');
 
 --  (22433,'2021-04-23','Kabagambe Angellas Savings Processed on 23/04/2021\n  From Kabagambe Angella','2021-04-23','200000.0','-','01122000110','05502043010','Centenary Bank','0002','BTN31944','Save2','10000','09:50:12','2')
 
@@ -3947,6 +3968,9 @@ DROP PREPARE stmt2;
 
 
 -- CALL postingTxnsX(1022,'2021-05-31','Tusaasirwe Jonards Account Deposit for Loan Payment\n  Dated 31/05/2021','2021-05-31','-','780000.0','785000.0','01123000110','Cash At Hand','0002','BTN32271','LoanR','10000','12:26:48','2','05502029910','05502000010','Cr','Main','NA');
+
+
+-- CALL postingTxnsX(NULL,'2021-07-07','Reversal of Excess Provision for bad loans,\n  Recognized on 07/07/2021','2021-07-07','3623328.5439989567','-','3.6247372490660113E8','02235000110','Provision for Bad Debts','000zib','BTN8585','System','10000','19:19:18','11','05509000110','05509000010','Dr','Main','NA');
 
  /*=========================================SEQUENCE NUMBERING SYSTEM======================================================*/
 
@@ -4150,7 +4174,7 @@ CREATE FUNCTION customerNameL(accounNumber VARCHAR(30))
 RETURNS VARCHAR(60)
 DETERMINISTIC
 BEGIN
-DECLARE customerNameNow VARCHAR(40);
+DECLARE customerNameNow VARCHAR(200);
 
 SELECT account_name INTO customerNameNow FROM account_created_store WHERE  account_number=accounNumber;
 IF ISNULL(customerNameNow) THEN
@@ -4827,4 +4851,75 @@ DELIMITER ;
 /* 
 INSERT INTO printerDrivers VALUES(NULL,'E-PoS printer driver',1,1),(NULL,'EPSON TM-U220 Receipt',1,1),(NULL,'EPSON TM-T20 ReceiptE4 (1)',1,1),(NULL,'XP-80C',2,2); */
 
+
+
+DROP PROCEDURE IF EXISTS normaliseBalance;
+DELIMITER //
+CREATE PROCEDURE normaliseBalance() READS SQL DATA 
+
+OUTER_BLOCK: BEGIN
+DECLARE theLoanTxnId VARCHAR(20);
+DECLARE outerNotFound, c INTEGER DEFAULT 0; 
+DECLARE forLoanTxnId CURSOR FOR SELECT DISTINCT(loanTrnId) from loandisburserepaystatement WHERE  LoanStatusReport='Running';
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
+
+OPEN forLoanTxnId; 
+
+LOANTXN_LOOP: LOOP 
+
+FETCH forLoanTxnId into theLoanTxnId;
+
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
+ 
+/* SELECT theLoanTxnId; */
+
+/* SET c=c+1; */
+/* SELECT c; */
+
+INNER_BLOCK: BEGIN
+
+DECLARE theTrnId INTEGER;
+DECLARE theOpeningBal,theBal,thePaid DOUBLE; 
+DECLARE innerNotFound INTEGER DEFAULT 0; 
+DECLARE forTrnIds CURSOR FOR SELECT TrnId FROM loandisburserepaystatement WHERE loanTrnId=theLoanTxnId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
+
+
+
+
+OPEN forTrnIds; 
+
+
+SELECT ExpectedTotalAmount INTO theOpeningBal FROM loandisburserepaystatement WHERE ExpectedTotalAmount>0 AND loanTrnId=theLoanTxnId ;
+
+ 
+TXNIDS_LOOP:LOOP
+
+FETCH forTrnIds INTO theTrnId;
+
+
+ IF innerNotFound=1 THEN
+LEAVE TXNIDS_LOOP;
+ END IF;
+
+SELECT  LoanBalance,AmountPaid INTO theBal,thePaid FROM loandisburserepaystatement WHERE TrnId=theTrnId;
+
+UPDATE loandisburserepaystatement SET  LoanBalance=theOpeningBal-thePaid WHERE TrnId=theTrnId;
+
+SET theOpeningBal=theOpeningBal-thePaid;
+
+SET innerNotFound=0;
+END LOOP TXNIDS_LOOP; 
+CLOSE forTrnIds; 
+END INNER_BLOCK;
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK//
+
+DELIMITER ;
 
