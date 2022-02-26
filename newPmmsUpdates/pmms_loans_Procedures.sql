@@ -8741,10 +8741,11 @@ CREATE PROCEDURE InterestManagementForLendersNonCompounded(IN loanIdZ VARCHAR(60
 
  /* END IF; */
 
+-- SELECT loanIdZ,@theTenure;
 
-IF @theTenure= '1.0 MONTHS' THEN /*  Only single monthly isntalment loans should be considered*/
+IF @theTenure= '1.0 MONTHS' OR @theTenure= '1 MONTHS' THEN /*  Only single monthly isntalment loans should be considered*/
 
-
+-- SELECT 'AM IN';
 
 Date_loop: LOOP /* Loop through the due dates since the last duedate*/
 SET @Ended=0;
@@ -8756,8 +8757,8 @@ SELECT instalment_due_date INTO originalDueDate FROM new_loan_appstoreamort WHER
 
 SELECT interestinvoRemaining INTO totalInterest FROM interestcomputed WHERE loanId=loanIdZ AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1;/* The last interest computed*/
 
-SELECT totalInterest ,loanIdZ,lastDate,InterestRate,TotalprincinpalRemainingX,TotalinterestRemainingX;
-
+-- SELECT totalInterest ,loanIdZ,lastDate,InterestRate,TotalprincinpalRemainingX,TotalinterestRemainingX;
+-- select lastDate;
 IF lastDate>=current_date() THEN /* Test whether the arrears last date is more than today's date*/
 
 
@@ -8795,7 +8796,7 @@ SET lastDate= @pureDate;
 
 
 CALL updateAccountsAfterCompounded(loanIdZ,lastDate,interestInveolved,TotalprincinpalRemainingX,TotalinterestRemainingX);/* Update the original loan schedule*/
-
+-- SELECT 'AFTER',loanIdZ,@pureDate,TotalprincinpalRemainingX,interestInveolved,0.0,interestInveolved,totalInterest,0.0,totalInterest;
 
 INSERT INTO interestComputed VALUES(null,loanIdZ,@pureDate,TotalprincinpalRemainingX,interestInveolved,0.0,interestInveolved,totalInterest,0.0,totalInterest,'Pending'); 
 
@@ -8872,7 +8873,7 @@ CREATE PROCEDURE InterestManagementForLendersCompounded(IN loanIdZ VARCHAR(60)) 
  /* END IF; */
 
 
-IF @theTenure= '1.0 MONTHS' THEN /*  Only single monthly isntalment loans should be considered*/
+IF @theTenure=  '1.0 MONTHS' OR @theTenure= '1 MONTHS'  THEN /*  Only single monthly isntalment loans should be considered*/
 
 
 
@@ -8956,7 +8957,8 @@ DELIMITER ;
 -- CREATE  EVENT `manage_interest` ON SCHEDULE EVERY 20 MINUTE STARTS CURRENT_TIMESTAMP() ON COMPLETION NOT PRESERVE ENABLE DO CALL manage_interest(CURRENT_TIMESTAMP());
 
 
-
+-- 12/01/2022	12/01/2022	Reversal of loan disbursed Kobusingye Agripina Martial Dated12/01/2022 Processed on 12/01/2022
+--   From Loans To Customers	6.0E7	-	107000.0	BTN34284
 
 
 
@@ -8977,7 +8979,7 @@ CREATE PROCEDURE updateAccountsAfterCompounded(IN loanId VARCHAR(30),IN newDateD
 
 /* The idea is to get the already existing values for the initial interest instalment,the actual instalment remaining,interest remaining,intial instalmet then we change these values with the interest computed */
 
-/* SELECT 'AM IN=',loanId,interestComputed; */
+--  SELECT 'AM IN=',loanId,interestComputed; 
 
 
 
@@ -9016,7 +9018,7 @@ FROM new_loan_appstore WHERE loan_id=loanId;
 
 SELECT TrnId,InterestBalance, LoanBalance INTO @idL, @intBal,@lBalance FROM pmms.loandisburserepaystatement WHERE LoanId=loanId AND LoanStatusReport='Running' ORDER BY TrnId DESC LIMIT 1;
 
-
+-- SELECT @idL, @intBal,@lBalance;
 /* Normally if the result set is empty, mysql will return an empty set with null values for each element,
 
  to avoid null pointers we initalise our variables with expected default values */
@@ -9102,7 +9104,7 @@ SET @principalAmount = @principalAmount ,
 @totalInterestAmount=@totalInterestAmount+interestComputed; */
 
 
- SELECT @principalAmount,@interestAmount, @instalmentAmount,@interestRemaining,@principalRemaining,@instalmentRemaining,@TotalprincipalAmount,@totalInterestAmount, @totalLoanAmount,@balanceDue,@instalmentAmount ,@totalInterestRemaining,@totalPrincipalRemaining,@intBal, @lBalance,@idL;
+--  SELECT @principalAmount,@interestAmount, @instalmentAmount,@interestRemaining,@principalRemaining,@instalmentRemaining,@TotalprincipalAmount,@totalInterestAmount, @totalLoanAmount,@balanceDue,@instalmentAmount ,@totalInterestRemaining,@totalPrincipalRemaining,@intBal, @lBalance,@idL;
 
 -- princimpal_amount=@principalAmount,
 UPDATE new_loan_appstoreamort SET 
@@ -11854,7 +11856,7 @@ DELIMITER ; */
 -- DELIMITER ;
 
 
-  DROP TABLE IF EXISTS loanArrearsSettings;
+  -- DROP TABLE IF EXISTS loanArrearsSettings;
  CREATE TABLE loanArrearsSettings (
     id INT(11) NOT NULL AUTO_INCREMENT,
    penaltyStatus INT(11) NOT NULL, -- ALLOWED=1,NOT_ALLOWED=0
@@ -12170,7 +12172,7 @@ CREATE  TEMPORARY TABLE smsSummury(itemName VARCHAR(200),itemValue VARCHAR(200))
 CALL totalNumberOfActiveCustomers(@activeCustomers);
 
 IF @activeCustomers>0 THEN
-
+-- SELECT @activeCustomers;
 INSERT INTO smsSummury VALUES("NumberOfActiveLoanCustomers:",@activeCustomers);
 
   END IF;
@@ -12179,7 +12181,7 @@ INSERT INTO smsSummury VALUES("NumberOfActiveLoanCustomers:",@activeCustomers);
 CALL totalNumberOfCustomersPaid(@activeCustomersPaid);
 
 IF @activeCustomersPaid>0 THEN
-
+-- SELECT @activeCustomersPaid;
 INSERT INTO smsSummury VALUES("NumberOfCustomersPaid:",@activeCustomersPaid);
 
   END IF;
@@ -12188,7 +12190,7 @@ INSERT INTO smsSummury VALUES("NumberOfCustomersPaid:",@activeCustomersPaid);
 CALL totalNumberOfCustomersSaving(@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
-
+-- SELECT @activeCustomersSave;
 INSERT INTO smsSummury VALUES("NumberOfCustomersSaved:",@activeCustomersSave);
 
   END IF;
@@ -12196,24 +12198,27 @@ INSERT INTO smsSummury VALUES("NumberOfCustomersSaved:",@activeCustomersSave);
   CALL countNumberOfDisbursements(@numberOfDibusements);
 
 IF @numberOfDibusements>0 THEN
-
+-- SELECT @numberOfDibusements;
 INSERT INTO smsSummury VALUES("NumberOfLoansDisbursed:",@numberOfDibusements);
 
   END IF;
+  -- SELECT @princimpalRepaymentsMade;
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
+
 CALL InterestRecover(DATE(NOW()),@InterestR);
 SET @ActualTotalAmountCollectedToday=@princimpalRepaymentsMade+@InterestR;
 IF @ActualTotalAmountCollectedToday>0 THEN
-
+  -- SELECT @ActualTotalAmountCollectedToday;
 INSERT INTO smsSummury VALUES("TotalCollections:",@ActualTotalAmountCollectedToday);
 
   END IF;
   
-  
+    -- SELECT @totalDisbursement;
 CALL sumDisbursements(@totalDisbursement);
 
 IF @totalDisbursement>0 THEN
-
+  
+    -- SELECT @totalDisbursement;
 INSERT INTO smsSummury VALUES("TotalAmountDisbursed:",@totalDisbursement);
 
   END IF;
@@ -12225,7 +12230,8 @@ INSERT INTO smsSummury VALUES("TotalAmountDisbursed:",@totalDisbursement);
 CALL OpeningCashBalance(DATE(NOW()),@OpeningCahdBala);
 
 
-
+  
+    -- SELECT @OpeningCahdBala;
 INSERT INTO smsSummury VALUES("OpeningCash:",@OpeningCahdBala);
 
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
@@ -12235,11 +12241,12 @@ CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 SET @OpeningCahdBala=@OpeningCahdBala+@princimpalRepaymentsMade;
 
 IF @princimpalRepaymentsMade>0 THEN 
+    -- SELECT @princimpalRepaymentsMade;
 INSERT INTO smsSummury VALUES("PrincipalCollected:",@princimpalRepaymentsMade);
 END IF;
 CALL InterestRecover(DATE(NOW()),@InterestR);
 
-
+  -- SELECT @InterestR;
 
 SET @OpeningCahdBala=@OpeningCahdBala+@InterestR;
 
@@ -12250,7 +12257,7 @@ END IF;
 
 CALL ProcessingFeesCollected(DATE(NOW()),@processingFees);
 
-
+ -- SELECT @processingFees;
 
 SET @OpeningCahdBala=@OpeningCahdBala+@processingFees;
 
@@ -12258,7 +12265,7 @@ IF @processingFees>0 THEN
 
 INSERT INTO smsSummury VALUES("ProcessingFees:",@processingFees);
 END IF;
-
+ -- SELECT @ledgerFessCol;
 
 CALL LedgerFees(DATE(NOW()),@ledgerFessCol);
 
@@ -12266,6 +12273,8 @@ CALL LedgerFees(DATE(NOW()),@ledgerFessCol);
 SET @OpeningCahdBala=@OpeningCahdBala+@ledgerFessCol;
 
 IF @ledgerFessCol>0 THEN 
+
+ -- SELECT "LedgerFees:", @ledgerFessCol;
 INSERT INTO smsSummury VALUES("LedgerFees:",@ledgerFessCol);
 END IF;
 
@@ -12701,7 +12710,7 @@ DECLARE theActualMethod INT;
 DECLARE l_done INTEGER DEFAULT 0;  /* Variable controlling the cusor */
 
 
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id  FROM pmms_loans.new_loan_appstore WHERE loan_cycle_status='Disbursed'; /*  cursor for iterating through each borrower's account */
+DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id  FROM pmms_loans.new_loan_appstore WHERE loan_cycle_status='Disbursed' AND ( loan_tenure='1.0 MONTHS' OR loan_tenure= '1 MONTHS' ); /*  cursor for iterating through each borrower's account */
  
 
 
@@ -12714,12 +12723,15 @@ DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id  FROM pmms_loans.new_loan_
 accounts_loop: LOOP  /*Loop through the loanIds */
 
 FETCH forSelectingLoanIds into loanIdZ; /* Pick the loan id into the variable loanIdz */
-
+SELECT loanIdZ;
 IF l_done=1 THEN /* check whether the cusor sitll holds more values and if not terminate loop */
 LEAVE accounts_loop; /* */
  END IF;  /* */
+-- SELECT loanIdZ;
 
 SELECT IndividualMethod INTO theActualMethod FROM individualMethod WHERE loanIdX=loanIdZ;
+
+SELECT theActualMethod;
 
 IF theActualMethod=2 THEN
 CALL InterestManagementForLendersCompounded(loanIdZ);
@@ -12727,6 +12739,7 @@ END IF;
 
 
 IF theActualMethod=1 THEN
+
 CALL InterestManagementForLendersNonCompounded(loanIdZ);
 
 END IF;
@@ -14976,3 +14989,160 @@ DELIMITER ;
 
 SELECT @savingsDepositC; */
 
+
+
+
+
+
+/* CALL microLoanDisbursement(data); */
+
+
+DROP PROCEDURE IF EXISTS microLoanDisbursementX;
+
+DELIMITER $$
+
+CREATE PROCEDURE   microLoanDisbursementX(IN data JSON,OUT microloanIdX INT) 
+BEGIN
+
+
+DECLARE customerPhoneNumber,customerName VARCHAR(200);
+DECLARE InterestRateUsed,loanLimitUsed DOUBLE;
+DECLARE tenureUsed,accrualDaysUsed,loanCycles,isSingle INT;
+DECLARE amortizationTypeX,amortizationCycleX,accrualMethod INT; 
+--  SELECT data,'XOOO';
+SELECT  COUNT(l.loanId) INTO loanCycles FROM loan l INNER JOIN customer c ON l.fkCustomerIdLoan=c.customerId WHERE c.customerId=JSON_UNQUOTE(JSON_EXTRACT(data, '$.customerId'));
+
+
+IF ISNULL(loanCycles) THEN 
+
+SET loanCycles=1;
+
+END IF; 
+
+/*  data; */
+
+ SELECT customer.customerName,customer.customerPhone1,microloancustomer.microloanCustomerLoanLimit,microloancustomer.microloanCustomerLoanInterest,microloancustomer.microloanCustomerAccrualDays, microloancustomer.microloanCustomerLoanTenure INTO customerName, customerPhoneNumber,loanLimitUsed,InterestRateUsed,accrualDaysUsed,tenureUsed FROM customer INNER JOIN  microloancustomer ON microloancustomer.fkCustomerIdMicroloanCustomer=customer.customerId  INNER JOIN product ON microloancustomer.fkproductCodeMicroloanCustomerId=product.productCode WHERE customer.customerId=JSON_UNQUOTE(JSON_EXTRACT(data, '$.customerId')) AND product.productCode=JSON_UNQUOTE(JSON_EXTRACT(data, '$.productCode'));
+
+--  SELECT customerName, customerPhoneNumber,loanLimitUsed,InterestRateUsed,accrualDaysUsed,tenureUsed;
+
+-- select data;
+
+ SELECT  microloancustomer.microloanCustomerAmortType,microloancustomer.microloanCustomerAmortCyle , microloancustomer.  microloanCustomerIntAccrualMethod INTO amortizationTypeX,amortizationCycleX,accrualMethod FROM customer INNER JOIN microloancustomer ON microloancustomer.fkcustomerIdMicroloancustomer=customer.customerId  INNER JOIN product ON microloancustomer.fkproductCodeMicroloanCustomerId=product.productCode WHERE customer.customerId=JSON_UNQUOTE(JSON_EXTRACT(data,'$.customerId')) AND product.productCode=JSON_UNQUOTE(JSON_EXTRACT(data,'$.productCode'));
+
+  -- SELECT amortizationTypeX,amortizationCycleX;
+
+--  SELECT JSON_INSERT(data,'$.microloanCustomerAmortCyle',amortizationCycleX,'$.microloanCustomerAmortType',amortizationTypeX) INTO data;
+
+-- SELECT JSON_UNQUOTE(JSON_EXTRACT(data,'$.microloanCustomerLoanTenure'));
+ SELECT JSON_INSERT(data, '$.narration', 'BORROW-MICROLOAN', '$.narration2',CONCAT(customerName,",",customerPhoneNumber),'$.loanTenureUsed', JSON_UNQUOTE(JSON_EXTRACT(data,'$.microloanCustomerLoanTenure')), '$.loanCycles', loanCycles,'$.txnPostType','CREDIT','$.microloanCustomerLoanLimit',loanLimitUsed,'$.microloanCustomerAccrualDays',accrualDaysUsed) INTO @newData;
+
+-- SELECT  @newData; 
+
+CALL createLoan(@newData,@loanId);
+-- SELECT "iN THE FALSE QUE";
+SELECT  JSON_INSERT(@newData, '$.loanId', @loanId) INTO @newData;
+-- SELECT @newData;
+CALL amortizeLoan(@newData);
+
+-- SELECT microloancustomer.microloanCustomerLoanLimit,microloancustomer.microloanCustomerLoanInterest,microloancustomer.microloanCustomerAccrualDays,microloancustomer.microloanCustomerLoanTenure,microloancustomer.microloanCustomerAmortType,microloancustomer. microloanCustomerAmortCyle INTO @LoanLimit,@Interest,@AccrualDays,@LoanTenure,@AmortType,@AmortCyle FROM microloanCustomer INNER JOIN customer ON microloancustomer.fkCustomerIdMicroLoanCustomer=customer.customerId WHERE customer.customerId=JSON_UNQUOTE(JSON_EXTRACT(data, '$.customerId'));
+
+--  SELECT @LoanLimit,@Interest,@AccrualDays,@LoanTenure,@AmortType,@AmortCyle ;
+ 
+   INSERT INTO microloan VALUES(NULL,JSON_UNQUOTE(JSON_EXTRACT(@newData,'$.microLoanPurpose')),loanLimitUsed,InterestRateUsed,accrualDaysUsed,tenureUsed,amortizationTypeX,amortizationCycleX,accrualMethod,@loanId,400);
+
+SET microloanIdX=LAST_INSERT_ID();
+
+  SET @theDataX1 = concat(CAST("SELECT isSingleInstalmentLoan(" AS CHAR CHARACTER SET utf8),@loanId, CAST(") INTO @isSingle1" AS CHAR CHARACTER SET utf8));
+-- select @theDataX1;
+  PREPARE stmt2 FROM @theDataX1;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+-- SELECT @isSingle1;
+ IF @isSingle1>0 THEN
+
+SELECT microloanamortshedule.instalmentDueDate,loan.loanAmountTaken,interest.interestRemaining INTO @dueDate,@loanTaken,@interest from loan INNER JOIN microloanamortshedule ON microloanamortshedule. fkLoanIdMicroLoanAmortShedule=loan.loanId INNER JOIN interest ON interest.fkLoanIdInterest=loan.loanId WHERE loan.loanId=@loanId;
+-- SELECT @dueDate,@loanTaken,@interest;
+INSERT INTO monthlySingleInstalmentloan VALUES(null,(@dueDate-INTERVAL 1 MONTH),@dueDate,CURRENT_TIMESTAMP,@loanTaken,@interest,0.0,@interest,@interest,0.0,@interest,1,@loanId); 
+
+END IF;
+
+END $$
+DELIMITER ;
+
+
+
+
+-- -----------------------------------------------------
+-- createLoan
+
+/* The creation of the loan should follow the loan type */
+-- -----------------------------------------------------
+
+
+DROP PROCEDURE IF EXISTS createLoan;
+
+DELIMITER $$
+
+CREATE PROCEDURE   createLoan(IN data JSON,OUT loanId INT) 
+BEGIN
+
+START TRANSACTION;
+--  SELECT data,"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj";
+INSERT INTO 
+approvalDetails 
+VALUES(
+  NULL,
+  JSON_UNQUOTE(JSON_EXTRACT(data, '$.userId')),
+  1000000000,
+  1000000000,
+  1000000000,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  1000000000,
+  1000000000,
+  1000000000,1000000000,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP
+  );
+
+SET @approvalId=LAST_INSERT_ID();
+
+INSERT INTO 
+ loan 
+VALUES
+(
+  NULL,
+  0,
+  JSON_UNQUOTE(JSON_EXTRACT(data, '$.loanCycles')),
+   2,
+    JSON_UNQUOTE(JSON_EXTRACT(data, '$.txnDate')),
+    JSON_UNQUOTE(JSON_EXTRACT(data, '$.txnDate'))+INTERVAL 1 MONTH,
+    JSON_UNQUOTE(JSON_EXTRACT(data, '$.txnDate'))+ INTERVAL 1 MONTH,
+   JSON_UNQUOTE(JSON_EXTRACT(data, '$.txnAmount')),
+  0.0,
+  0.0,
+  0.0,
+  JSON_UNQUOTE(JSON_EXTRACT(data, '$.txnAmount')),
+ JSON_UNQUOTE(JSON_EXTRACT(data, '$.interestRateUsed')),
+  JSON_UNQUOTE(JSON_EXTRACT(data, '$.loanTenureUsed')),
+  JSON_UNQUOTE(JSON_EXTRACT(data, '$.customerId')),
+  JSON_UNQUOTE(JSON_EXTRACT(data, '$.productCode')),
+  @approvalId
+    );
+SET loanId=LAST_INSERT_ID();
+-- SELECT loanId;
+SELECT JSON_INSERT(data, '$.loanId',loanId) INTO @newData;
+  -- SELECT @newData,@newDataX; 
+CALL interestComputedDisburse(@newData,@newDataX);
+-- SELECT "MAY MAN";
+CALL loanDisburseDetails(@newDataX);
+-- SELECT "MAY MAN1";
+-- SELECT @newDataX;
+CALL theTxnGeneralLedger(@newDataX);
+COMMIT;
+END $$
+DELIMITER ;

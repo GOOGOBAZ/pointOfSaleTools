@@ -290,7 +290,7 @@ CREATE TABLE `savingssharescomputationparameters` (
  
 
 
---INSERT INTO  savingssharescomputationparameters VALUES(1,	'2019-02-23'	,'2019-03-23',	10.67,	5.33	,1	,1	,1	,1	,'NA',	'NA'	,'NA');
+-- INSERT INTO  savingssharescomputationparameters VALUES(1,	'2019-02-23'	,'2019-03-23',	10.67,	5.33	,1	,1	,1	,1	,'NA',	'NA'	,'NA');
 
 
 DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnSavings;
@@ -385,6 +385,7 @@ SET monthlyTotals=0;
 
 SET theAccountDate1=@theAccountDate;
 
+SET @ledgerBalance=NULL;
 LEAVE Date_loop;
 
 END IF;
@@ -441,7 +442,7 @@ SET ledgerBalance1=@ledgerBalance;
 SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
  
 
-SET @ledgerBalance =0;
+SET @ledgerBalance=NULL;
 
  END LOOP Date_loop;
 
@@ -449,7 +450,7 @@ SET @ledgerBalance =0;
 INSERT INTO SavingsInterestPaymentAnnually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
 
 -- END IF;
-
+SET @ledgerBalance=NULL;
 SET finalTotals=0;
 
 SET l_done=0;
@@ -462,7 +463,7 @@ END//
 
  DELIMITER ;
 
-CALL devidendPaymentOnSavings();
+-- CALL devidendPaymentOnSavings();
  
 
 
@@ -543,7 +544,7 @@ SET @ledgerBalance=0;
 
 END IF;
 
-SELECT @ledgerBalance,@accountName;
+-- SELECT @ledgerBalance,@accountName;
 
 IF @ledgerBalance>0 THEN
 
@@ -568,7 +569,7 @@ SET monthlyTotals=0;
 END IF;
 
 SET theAccountDate1=@theAccountDate;
-
+SET @ledgerBalance=NULL;
 LEAVE Date_loop;
 
 END IF;
@@ -626,7 +627,7 @@ SET theAccountDate1=@theAccountDate;
 SET ledgerBalance1=@ledgerBalance;
 SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
 
- SET @ledgerBalance=0;
+ SET @ledgerBalance=NULL;
 
  END LOOP Date_loop;
 
@@ -648,7 +649,7 @@ END //
 
  DELIMITER ;
  
- CALL devidendPaymentOnShares();
+--  CALL devidendPaymentOnShares();
 
 
  
@@ -3282,12 +3283,14 @@ IF @trIdV=@LasttrId THEN
 
 --  (1013,'2021-06-21','Provision for bad loans ,\n  Dated  21/06/2021','2021-06-21','3093225.7940000296','-','3.6965227214299995E8','05509000110','Provision for Bad Debts','000zib','BTN8576','System','10000','10:09:29','20','02235000110','02235000010','Dr','Main','NA')
 
--- CALL postingTxnsX(NULL,'2021-09-10','Ninsiima Florences Savings for Loan Payment\n  Dated 10/09/2021','2021-09-10','400000.0','-','2181400.0','05502028510','Centenary Bank','000zib','BTN32977','LoanR','10000','11:59:49','5','01122000110','01122000010','Dr','Main','NA');
+-- CALL postingTxnsX(NULL,'2021-11-24','Rwehayo Chrispuss Savings for Loan Payment\n  Dated 24/11/2021','2021-11-24','5500000.0','-','5802688.0','05502035410','Rwehayo Chrispuss ','000zib','BTN33714','LoanR','10000','10:40:08','5','01122000210','01122000010','Dr','Main','NA');
 
 -- CALL postingTxnsX(NULL,'2021-07-22','Provision for bad loans ,\n  Dated  22/07/2021','2021-07-22','-','9736250.0','4.425071537943021E8','02235000110','Provision for Bad Debts','000zib','BTN8594','System','10000','13:28:43','10','05509000110','05509000010','Cr','Main','NA');
 
 -- select  trn_id,trn_date,debit,credit, ledger_balance from   bsanca01122000110 WHERE trn_date>='2021-06-01' INTO OUTFILE 'aadesk1.sql' FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
 -- select * from bsanca01122000010 INTO OUTFILE 'AAFIE.sql'  FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
+
+-- postingTxnsX(NULL,'2022-01-21','Centenary Banks Bank Deposit Processed on 21/01/2022\n  From Cash At Hand','2022-01-21','2500000.0','-','1255300.0','01123000110','Centenary Bank','0002','BTN170707','Gen','10004','09:06:58','3','01122000110','01122000010','Dr','Main','NA');
 
         DROP PROCEDURE IF EXISTS postingTxnsX;
 
@@ -3895,7 +3898,7 @@ SELECT @accountCat,@runngbal;
 -- SELECT Year, Product, SUM(Sale) AS Total_Sales FROM Sales GROUP BY Year ORDER BY Product;  
 
 -- SELECT Year, Product, Sale, SUM(Sale) OVER(PARTITION BY Year) AS Total_Sales FROM Sales;  
--- CALL adjustIds(14651,'01123000110');
+-- CALL adjustIds(3159,'01122000010');
 
  DROP PROCEDURE IF EXISTS adjustIds;
 
@@ -3970,7 +3973,18 @@ DROP PREPARE stmt2;
 -- CALL postingTxnsX(1022,'2021-05-31','Tusaasirwe Jonards Account Deposit for Loan Payment\n  Dated 31/05/2021','2021-05-31','-','780000.0','785000.0','01123000110','Cash At Hand','0002','BTN32271','LoanR','10000','12:26:48','2','05502029910','05502000010','Cr','Main','NA');
 
 
--- CALL postingTxnsX(NULL,'2021-07-07','Reversal of Excess Provision for bad loans,\n  Recognized on 07/07/2021','2021-07-07','3623328.5439989567','-','3.6247372490660113E8','02235000110','Provision for Bad Debts','000zib','BTN8585','System','10000','19:19:18','11','05509000110','05509000010','Dr','Main','NA');
+-- CALL postingTxnsX(NULL,'2021-10-01','Reversal of Excess Provision for bad loans,\n  Recognized on 01/10/2021','2021-10-01','2150375.675999999','-','4.956685208014726E8','02235000110','Provision for Bad Debts','000zib','BTN8647','System','10000','16:20:29','99','05509000110','05509000010','Dr','Main','NA');
+-- trn_id ,trn_date ,value_date ,debit ,credit ,ledger_balance ,credit_account_no ,credit_account_name ,tra_ref_number ,chq_number ,trn_type ,staff_id ,trn_time ,trn_sq_no ,account_number ,master_number ,other_one ,other_two ,other_three 
+
+-- CALL adjustIds(1085,'05509000110');
+-- 0776717700;0787848687;0755143791;0785044332;0785891477;0781331616
+-- Customer waffe omulungi, Tukwebaza olwokubela owensonga gyetuli. Tukwagaliza Christmas Enungi ne famile yo nomwaka omujya ogwobuwanguzi okuva eli ffe aba Microbills
+-- CALL adjustIds(86,'05509000010');
+
+-- CALL postingTxnsX(NULL,'2021-10-06','Reversal of Excess Provision for bad loans,\n  Recognized on 06/10/2021','2021-10-06','4209779.509800136','-','4.9306077660685253E8','02235000110','Provision for Bad Debts','000zib','BTN8651','System','10000','13:56:56','74','05509000110','05509000010','Dr','Main','NA')
+
+-- CALL adjustIds(1089,'05509000110');
+-- CALL adjustIds(90,'05509000010');
 
  /*=========================================SEQUENCE NUMBERING SYSTEM======================================================*/
 
@@ -4158,7 +4172,7 @@ INSERT INTO  loanStatementtDetailsTable(
 END ##
 DELIMITER ;
 
-CALL loanStatementDetails('NL0378');
+-- CALL loanStatementDetails('NL0378');
 
 
 
@@ -4860,7 +4874,7 @@ CREATE PROCEDURE normaliseBalance() READS SQL DATA
 OUTER_BLOCK: BEGIN
 DECLARE theLoanTxnId VARCHAR(20);
 DECLARE outerNotFound, c INTEGER DEFAULT 0; 
-DECLARE forLoanTxnId CURSOR FOR SELECT DISTINCT(loanTrnId) from loandisburserepaystatement WHERE  LoanStatusReport='Running';
+DECLARE forLoanTxnId CURSOR FOR SELECT DISTINCT(loanTrnId) from loandisburserepaystatement WHERE  LoanStatusReport='Running' AND NOT loanTrnId='0';
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
 
 OPEN forLoanTxnId; 
@@ -5210,6 +5224,10 @@ CLOSE forLoanTxnId;
 END OUTER_BLOCK//
 
 DELIMITER ;
+
+
+
+
 
 
 
@@ -5591,4 +5609,421 @@ SELECT instalment_no INTO theInstalmentNo FROM new_loan_appstoreamort WHERE  mas
 
 RETURN theInstalmentNo;
 END ##
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+DROP PROCEDURE IF EXISTS normaliseDueDates;
+DELIMITER //
+CREATE PROCEDURE normaliseDueDates() READS SQL DATA 
+
+OUTER_BLOCK: BEGIN
+DECLARE theLoanTxnId VARCHAR(20);
+DECLARE outerNotFound, c INTEGER DEFAULT 0; 
+DECLARE forLoanTxnId CURSOR FOR SELECT trn_id from new_loan_appstore WHERE  loan_cycle_status='Disbursed';
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
+
+OPEN forLoanTxnId; 
+
+LOANTXN_LOOP: LOOP 
+
+FETCH forLoanTxnId into theLoanTxnId;
+
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
+ 
+ SELECT theLoanTxnId; 
+
+/* SET c=c+1; */
+/* SELECT c; */
+
+INNER_BLOCK: BEGIN
+
+DECLARE theBatchNoS INT;
+DECLARE innerNotFound INTEGER DEFAULT 0; 
+DECLARE forBatchNos CURSOR FOR SELECT instalment_no FROM new_loan_appstoreamort WHERE master1_id=theLoanTxnId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
+
+
+
+
+OPEN forBatchNos; 
+
+SELECT instalment_due_date INTO @theDueDate FROM new_loan_appstoreamort where instalment_no=1 AND master1_id=theLoanTxnId;
+ SELECT @theDueDate,theLoanTxnId;
+TXNIDS_LOOP:LOOP
+SET @theDueDate=DATE_ADD(@theDueDate, INTERVAL 1 DAY);
+SELECT @theDueDate;
+FETCH forBatchNos INTO theBatchNoS;
+SELECT  theBatchNoS;
+SET @nextInstal=theBatchNoS+1;
+SELECT @nextInstal;
+  SET @sql_text = concat(CAST("UPDATE new_loan_appstoreamort SET instalment_due_date='" AS CHAR CHARACTER SET utf8),@theDueDate ,CAST("' WHERE instalment_no=" AS CHAR CHARACTER SET utf8),@nextInstal,CAST(" AND master1_id='" AS CHAR CHARACTER SET utf8),theLoanTxnId,CAST("'" AS CHAR CHARACTER SET utf8));
+    SELECT @sql_text; 
+PREPARE stmt FROM @sql_text;
+  EXECUTE stmt;
+DROP PREPARE stmt;
+
+ IF innerNotFound=1 THEN
+ SET @nextInstal=NULL;
+LEAVE TXNIDS_LOOP;
+ END IF;
+
+
+
+SET innerNotFound=0;
+END LOOP TXNIDS_LOOP; 
+CLOSE forBatchNos; 
+END INNER_BLOCK;
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK//
+
+DELIMITER ;
+
+
+
+
+
+DROP PROCEDURE IF EXISTS normaliseActualDueDates;
+DELIMITER //
+CREATE PROCEDURE normaliseActualDueDates() READS SQL DATA 
+
+OUTER_BLOCK: BEGIN
+DECLARE theLoanTxnId VARCHAR(20);
+DECLARE outerNotFound, c INTEGER DEFAULT 0; 
+DECLARE forLoanTxnId CURSOR FOR SELECT trn_id from new_loan_appstore WHERE loan_cycle_status='Disbursed' AND trn_date='2021-10-31';
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
+
+OPEN forLoanTxnId; 
+
+LOANTXN_LOOP: LOOP 
+
+FETCH forLoanTxnId into theLoanTxnId;
+
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
+ 
+ SELECT theLoanTxnId; 
+
+/* SET c=c+1; */
+/* SELECT c; */
+
+INNER_BLOCK: BEGIN
+
+DECLARE theBatchNoS INT;
+DECLARE innerNotFound INTEGER DEFAULT 0; 
+DECLARE forBatchNos CURSOR FOR SELECT instalment_no FROM new_loan_appstoreamort WHERE master1_id=theLoanTxnId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
+
+
+
+
+OPEN forBatchNos; 
+
+SELECT instalment_due_date INTO @theDueDate FROM new_loan_appstoreamort where instalment_no=1 AND master1_id=theLoanTxnId;
+ SELECT @theDueDate,theLoanTxnId;
+ SET @nextInstal=1;
+TXNIDS_LOOP:LOOP
+SET @theDueDate=DATE_ADD(@theDueDate, INTERVAL 1 DAY);
+SELECT @theDueDate;
+FETCH forBatchNos INTO theBatchNoS;
+SELECT  theBatchNoS;
+
+SELECT @nextInstal;
+  SET @sql_text = concat(CAST("UPDATE new_loan_appstoreamort SET instalment_due_date='" AS CHAR CHARACTER SET utf8),@theDueDate ,CAST("' WHERE instalment_no=" AS CHAR CHARACTER SET utf8),@nextInstal,CAST(" AND master1_id='" AS CHAR CHARACTER SET utf8),theLoanTxnId,CAST("'" AS CHAR CHARACTER SET utf8));
+    SELECT @sql_text; 
+PREPARE stmt FROM @sql_text;
+  EXECUTE stmt;
+DROP PREPARE stmt;
+SET @nextInstal=theBatchNoS+1;
+ IF innerNotFound=1 THEN
+ SET @nextInstal=NULL;
+LEAVE TXNIDS_LOOP;
+ END IF;
+
+
+
+SET innerNotFound=0;
+END LOOP TXNIDS_LOOP; 
+CLOSE forBatchNos; 
+END INNER_BLOCK;
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK//
+
+DELIMITER ;
+
+
+
+
+
+        DROP PROCEDURE IF EXISTS updateMasterX;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE updateMasterX(IN TrnDate DATE,IN accountNumber VARCHAR(20),IN NewLedgerBalance VARCHAR(20),IN StaffId VARCHAR(8))
+        BEGIN
+
+        CALL priviousBalanceX(accountNumber,@previouslyAdded);
+/* SELECT @previouslyAdded; */
+        CALL currentMasterBalanceX(accountNumber,@currentlAdded);
+/* SELECT @currentlAdded; */
+        CALL accountNma(accountNumber,@accountName);
+/* SELECT @accountName; */
+        SET @newMasterBalance=(@currentlAdded-@previouslyAdded)+NewLedgerBalance;
+/* SELECT @newMasterBalance; */
+         CALL accountMasterX(accountNumber,@accountMaster);
+/*           SELECT @accountMaster; */
+		  
+		  SET @qry=CONCAT(CAST("INSERT INTO BSANCA" AS CHAR CHARACTER SET utf8),@accountMaster,CAST(" VALUES(NULL" AS CHAR CHARACTER SET utf8),CAST(",'" AS CHAR CHARACTER SET utf8),TrnDate,CAST("','" AS CHAR CHARACTER SET utf8),TrnDate,CAST("','" AS CHAR CHARACTER SET utf8),@accountName,CAST("','" AS CHAR CHARACTER SET utf8),accountNumber,CAST("','" AS CHAR CHARACTER SET utf8),NewLedgerBalance,CAST("','" AS CHAR CHARACTER SET utf8),@newMasterBalance,CAST("','" AS CHAR CHARACTER SET utf8),StaffId,CAST("')" AS CHAR CHARACTER SET utf8) );
+/*         SELECT @qry; */
+		PREPARE st FROM @qry; EXECUTE st;DROP PREPARE st;
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+      DROP PROCEDURE IF EXISTS getStatementOfLoanStatus;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE getStatementOfLoanStatus(IN startDate VARCHAR(40),IN endDate VARCHAR(40))
+        BEGIN
+          
+		   DECLARE thePrincipalBalance DOUBLE;
+
+
+       DECLARE txnIdS VARCHAR(30);
+
+ DECLARE l_done INTEGER DEFAULT 0;
+ DECLARE Ids INTEGER DEFAULT 0;
+ 
+ 
+DECLARE forSelectingTxnIds CURSOR FOR SELECT DISTINCT AccountNumber  FROM loandisburserepaystatement WHERE TrnDate>=startDate AND TrnDate<=endDate;
+ 
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+ 
+DROP TABLE IF EXISTS theStatementStatusDetails;
+
+CREATE  TEMPORARY TABLE theStatementStatusDetails(
+  id  INT,
+  borrower_name VARCHAR(200),
+  borrower_account VARCHAR(200),
+  princimcipal_openingBal DOUBLE,
+  princincipal_disbursed DOUBLE,
+  principal_paid DOUBLE,
+  closing_princiBal DOUBLE,
+    interest_openingBal DOUBLE,
+  expected_interest DOUBLE,
+  interest_paid DOUBLE,
+  closing_InterestBal DOUBLE,PRIMARY KEY (id))ENGINE = InnoDB
+AUTO_INCREMENT =0
+DEFAULT CHARACTER SET = utf8;
+
+
+ OPEN forSelectingTxnIds;
+
+
+accounts_loop: LOOP 
+
+
+
+ FETCH forSelectingTxnIds into txnIdS;
+ 
+ 
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+ 
+CALL accountNma(txnIdS,@accName);
+
+ SELECT PrincipalBalance INTO thePrincipalBalance FROM loandisburserepaystatement WHERE AccountNumber=txnIdS AND TrnDate=startDate AND PrincipalBalance>0 ORDER BY  TrnId DESC LIMIT 1;
+ 
+ SELECT @accName,txnIdS,thePrincipalBalance;
+
+--  INSERT INTO temp_dailycollection VALUES(Ids,@narration,@ExpectedAm,@actualToday,@Varince,@Vstatus);
+
+SET thePrincipalBalance=NULL;
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTxnIds;
+ 
+
+
+-- SELECT id ,temp_NarrationC,temp_ExpectedCollection ,temp_ActualCollection,temp_BalColl,temp_Variance  FROM temp_dailycollection;
+
+
+		 
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+
+
+
+
+  -- -----------------------------------------------------
+-- theLoginStatus
+
+/* This is a function for testing whether the company has already been registered */
+
+/* ONLY one company should be permited and to prevent this we have to put this"*/
+
+DROP FUNCTION IF EXISTS theBalanceLoan;
+
+DELIMITER $$
+
+CREATE FUNCTION theBalanceLoan(theLoanTrnId VARCHAR(20)) 
+RETURNS DOUBLE
+DETERMINISTIC
+BEGIN
+DECLARE princimpalBal DOUBLE;
+SELECT PrincipalBalance INTO princimpalBal FROM loandisburserepaystatement WHERE loanTrnId=theLoanTrnId ORDER BY TrnId DESC LIMIT 1;
+
+IF ISNULL(princimpalBal) THEN
+SET princimpalBal=0;
+END IF;
+
+RETURN princimpalBal;
+END $$
+DELIMITER ;
+
+
+
+
+
+
+
+  -- -----------------------------------------------------
+-- previousMasterBalance
+
+/* This is a function for testing whether the company has already been registered */
+
+/* ONLY one company should be permited and to prevent this we have to put this"*/
+
+DROP FUNCTION IF EXISTS previousCashMasterBalance;
+
+DELIMITER $$
+
+CREATE FUNCTION previousCashMasterBalance(trnId VARCHAR(20)) 
+RETURNS DOUBLE
+DETERMINISTIC
+BEGIN
+DECLARE priviousMasterBal DOUBLE;
+
+SELECT master_balance INTO priviousMasterBal FROM bsanca05502000010 WHERE trn_id=trnId-1;
+
+IF ISNULL(priviousMasterBal) THEN
+SET priviousMasterBal=0;
+END IF;
+
+RETURN priviousMasterBal;
+END $$
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+  -- -----------------------------------------------------
+-- ledgerBalance
+
+/* This is a function for testing whether the company has already been registered */
+
+/* ONLY one company should be permited and to prevent this we have to put this"*/
+
+DROP PROCEDURE IF EXISTS ledgerBalance;
+
+DELIMITER $$
+
+CREATE PROCEDURE ledgerBalance() 
+BEGIN
+DECLARE ledgerBal,theAccountBal,privLedger DOUBLE;
+DECLARE theAccountNumber VARCHAR(60);
+
+DECLARE l_done, theId INTEGER DEFAULT 0;
+
+ DECLARE forSelectingTrnId CURSOR FOR SELECT trn_id  FROM bsanca05502000010 WHERE trn_id>1500;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+ OPEN forSelectingTrnId;
+
+
+accounts_loop: LOOP 
+
+ FETCH forSelectingTrnId into theId;
+
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+
+SELECT account_number INTO theAccountNumber from bsanca05502000010 where trn_id=theId;
+
+ SELECT account_balance INTO  privLedger FROM bsanca05502000010 WHERE  account_number=theAccountNumber AND trn_id<theId ORDER BY trn_id DESC LIMIT 1;
+
+SELECT account_balance INTO theAccountBal FROM bsanca05502000010 WHERE trn_id=theId;
+
+IF ISNULL(privLedger) THEN
+SET privLedger=0;
+END IF;
+
+SELECT theAccountNumber,theId,privLedger,theAccountBal;
+
+SET ledgerBal=(previousCashMasterBalance(theId)-privLedger)+theAccountBal;
+
+SELECT ledgerBal;
+
+update  bsanca05502000010 set  master_balance=ledgerBal WHERE trn_id=theId;
+
+
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+ CLOSE forSelectingTrnId;
+
+END $$
 DELIMITER ;

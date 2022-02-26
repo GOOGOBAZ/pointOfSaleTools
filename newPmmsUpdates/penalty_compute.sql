@@ -25,7 +25,7 @@ OPEN forselectingLoanTrnId;
 loanTrnIdLoop: LOOP 
 
 FETCH forselectingLoanTrnId INTO trnId;
-/* SELECT trnId;  */
+--  SELECT trnId;  
  IF lDone1=1 THEN
 LEAVE loanTrnIdLoop;
  END IF;
@@ -35,18 +35,18 @@ SELECT penaltyStatus INTO penaltyStatusN FROM loanarrearssettings;
  IF penaltyStatusN=1 THEN 
  
  SELECT instalment_end_date INTO endDate FROM new_loan_appstore WHERE trn_id=trnId;
-
+SET thePenaltyS=NULL;
 SELECT penaltyStatus INTO thePenaltyS FROM amdapenaltycomputenow WHERE loanTrnId=trnId;
  
-
+-- SELECT thePenaltyS,trnId;
 
 IF ISNULL(thePenaltyS) THEN
 SET thePenaltyS=1;
 END IF;
-
-/* SELECT endDate,thePenaltyS,trnId; */
+  -- SELECT endDate,thePenaltyS,trnId; 
 IF endDate>=(NOW()-INTERVAL 1 DAY) THEN
 
+-- SELECT trnId,endDate;
 
  SELECT COUNT(instalment_no) INTO numberOfItems FROM new_loan_appstoreamort WHERE instalment_due_date<=(NOW()-INTERVAL 1 DAY) AND NOT instalment_status='P' AND master1_id=trnId;
 
@@ -60,11 +60,14 @@ IF numberOfItems>0 THEN
  
 instalmentNoLoop:REPEAT 
 SET counter=counter+1;  
-
+-- SELECT 'AM IN N';
 SELECT instalmentComputeStatus INTO theInstalmentStatus FROM amdapenaltycomputenowdetails WHERE loanTrnId=trnId AND instalmentNo=firstInstalment LIMIT 1;
+
+
+
 SET @theInstalmentStatus=NULL;
    SET @theData = CONCAT(CAST("SELECT instalmentComputeStatus INTO @theInstalmentStatus FROM amdapenaltycomputenowdetails WHERE loanTrnId= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),trnId,CAST("'" AS CHAR CHARACTER SET utf8),CAST("AND instalmentNo=" AS CHAR CHARACTER SET utf8),firstInstalment);
---  select @theData; 
+-- select @theData; 
   PREPARE stmt2 FROM @theData;
   EXECUTE stmt2;
 DROP PREPARE stmt2;
@@ -83,9 +86,9 @@ SELECT balance_due,TotalLoanPenaltyRemaining,instalment_amount INTO oldBalance,o
 
 SELECT LoanPenalty, LoanPenaltyRemaining, InstalmentRemaining INTO oldLoanPenalty,oldLoanPenaltyRemaining,oldInstalmnetAmount FROM new_loan_appstoreamort WHERE master1_id=trnId AND instalment_no=firstInstalment;
 
-/* SELECT oldInstalmnetAmount,"5"; */
+--  SELECT oldInstalmnetAmount,"5"; 
 
-SET computedPenalty=(oldInstalmnetAmount*.01);
+SET computedPenalty=(oldInstalmnetAmount*.0112);
 
 -- SELECT computedPenalty,trnId,instalmentNo,"6"; 
 
@@ -112,16 +115,16 @@ END IF;
 SET firstInstalment=firstInstalment+1;
 
  
-    /* select     counter,numberOfItems,firstInstalment; */
+    --  select     counter,numberOfItems,firstInstalment; 
 UNTIL counter=(numberOfItems) END REPEAT instalmentNoLoop;
 END IF;
 
 ELSEIF thePenaltyS=1 THEN
-
+-- SELECT 'tHEpNEA';
 SELECT COUNT(id) INTO existsIn1 FROM amdaPenaltyComputeNow WHERE loanTrnId=trnId;
 
 
-/* SELECT existsIn1; */
+--  SELECT existsIn1; 
 
 IF existsIn1 <=0 THEN
 
@@ -826,7 +829,7 @@ DECLARE lastDate,originalDueDate DATE; /*  The variable lastDate holds the value
  OPEN forSelectingLoanIds; /* Open the cursor holding loan ids for each customer */
 
 
-xaccounts_loop: LOOP  /*Loop through the loanIds */
+accounts_loop: LOOP  /*Loop through the loanIds */
 
  FETCH forSelectingLoanIds into loanIdZ; /*Pick the loan id into the variable loanIdz */
 -- SELECT loanIdZ;
