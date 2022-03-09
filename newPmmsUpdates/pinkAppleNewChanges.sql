@@ -213,7 +213,7 @@ DROP PROCEDURE IF EXISTS createNewLoan;
 
 DELIMITER $$
 
-CREATE PROCEDURE createNewLoan(IN accountNumber VARCHAR(60),IN amount DOUBLE,IN rate DOUBLE,IN tenure INT,IN currentDate DATE,IN periodTypeNumber INT,IN periodTypeString VARCHAR(60),IN userId INT,IN interestRegime INT,IN amortizationDate DATE,IN loanOfficerId INT,IN thePeriodSet INT) BEGIN
+CREATE PROCEDURE createNewLoan(IN accountNumber VARCHAR(60),IN amount DOUBLE,IN rate DOUBLE,IN tenure DOUBLE,IN currentDate DATE,IN periodTypeNumber DOUBLE,IN periodTypeString VARCHAR(60),IN userId INT,IN interestRegime DOUBLE,IN amortizationDate DATE,IN loanOfficerId INT,IN thePeriodSet DOUBLE,IN theCompuM INT) BEGIN
 DECLARE theLoanTxnId INT;
 DECLARE theLoanId VARCHAR(60);
 
@@ -230,7 +230,7 @@ SELECT theLoanId(),CONCAT("newloan",accountNumber) INTO theLoanTxnId,theLoanId;
 
 -- SELECT theLoanTxnId,theLoanId;
 -- SELECT DATE_FORMAT(currentDate, '%Y-%m-%d');
-CALL createAmortzationSchedule(theLoanTxnId,theLoanId,amount,rate,tenure,periodTypeNumber,interestRegime,amortizationDate,thePeriodSet,@totalInterestComputed);
+CALL createAmortzationSchedule(theLoanTxnId,theLoanId,amount,rate,tenure,periodTypeNumber,interestRegime,amortizationDate,thePeriodSet,theCompuM,@totalInterestComputed);
 
 -- IN theLoanTxnId INT, IN theLoanId VARCHAR(60),IN amount DOUBLE,IN rate DOUBLE,IN tenure INT,IN periodTypeNumber INT,IN interestRegime INT,IN amortizationDate DATE,IN thePeriodSet INT, OUT totalInterestComputed DOUBLE
 -- INSERT INTO new_loan_appstore VALUES(theLoanTxnId,amortizationDate,theLoanId,);
@@ -325,10 +325,10 @@ DROP PROCEDURE IF EXISTS createAmortzationSchedule;
 
 DELIMITER $$
 
-CREATE PROCEDURE createAmortzationSchedule(IN theLoanTxnId INT, IN theLoanId VARCHAR(60),IN amount DOUBLE,IN rate DOUBLE,IN tenure INT,IN periodTypeNumber INT,IN interestRegime INT,IN amortizationDate DATE,IN thePeriodSet INT, OUT totalInterestComputed DOUBLE) BEGIN
+CREATE PROCEDURE createAmortzationSchedule(IN theLoanTxnId INT, IN theLoanId VARCHAR(60),IN amount DOUBLE,IN rate DOUBLE,IN tenure DOUBLE,IN periodTypeNumber DOUBLE,IN interestRegime DOUBLE,IN amortizationDate DATE,IN thePeriodSet DOUBLE,IN theCompuM INT, OUT totalInterestComputed DOUBLE) BEGIN
 
        DECLARE counter,counterX INT;
-DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;
+DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount,thePrincipalIntalmentX1  DOUBLE;
 
 
 
@@ -384,6 +384,7 @@ SET counter=counter+1;
 SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
 
 
+  SELECT counter, thePrincipalIntalmentX,theInterestInstalmentX,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal;
 
 IF counter=tenure THEN
 
@@ -429,6 +430,8 @@ INSERT INTO new_loan_appstoreamort VALUES(
   theLoanId
   );
 
+
+SELECT counter,theInterestInstalmentX,thePrincipalIntalmentX;
 SET openingPrincimpalBal=openingPrincimpalBal-thePrincipalIntalmentX,closingPrincipalBal=closingPrincipalBal-thePrincipalIntalmentX,openingInterestBal=openingInterestBal-theInterestInstalmentX,closingInterestBal=closingInterestBal-theInterestInstalmentX;
 
 UNTIL counter=tenure END REPEAT;
@@ -465,6 +468,7 @@ SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),the
 
 END IF;
 
+  SELECT counter, thePrincipalIntalmentX,theInterestInstalmentX,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal;
 SET @INTER=thePeriod(periodTypeNumber);
 
 INSERT INTO new_loan_appstoreamort VALUES(
@@ -512,42 +516,31 @@ UNTIL counter=thePeriodSet END REPEAT;
       END IF;
 
       WHEN 2 THEN 
-      
-     IF thePeriodSet=0 THEN
        
-SELECT 1;
-
-      ELSE
-
-
-select 3;
-
-      END IF;
-      WHEN 3 THEN 
-      
-       IF thePeriodSet=0 THEN
-
+       
        SET counter=0;
 SET counterX=1;
-SET totalPrincipalX=0.0,totalInterestX=0.0;
+SET totalPrincipalX=0.0,totalInterestX=0.0,closingPrincipalBal=0.0,closingInterestBal=0.0;
 IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
 SET counterX=2; 
 END IF;
 
 SET @dueDate=amortizationDate;
- SET theInterestInstalmentX=ROUND(interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber)),0); 
 
-SET theInitialInstalmentX=ROUND(instalmentCalculated(amount,rate,tenure,periodTypeNumber),0);
-SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX,theTxnAmount=amount;
+
+SET theTxnAmount=amount;
+
+SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));
+SELECT actualTotalInterestReducingCompound(amount,rate,periodTypeNumber,tenure) INTO actualTotalInterest;
+SET theInitialInstalmentX=instalmentCalculatedEPI(amount,rate,tenure,periodTypeNumber);
+SET thePrincipalIntalmentX=ROUND(theInitialInstalmentX-theInterestInstalmentX);
 
 SET openingPrincimpalBal=amount,closingPrincipalBal=amount-thePrincipalIntalmentX,openingInterestBal=actualTotalInterest,closingInterestBal=actualTotalInterest-theInterestInstalmentX;
+
 
 REPEAT 
 
 SET @period= thePeriod(periodTypeNumber);
-
-
-
 
 SET @dueDate = concat(CAST("SELECT " AS CHAR CHARACTER SET utf8), CAST("DATE_ADD('" AS CHAR CHARACTER SET utf8),@dueDate,CAST("'" AS CHAR CHARACTER SET utf8),CAST("," AS CHAR CHARACTER SET utf8),CAST("INTERVAL " AS CHAR CHARACTER SET utf8),counterX,  CAST(" " AS CHAR CHARACTER SET utf8),@period,CAST(" )" AS CHAR CHARACTER SET utf8),CAST(" INTO @dueDate" AS CHAR CHARACTER SET utf8));
 --  select  @dueDate;
@@ -560,18 +553,14 @@ SET counter=counter+1;
 SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
 
 
+  SELECT counter, thePrincipalIntalmentX,theInterestInstalmentX,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal;
 
 
 IF counter=tenure THEN
-
-SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((ROUND(interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)),0))-totalInterestX));
-
+SELECT amount,totalPrincipalX;
+SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX));
 
 END IF; 
-
-
-SET theTxnAmount=theTxnAmount-thePrincipalIntalmentX;
-
 
 
 
@@ -579,9 +568,9 @@ INSERT INTO new_loan_appstoreamort VALUES(
   NULL,
   counter,
   ROUND(thePrincipalIntalmentX,0),
-  openingPrincimpalBal,
+  ROUND(openingPrincimpalBal,0),
   ROUND(theInterestInstalmentX,0),
-  openingInterestBal,
+  ROUND(openingInterestBal,0),
   ROUND(thePrincipalIntalmentX+theInterestInstalmentX,0),
   0,
   ROUND(openingPrincimpalBal+openingInterestBal,0),
@@ -611,20 +600,235 @@ INSERT INTO new_loan_appstoreamort VALUES(
   theLoanId
   );
 
+SET theTxnAmount=theTxnAmount-thePrincipalIntalmentX;
 
-SET openingPrincimpalBal=openingPrincimpalBal-thePrincipalIntalmentX,closingPrincipalBal=closingPrincipalBal-thePrincipalIntalmentX,openingInterestBal=openingInterestBal-theInterestInstalmentX,closingInterestBal=closingInterestBal-theInterestInstalmentX;
 
+SET openingPrincimpalBal=openingPrincimpalBal-thePrincipalIntalmentX,closingPrincipalBal=closingPrincipalBal-thePrincipalIntalmentX,openingInterestBal=openingInterestBal-theInterestInstalmentX;
 SET theInterestInstalmentX=ROUND(interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)),0);
+SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX;
+SET closingInterestBal=closingInterestBal-theInterestInstalmentX;
+
+
 
 
 UNTIL counter=tenure END REPEAT;
+           
 
-      ELSE
+   
+
+      WHEN 3 THEN 
+
+IF theCompuM=1 THEN
+
+       SET counter=0;
+SET counterX=1;
+SET totalPrincipalX=0.0,totalInterestX=0.0,closingPrincipalBal=0.0,closingInterestBal=0.0;
+IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
+SET counterX=2; 
+END IF;
+
+SET @dueDate=amortizationDate;
 
 
-select 5;
+SET theTxnAmount=amount;
 
-      END IF;
+SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));
+
+  SET thePrincipalIntalmentX=ROUND(flatPrincipalInstalment(amount,tenure),0);
+
+SELECT actualTotalInterestReducing(amount,rate,periodTypeNumber,tenure) INTO actualTotalInterest;
+
+SET openingPrincimpalBal=amount,closingPrincipalBal=amount-thePrincipalIntalmentX,openingInterestBal=actualTotalInterest,closingInterestBal=actualTotalInterest-theInterestInstalmentX;
+
+
+REPEAT 
+
+SET @period= thePeriod(periodTypeNumber);
+
+SET @dueDate = concat(CAST("SELECT " AS CHAR CHARACTER SET utf8), CAST("DATE_ADD('" AS CHAR CHARACTER SET utf8),@dueDate,CAST("'" AS CHAR CHARACTER SET utf8),CAST("," AS CHAR CHARACTER SET utf8),CAST("INTERVAL " AS CHAR CHARACTER SET utf8),counterX,  CAST(" " AS CHAR CHARACTER SET utf8),@period,CAST(" )" AS CHAR CHARACTER SET utf8),CAST(" INTO @dueDate" AS CHAR CHARACTER SET utf8));
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+SET counter=counter+1;
+
+SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+
+
+  SELECT counter, thePrincipalIntalmentX,theInterestInstalmentX,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal;
+
+
+IF counter=tenure THEN
+-- SELECT amount,totalPrincipalX;
+SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX));
+
+END IF; 
+
+
+
+INSERT INTO new_loan_appstoreamort VALUES(
+  NULL,
+  counter,
+  ROUND(thePrincipalIntalmentX,0),
+  ROUND(openingPrincimpalBal,0),
+  ROUND(theInterestInstalmentX,0),
+  ROUND(openingInterestBal,0),
+  ROUND(thePrincipalIntalmentX+theInterestInstalmentX,0),
+  0,
+  ROUND(openingPrincimpalBal+openingInterestBal,0),
+  ROUND(closingPrincipalBal+closingInterestBal,0),
+  @dueDate,
+  'NY',
+  @dueDate,
+  DATEDIFF(instalment_due_date,instalment_paid_date),
+  0,
+  0,
+  ROUND(thePrincipalIntalmentX+theInterestInstalmentX,0),
+  0,
+  ROUND(thePrincipalIntalmentX,0),
+  0,
+  ROUND(theInterestInstalmentX,0),
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  'NYA',
+  DATE(NOW()),
+  DATE(NOW()),
+  theLoanTxnId,
+  theLoanId
+  );
+
+SET theTxnAmount=theTxnAmount-thePrincipalIntalmentX;
+
+
+SET openingPrincimpalBal=openingPrincimpalBal-thePrincipalIntalmentX,closingPrincipalBal=closingPrincipalBal-thePrincipalIntalmentX,openingInterestBal=openingInterestBal-theInterestInstalmentX;
+SET theInterestInstalmentX=ROUND(interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)),0);
+SET closingInterestBal=closingInterestBal-theInterestInstalmentX;
+
+
+UNTIL counter=tenure END REPEAT;
+           
+
+   
+
+ELSEIF theCompuM=2 THEN
+
+   SET counter=0;
+SET counterX=1;
+SET totalPrincipalX=0.0,totalInterestX=0.0,closingPrincipalBal=0.0,closingInterestBal=0.0;
+IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
+SET counterX=2; 
+END IF;
+
+SET @dueDate=amortizationDate;
+
+SET thePrincipalIntalmentX=ROUND(flatPrincipalInstalment(amount,tenure),0);
+
+SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));  
+
+SET theInitialInstalmentX=instalmentCalculatedEPI(amount,rate ,tenure,periodTypeNumber) ;
+
+SET thePrincipalIntalmentX1=theInitialInstalmentX-theInterestInstalmentX;
+
+SET theTxnAmount=amount;
+
+SELECT actualTotalInterestReducingCompound(amount,rate,periodTypeNumber,tenure) INTO actualTotalInterest;
+
+
+
+SET openingPrincimpalBal=amount,closingPrincipalBal=amount-thePrincipalIntalmentX,openingInterestBal=actualTotalInterest,closingInterestBal=actualTotalInterest-theInterestInstalmentX;
+
+
+REPEAT 
+
+SET @period= thePeriod(periodTypeNumber);
+
+SET @dueDate = concat(CAST("SELECT " AS CHAR CHARACTER SET utf8), CAST("DATE_ADD('" AS CHAR CHARACTER SET utf8),@dueDate,CAST("'" AS CHAR CHARACTER SET utf8),CAST("," AS CHAR CHARACTER SET utf8),CAST("INTERVAL " AS CHAR CHARACTER SET utf8),counterX,  CAST(" " AS CHAR CHARACTER SET utf8),@period,CAST(" )" AS CHAR CHARACTER SET utf8),CAST(" INTO @dueDate" AS CHAR CHARACTER SET utf8));
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+SET counter=counter+1;
+
+SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+
+
+  SELECT counter, thePrincipalIntalmentX,theInterestInstalmentX,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal;
+
+
+IF counter=tenure THEN
+-- SELECT amount,totalPrincipalX;
+SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX));
+
+END IF; 
+
+
+
+INSERT INTO new_loan_appstoreamort VALUES(
+  NULL,
+  counter,
+  ROUND(thePrincipalIntalmentX,0),
+  ROUND(openingPrincimpalBal,0),
+  ROUND(theInterestInstalmentX,0),
+  ROUND(openingInterestBal,0),
+  ROUND(thePrincipalIntalmentX+theInterestInstalmentX,0),
+  0,
+  ROUND(openingPrincimpalBal+openingInterestBal,0),
+  ROUND(closingPrincipalBal+closingInterestBal,0),
+  @dueDate,
+  'NY',
+  @dueDate,
+  DATEDIFF(instalment_due_date,instalment_paid_date),
+  0,
+  0,
+  ROUND(thePrincipalIntalmentX+theInterestInstalmentX,0),
+  0,
+  ROUND(thePrincipalIntalmentX,0),
+  0,
+  ROUND(theInterestInstalmentX,0),
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  'NYA',
+  DATE(NOW()),
+  DATE(NOW()),
+  theLoanTxnId,
+  theLoanId
+  );
+
+SET theTxnAmount=theTxnAmount-thePrincipalIntalmentX1;
+
+
+-- SET theInterestInstalmentX=interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber));  
+
+
+
+SET openingPrincimpalBal=openingPrincimpalBal-thePrincipalIntalmentX,closingPrincipalBal=closingPrincipalBal-thePrincipalIntalmentX,openingInterestBal=openingInterestBal-theInterestInstalmentX;
+SET theInterestInstalmentX=ROUND(interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)),0);
+SET thePrincipalIntalmentX1=theInitialInstalmentX-theInterestInstalmentX;
+SET closingInterestBal=closingInterestBal-theInterestInstalmentX;
+
+
+
+UNTIL counter=tenure END REPEAT;
+           
+
+   
+
+END IF;
+
+
+  
     END CASE;
 
 
@@ -648,7 +852,7 @@ DROP FUNCTION IF EXISTS flatPrincipalInstalment;
 
 DELIMITER $$
 
-CREATE FUNCTION flatPrincipalInstalment(thePrincipalAmount DOUBLE,tenure INT) 
+CREATE FUNCTION flatPrincipalInstalment(thePrincipalAmount DOUBLE,tenure DOUBLE) 
 RETURNS DOUBLE
 DETERMINISTIC
 BEGIN
@@ -665,51 +869,6 @@ DELIMITER ;
 
 
 
-
-
-DROP FUNCTION IF EXISTS actualTotalInterestReducing;
-
-DELIMITER $$
-
-CREATE FUNCTION actualTotalInterestReducing(amount DOUBLE,rate DOUBLE,periodTypeNumber INT,tenure INT) 
-RETURNS DOUBLE
-DETERMINISTIC
-BEGIN
-
- DECLARE counter,counterX INT;
-DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;
-
-
-SET counter=0;
-SET counterX=1;
-SET totalPrincipalX=0.0,totalInterestX=0.0;
-
- SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber)); 
-
-SET theInitialInstalmentX=ROUND(instalmentCalculated(amount,rate,tenure,periodTypeNumber),0);
-SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX,theTxnAmount=amount;
-
-
-REPEAT 
-SET counter=counter+1;
-SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
-IF counter=tenure THEN
-SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((ROUND(interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)),0))-totalInterestX));
-END IF; 
-
-SET theTxnAmount=theTxnAmount-thePrincipalIntalmentX;
-
-SET theInitialInstalmentX=ROUND(instalmentCalculated(theTxnAmount,rate,tenure,periodTypeNumber),0);
-SET theInterestInstalmentX=ROUND(interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)),0);
-
-
-UNTIL counter=tenure END REPEAT;
-
-
-
-RETURN totalInterestX;
-END $$
-DELIMITER ;
 
 
 
@@ -754,7 +913,7 @@ DROP FUNCTION IF EXISTS theAnnualRate;
 
 DELIMITER $$
 
-CREATE FUNCTION theAnnualRate(theRate INT,amortCycle INT) 
+CREATE FUNCTION theAnnualRate(theRate DOUBLE,amortCycle DOUBLE) 
 RETURNS DOUBLE
 DETERMINISTIC
 BEGIN
@@ -823,7 +982,7 @@ DROP FUNCTION IF EXISTS numberOfYears;
 
 DELIMITER $$
 
-CREATE FUNCTION numberOfYears( tenure INT,amortCycle INT) 
+CREATE FUNCTION numberOfYears( tenure DOUBLE,amortCycle DOUBLE) 
 RETURNS DOUBLE
 DETERMINISTIC
 BEGIN
@@ -891,7 +1050,7 @@ DROP FUNCTION IF EXISTS thePeriod;
 
 DELIMITER $$
 
-CREATE FUNCTION thePeriod(amortCycle INT) 
+CREATE FUNCTION thePeriod(amortCycle DOUBLE) 
 RETURNS VARCHAR(60)
 DETERMINISTIC
 BEGIN
@@ -953,18 +1112,18 @@ DROP FUNCTION IF EXISTS instalmentCalculatedEPI;
 
 DELIMITER $$
 
-CREATE FUNCTION instalmentCalculatedEPI(thePrincipalAmount DOUBLE,rateUsed DOUBLE,tenure DOUBLE,loanCycle INT) 
+CREATE FUNCTION instalmentCalculatedEPI(thePrincipalAmount DOUBLE,rateUsed DOUBLE,tenure DOUBLE,loanCycle DOUBLE) 
 RETURNS DOUBLE
 DETERMINISTIC
 BEGIN
 
-DECLARE pInstalment,denomi DOUBLE;
+DECLARE pInstalment,denomi,numi DOUBLE;
 
 set denomi=(POW((1+((actualRateUsed(rateUsed,loanCycle))/100)),tenure)-1);
-
+set numi=(thePrincipalAmount*((actualRateUsed(rateUsed,loanCycle))/100))*POW((1+((actualRateUsed(rateUsed,loanCycle))/100)),tenure);
 IF denomi>0 THEN
 
-SET pInstalment= (thePrincipalAmount*((actualRateUsed(rateUsed,loanCycle))/100))*POW((1+((actualRateUsed(rateUsed,loanCycle))/100)),tenure)/(POW((1+((actualRateUsed(rateUsed,loanCycle))/100)),tenure)-1);
+SET pInstalment= numi/denomi;
 
 -- SET pInstalment=1000/tenure;
 
@@ -980,48 +1139,106 @@ END $$
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS actualTotalInterestReducingCompound;
+
+DELIMITER $$
+
+CREATE FUNCTION actualTotalInterestReducingCompound(amount DOUBLE,rate DOUBLE,periodTypeNumber DOUBLE,tenure DOUBLE) 
+RETURNS DOUBLE
+DETERMINISTIC
+BEGIN
+ DECLARE counter,counterX INT;
+DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;      
+SET counter=0;
+SET counterX=1;
+SET totalPrincipalX=0.0,totalInterestX=0.0,actualTotalInterest=0.0;
+IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
+SET counterX=2; 
+END IF;
+
+
+
+SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));  
+
+SET theInitialInstalmentX=instalmentCalculatedEPI(amount,rate ,tenure,periodTypeNumber) ;
+
+SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX;
+
+SET theTxnAmount=amount;
+
+REPEAT 
+
+SET counter=counter+1;
+
+SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+-- SELECT counter,theInterestInstalmentX,theInitialInstalmentX,thePrincipalIntalmentX,theTxnAmount;
+IF counter=tenure THEN
+
+SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)))-totalInterestX));
+END IF;
+SET theTxnAmount=(theTxnAmount-thePrincipalIntalmentX);
+
+-- SET theInitialInstalmentX=instalmentCalculatedEPI(theTxnAmount,rate ,tenure,periodTypeNumber) ;
+SET theInterestInstalmentX=interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)); 
+SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX;
+
+
+
+
+UNTIL counter=tenure END REPEAT;
+
+RETURN ROUND(totalInterestX,0);
+
+END $$
+DELIMITER ;
+
+
+
+
 
 DROP FUNCTION IF EXISTS actualTotalInterestReducing;
 
 DELIMITER $$
 
-CREATE FUNCTION actualTotalInterestReducing(amount DOUBLE,rate DOUBLE,periodTypeNumber INT,tenure INT) 
+CREATE FUNCTION actualTotalInterestReducing(amount DOUBLE,rate DOUBLE,periodTypeNumber DOUBLE,tenure DOUBLE) 
 RETURNS DOUBLE
 DETERMINISTIC
 BEGIN
-
  DECLARE counter,counterX INT;
-DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;
-
-
+DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;      
 SET counter=0;
 SET counterX=1;
-SET totalPrincipalX=0.0,totalInterestX=0.0;
+SET totalPrincipalX=0.0,totalInterestX=0.0,actualTotalInterest=0.0;
+IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
+SET counterX=2; 
+END IF;
 
- SET theInterestInstalmentX=ROUND(interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber)),0); 
+SET thePrincipalIntalmentX=flatPrincipalInstalment(amount,tenure);
 
-SET theInitialInstalmentX=ROUND(instalmentCalculated(amount,rate,tenure,periodTypeNumber),0);
-SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX,theTxnAmount=amount;
+SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));   
 
+SET theTxnAmount=amount;
 
 REPEAT 
+
 SET counter=counter+1;
+
 SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+
 IF counter=tenure THEN
-SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((ROUND(interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)),0))-totalInterestX));
-END IF; 
+
+SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)))-totalInterestX));
+END IF;
 
 SET theTxnAmount=theTxnAmount-thePrincipalIntalmentX;
 
-SET theInitialInstalmentX=ROUND(instalmentCalculated(theTxnAmount,rate,tenure,periodTypeNumber),0);
-SET theInterestInstalmentX=ROUND(interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)),0);
+SET theInterestInstalmentX=interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)); 
 
 
 UNTIL counter=tenure END REPEAT;
 
+RETURN ROUND(totalInterestX,0);
 
-
-RETURN totalInterestX;
 END $$
 DELIMITER ;
 
@@ -1041,7 +1258,7 @@ DROP FUNCTION IF EXISTS actualRateUsed;
 
 DELIMITER $$
 
-CREATE FUNCTION actualRateUsed(theInterestRate DOUBLE, amortCycle INT) 
+CREATE FUNCTION actualRateUsed(theInterestRate DOUBLE, amortCycle DOUBLE) 
 RETURNS DOUBLE
 DETERMINISTIC
 BEGIN
@@ -1102,38 +1319,143 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS actualTotalInterestReducing;
+-- DROP PROCEDURE IF EXISTS actualTotalInterestReducingSimple;
 
-DELIMITER $$
+-- DELIMITER $$
 
-CREATE PROCEDURE actualTotalInterestReducing(amount DOUBLE,rate DOUBLE,periodTypeNumber INT,tenure INT) 
+-- CREATE PROCEDURE actualTotalInterestReducingSimple(amount DOUBLE,rate DOUBLE,periodTypeNumber DOUBLE,tenure DOUBLE) 
 
-BEGIN
- DECLARE counter,counterX INT;
-DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;      
-SET counter=0;
-SET counterX=1;
-SET totalPrincipalX=0.0,totalInterestX=0.0,actualTotalInterest=0.0;
-IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
-SET counterX=2; 
-END IF;
+-- BEGIN
+--  DECLARE counter,counterX INT;
+-- DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;      
+-- SET counter=0;
+-- SET counterX=1;
+-- SET totalPrincipalX=0.0,totalInterestX=0.0,actualTotalInterest=0.0;
+-- IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
+-- SET counterX=2; 
+-- END IF;
 
-SET thePrincipalIntalmentX=flatPrincipalInstalment(amount,tenure);
+-- SET thePrincipalIntalmentX=ROUND(flatPrincipalInstalment(amount,tenure),0);
 
-SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));    
+-- SET theInterestInstalmentX=ROUND(interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber)),0);   
 
-REPEAT 
+-- SET theTxnAmount=amount;
 
-SET counter=counter+1;
+-- REPEAT 
 
-SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+-- SET counter=counter+1;
 
-IF counter=tenure THEN
+-- SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+-- SELECT counter,theInterestInstalmentX,totalInterestX,totalPrincipalX,theTxnAmount;
+-- IF counter=tenure THEN
 
-SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((ROUND(interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)),0))-totalInterestX));
-END IF;
+-- SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)))-totalInterestX));
+-- END IF;
+-- SET theTxnAmount=ROUND((theTxnAmount-thePrincipalIntalmentX),0);
 
-UNTIL counter=tenure END REPEAT;
-END $$
-DELIMITER ;
+-- SET theInterestInstalmentX=ROUND(interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)),0); 
 
+
+-- UNTIL counter=tenure END REPEAT;
+
+-- SELECT ROUND(totalInterestX,0);
+
+-- END $$
+-- DELIMITER ;
+
+
+
+
+-- -- EPI Equal Period Instalment?
+
+
+-- DROP PROCEDURE IF EXISTS instalmentCalculatedEPI;
+
+-- DELIMITER $$
+
+-- CREATE PROCEDURE instalmentCalculatedEPI(thePrincipalAmount DOUBLE,rateUsed DOUBLE,tenure DOUBLE,loanCycle DOUBLE) 
+-- BEGIN
+
+-- DECLARE pInstalment,denomi,numi,thePower,theARate DOUBLE;
+-- SELECT thePrincipalAmount,rateUsed ,tenure ,loanCycle ;
+
+-- set theARate=actualRateUsed(rateUsed,loanCycle);
+-- SET thePower=POW((1+(theARate/100)),tenure);
+-- set denomi=(thePower-1);
+-- set numi=(thePrincipalAmount*(theARate/100))*thePower;
+
+-- SELECT denomi,numi,thePower,theARate;
+
+-- IF denomi>0 THEN
+
+-- SET pInstalment= numi/denomi;
+
+-- -- SET pInstalment=1000/tenure;
+
+-- ELSE 
+
+-- SET pInstalment=thePrincipalAmount/tenure;
+
+-- END IF;
+
+-- SELECT  pInstalment;
+
+-- END $$
+-- DELIMITER ;
+
+
+
+
+
+
+-- DROP PROCEDURE IF EXISTS actualTotalInterestReducingCompound;
+
+-- DELIMITER $$
+
+-- CREATE PROCEDURE actualTotalInterestReducingCompound(amount DOUBLE,rate DOUBLE,periodTypeNumber DOUBLE,tenure DOUBLE) 
+
+-- BEGIN
+--  DECLARE counter,counterX INT;
+-- DECLARE thePrincipalIntalmentX,theInterestInstalmentX,totalPrincipalX,totalInterestX,actualTotalInterest,openingPrincimpalBal,closingPrincipalBal,openingInterestBal,closingInterestBal,theInitialInstalmentX,theTxnAmount  DOUBLE;      
+-- SET counter=0;
+-- SET counterX=1;
+-- SET totalPrincipalX=0.0,totalInterestX=0.0,actualTotalInterest=0.0;
+-- IF periodTypeNumber =3 OR periodTypeNumber =6 OR periodTypeNumber=8 THEN
+-- SET counterX=2; 
+-- END IF;
+
+
+
+-- SET theInterestInstalmentX=interestComputedY(amount,rate,numberOfYears(1,periodTypeNumber));  
+
+-- SET theInitialInstalmentX=instalmentCalculatedEPI(amount,rate ,tenure,periodTypeNumber) ;
+
+-- SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX;
+
+-- SET theTxnAmount=amount;
+
+-- REPEAT 
+
+-- SET counter=counter+1;
+
+-- SET totalPrincipalX=totalPrincipalX+thePrincipalIntalmentX,totalInterestX=totalInterestX+theInterestInstalmentX;
+-- SELECT counter,theInterestInstalmentX,theInitialInstalmentX,thePrincipalIntalmentX,theTxnAmount;
+-- IF counter=tenure THEN
+
+-- SET thePrincipalIntalmentX=(thePrincipalIntalmentX+(amount-totalPrincipalX)),theInterestInstalmentX=(theInterestInstalmentX+((interestComputedY( amount,rate,numberOfYears(tenure,periodTypeNumber)))-totalInterestX));
+-- END IF;
+-- SET theTxnAmount=(theTxnAmount-thePrincipalIntalmentX);
+
+-- -- SET theInitialInstalmentX=instalmentCalculatedEPI(theTxnAmount,rate ,tenure,periodTypeNumber) ;
+-- SET theInterestInstalmentX=interestComputedY(theTxnAmount,rate,numberOfYears(1,periodTypeNumber)); 
+-- SET thePrincipalIntalmentX=theInitialInstalmentX-theInterestInstalmentX;
+
+
+
+
+-- UNTIL counter=tenure END REPEAT;
+
+-- SELECT ROUND(totalInterestX,2);
+
+-- END $$
+-- DELIMITER ;
