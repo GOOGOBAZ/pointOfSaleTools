@@ -9209,9 +9209,9 @@ CREATE PROCEDURE DateManagementForLenders(IN InterestPaid Double,IN loanIdUsed V
 DECLARE numberOfIds INTEGER;
 
 
- SELECT loan_tenure INTO @theTenure FROM new_loan_appstore WHERE loan_id=loanIdUsed;
+ SELECT loan_tenure INTO @theTenure FROM new_loan_appstore1 WHERE loan_id=loanIdUsed;
 
-IF @theTenure= '1.0 MONTHS' THEN
+IF @theTenure= '1.0 MONTHS' OR @theTenure= '1 MONTHS' THEN
 
 SELECT interest_rate,TotalPrincipalRemaining INTO @InterestRate,@princinpalRemaining FROM new_loan_appstore WHERE loan_id=loanIdUsed;
 
@@ -10034,11 +10034,13 @@ BEGIN
 
  DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate VARCHAR(45);
 
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' ;
+DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed' ;
  
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
  
 SET ID =0;
+
+
 
 DROP TABLE IF EXISTS aging_loan_analysis1;
 
@@ -10145,6 +10147,7 @@ SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
 
 
 INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
+
 
 
     SET l_done=0;
@@ -12202,6 +12205,16 @@ IF @numberOfDibusements>0 THEN
 INSERT INTO smsSummury VALUES("NumberOfLoansDisbursed:",@numberOfDibusements);
 
   END IF;
+
+ CALL countNumberOfRenewals(@numberOfRenewals);
+
+IF @numberOfRenewals>0 THEN
+-- SELECT @numberOfDibusements;
+INSERT INTO smsSummury VALUES("NumberOfLoansRenewed:",@numberOfRenewals);
+
+  END IF;
+
+
   -- SELECT @princimpalRepaymentsMade;
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 
@@ -12220,6 +12233,16 @@ IF @totalDisbursement>0 THEN
   
     -- SELECT @totalDisbursement;
 INSERT INTO smsSummury VALUES("TotalAmountDisbursed:",@totalDisbursement);
+
+  END IF;
+  
+    -- SELECT @totalDisbursement;
+CALL sumRenewals(@totalRenewals);
+
+IF @totalRenewals>0 THEN
+  
+    -- SELECT @totalDisbursement;
+INSERT INTO smsSummury VALUES("TotalAmountRenewed:",@totalRenewals);
 
   END IF;
   
@@ -12405,9 +12428,16 @@ INSERT INTO smsSummury VALUES("OtherReceivablesRefunded:",@otherReceiAndPrepayme
 END IF;
 
 
+CALL BankDepositsMade(DATE(NOW()),@bankDepositMade);
+
+SET @OpeningCahdBala=@OpeningCahdBala-@bankDepositMade;
+
+IF @bankDepositMade>0 THEN 
+INSERT INTO smsSummury VALUES("BankDeposits:",@bankDepositMade);
+END IF;
+
+
 CALL BankWithdrawsMade(DATE(NOW()),@BankWithdrws);
-
-
 SET @OpeningCahdBala=@OpeningCahdBala+@BankWithdrws;
 
 IF @BankWithdrws>0 THEN 
@@ -12420,8 +12450,18 @@ CALL refundFromMobileMoneyPayableMade(DATE(NOW()),@mobileMoneyRefund);
 SET @OpeningCahdBala=@OpeningCahdBala+@mobileMoneyRefund;
 
 IF @mobileMoneyRefund>0 THEN 
-INSERT INTO smsSummury VALUES("PrincipalCollected:",@mobileMoneyRefund);
+INSERT INTO smsSummury VALUES("MobileMoneyWithdraws:",@mobileMoneyRefund);
 END IF;
+
+CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
+
+SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
+
+IF @mobileMoney>0 THEN 
+INSERT INTO smsSummury VALUES("MobileMoneyDeposits:",@mobileMoney);
+END IF;
+
+
 
 CALL fixedAssetsAndInvestmentsDisposedOff(DATE(NOW()),@fixedAssetsAndInvestmentDisp);
 
@@ -12490,13 +12530,7 @@ IF @receiavale>0 THEN
 INSERT INTO smsSummury VALUES("ReceivablesCreated:",@receiavale);
 END IF;
 
-CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
 
-SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
-
-IF @mobileMoney>0 THEN 
-INSERT INTO smsSummury VALUES("MobileMoneyReceivableMade:",@mobileMoney);
-END IF;
 
 CALL OtherReceivablesAndPrepaymentsCreated(DATE(NOW()),@otherRecePreMade);
 
@@ -12506,14 +12540,6 @@ IF @otherRecePreMade>0 THEN
 INSERT INTO smsSummury VALUES("OtherReceivablesAndPrepaymentsMade:",@otherRecePreMade);
 END IF;
 
-
-CALL BankDepositsMade(DATE(NOW()),@bankDepositMade);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@bankDepositMade;
-
-IF @bankDepositMade>0 THEN 
-INSERT INTO smsSummury VALUES("BankDeposits:",@bankDepositMade);
-END IF;
 
 
 CALL fixedAssetsAndInvestmentsAquired(DATE(NOW()),@fixedAssetsAndInvestmentAquired);
@@ -12609,11 +12635,26 @@ SELECT SUM(princimpal_amount) INTO totalDisbursement  FROM new_loan_appstore WHE
 END $$
 DELIMITER ;
 
+
+DROP PROCEDURE IF EXISTS `sumRenewals`;
+
+
+DELIMITER $$
+CREATE  PROCEDURE `sumRenewals`(OUT totalRenewals DOUBLE)
+BEGIN
+SELECT SUM(princimpal_amount) INTO totalRenewals  FROM new_loan_appstore WHERE trn_date=DATE(NOW()) AND loan_cycle_status='Renewed';
+
+END $$
+DELIMITER ;
+
+
+
+
 DROP PROCEDURE IF EXISTS `totalNumberOfActiveCustomers`;
 DELIMITER $$
 CREATE  PROCEDURE `totalNumberOfActiveCustomers`(OUT activeCustomers INT)
 BEGIN
-SELECT COUNT(trn_id) INTO activeCustomers FROM new_loan_appstore WHERE loan_cycle_status='Disbursed';
+SELECT COUNT(trn_id) INTO activeCustomers FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed';
 
 END $$
 DELIMITER ;
@@ -12628,6 +12669,9 @@ SELECT COUNT(CollectionId) INTO activeCustomersPaid FROM dailycollection  WHERE 
 
 END $$
 DELIMITER ;
+          
+
+
           
  DROP PROCEDURE IF EXISTS `totalNumberOfCustomersSaving`;         
 DELIMITER $$
@@ -12644,12 +12688,21 @@ DELIMITER ;
 DELIMITER $$
 CREATE  PROCEDURE `countNumberOfDisbursements`(OUT numberOfDibusements INT)
 BEGIN
-SELECT COUNT(trn_id) INTO numberOfDibusements FROM new_loan_appstore WHERE trn_date=DATE(NOW()) AND loan_cycle_status='Disbursed';
+SELECT COUNT(trn_id) INTO numberOfDibusements FROM new_loan_appstore WHERE trn_date=DATE(NOW()) AND loan_cycle_status='Disbursed' ;
 
 END $$
 DELIMITER ;
 
 
+
+ DROP PROCEDURE IF EXISTS `countNumberOfRenewals`;   
+DELIMITER $$
+CREATE  PROCEDURE `countNumberOfRenewals`(OUT numberOfRenewals INT)
+BEGIN
+SELECT COUNT(trn_id) INTO numberOfRenewals FROM new_loan_appstore WHERE trn_date=DATE(NOW()) AND  loan_cycle_status='Renewed';
+
+END $$
+DELIMITER ;
 
 -- -----------------------------------------------------
 -- Table loggedInUsers
@@ -12998,7 +13051,7 @@ BEGIN
 
  DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,theTrnId VARCHAR(100);
 
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' ;
+DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed' ;
  
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
  
@@ -13068,21 +13121,33 @@ LEAVE accounts_loop;
  END IF;
 SELECT pl.applicant_account_name,m.mobile1,pl.trn_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.trn_id INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theTrnId FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
 -- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain;
+-- SELECT customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theTrnId;
 SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
 
--- SELECT p_remain,i_remain,arrears;
+IF ISNULL(customerName) THEN
+SET customerName="-";
+END IF;
+
+IF ISNULL(customerContactNumber) THEN
+SET customerContactNumber="-";
+END IF;
+
+
+IF ISNULL(TrnDate) THEN
+SET TrnDate=DATE_FORMAT(NOW(),'%d/%m/%Y');
+END IF;
 
 SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=theTrnId;
 -- SELECT loanId,numberOfGaurantors;
 IF numberOfGaurantors=0 THEN
 
-SET gaurantorName1='MISSING',gaurantorContact1='MISSING',gaurantorName2='MISSING',gaurantorContact2='MISSING';
+SET gaurantorName1='-',gaurantorContact1='-',gaurantorName2='-',gaurantorContact2='-';
 END IF;
 
 IF numberOfGaurantors=1 THEN
 SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId;
 
-SET gaurantorName2='MISSING',gaurantorContact2='MISSING';
+SET gaurantorName2='-',gaurantorContact2='-';
 END IF;
 
 
@@ -13146,7 +13211,7 @@ SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
 SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
  END IF;
 
-
+-- select TrnDate,@INST;
 INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
 
 

@@ -1,0 +1,2367 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package googo.pmms.project2.smallFrames;
+
+import googo.pmms.project2.accountsHelper.Formartter;
+import googo.pmms.project2.accountsHelper.fileInputOutPutStreams;
+import googo.pmms.project2.databases.loanDatabaseQuaries;
+import googo.pmms.project2.databases.DatabaseQuaries;
+import googo.pmms.project2.frameHelper.HeaderRenderer;
+import googo.pmms.project2.frameHelper.IUpdateText;
+import googo.pmms.project2.frameHelper.ListDataModel;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import javax.swing.ImageIcon;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
+import googo.pmms.project2.reportsHelper.OtherLoanReports;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Toolkit;
+import static java.lang.Double.parseDouble;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import static javax.swing.SwingConstants.RIGHT;
+import javax.swing.table.DefaultTableCellRenderer;
+
+/**
+ *
+ * @author STAT SOLUTIONS
+ */
+public class BorrowingCharacteristics1 extends javax.swing.JFrame implements MouseListener, IUpdateText, ActionListener,KeyListener{
+String userId;
+//JFrame reflection;
+//    List amortDetails;
+//    DecimalFormat NumberFormat =new DecimalFormat("#,###");
+//        SimpleDateFormat sdf =new SimpleDateFormat("dd/MM/yyyy");
+    fileInputOutPutStreams fios= new fileInputOutPutStreams();
+//    Formartter ffm = new Formartter();
+//    Date Trndate,valuedate;
+//   ArrayList<String> data4, column1;
+//List data5;
+//    String text,position;
+// Integer Value,Value1;
+//    GregorianCalendar cal = new GregorianCalendar(); 
+//    
+//         BatchPostingHelper bPost=new BatchPostingHelper(); 
+//         
+//     JdbcConnector csx = new JdbcConnector(fios.stringFileReader(fios.createFileName("emailDetails", "sendMail", "AccountDBDetails.txt"))); ; 
+    DatabaseQuaries dbq =new DatabaseQuaries();
+     List theCollection;
+    loanDatabaseQuaries loan=new loanDatabaseQuaries();
+//    Formartter form= new Formartter();
+//    AccountNumberCreationDataBase ancdb=new AccountNumberCreationDataBase();
+//   ReportsDatabase report =new ReportsDatabase();
+//    BalanceSheet bsheet= new BalanceSheet();
+//    PostingMain post= new PostingMain();
+//    BackUpRestoreDB dbBackUp= new BackUpRestoreDB();
+//    CreatingFolders filesW= new CreatingFolders();
+//   private PostingEntryWindow.ProcessLoanRepayment laonPay;
+//  String completeStatus="Not Complete",flag="Not Flagged"; int temper=0;
+//    String batchNumber;
+    OtherLoanReports otherLoans=new  OtherLoanReports();
+//     LoanSavingsSharesOthers loanSaveShare=new LoanSavingsSharesOthers();
+//         ListDataModel model1;
+         ListDataModel result;
+//         String theAccount="";
+//         
+////     OtherLoanReports otherLoans=new  OtherLoanReports();
+//     
+//    List loanPaymentOrder;
+//    SimpleDateFormat sdk =new SimpleDateFormat("dd.MM.yyyy");
+//  
+//        CreateExcelWorkBook writeExcel= new CreateExcelWorkBook();
+//    
+// int n=0;
+//   
+//          JOptionPane p;
+//    PostingModal model ;
+//    JFrame fi, f,fa,fb,fc;
+//    Date date;
+//  SimpleDateFormat df;
+     Formartter fmt= new Formartter();
+// AccountNumberCreationDataBase db =new AccountNumberCreationDataBase();
+//PostingEntryWindow component;
+
+String GroupId;
+    public BorrowingCharacteristics1(String userId) {
+        
+         
+          
+        initComponents();
+        this.userId=userId;
+//        component=comp;
+   
+        Image img = new ImageIcon(System.getProperty("user.dir")+"/"+"ICON_LOGO.jpg").getImage();
+        this.setIconImage(img);
+        this.setTitle("OTHER LOAN DETAILS"); 
+jTable1.addMouseListener(this);
+
+ jTable1.setAlignmentX(LEFT_ALIGNMENT);
+jTable1.setAlignmentY(CENTER_ALIGNMENT);
+jTable1.setAutoscrolls(true);
+jTable1.setShowHorizontalLines(true);
+jTable1.setShowGrid(true);
+jTable1.setRowHeight(40);
+jTable1.setGridColor(Color.gray);
+
+jTable2.addMouseListener(this);
+
+ jTable2.setAlignmentX(LEFT_ALIGNMENT);
+jTable2.setAlignmentY(CENTER_ALIGNMENT);
+jTable2.setAutoscrolls(true);
+jTable2.setShowHorizontalLines(true);
+jTable2.setShowGrid(true);
+jTable2.setRowHeight(40);
+jTable2.setGridColor(Color.gray);
+    }
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        jPanel1 = new javax.swing.JPanel();
+        newLoanPanel1 = new javax.swing.JPanel();
+        jButton77 = new javax.swing.JButton();
+        jButton78 = new javax.swing.JButton();
+        jButton79 = new javax.swing.JButton();
+        jLabel123 = new javax.swing.JLabel();
+        jTextField13 = new javax.swing.JTextField();
+        jLabel124 = new javax.swing.JLabel();
+        jTextField14 = new javax.swing.JTextField();
+        jCheckBox15 = new javax.swing.JCheckBox();
+        jComboBox19 = new javax.swing.JComboBox();
+        jLabel125 = new javax.swing.JLabel();
+        updateAllDetails = new javax.swing.JCheckBox();
+        updateOnlyGroups = new javax.swing.JCheckBox();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jComboBox1 = new javax.swing.JComboBox<>();
+        jPanel2GroupAssignmentPanel = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
+        jLabel2 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
+        jCheckBox16 = new javax.swing.JCheckBox();
+        jPanel3LoanDetailsDisplayedPanel = new javax.swing.JPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTable2 = new javax.swing.JTable();
+        jButton51 = new javax.swing.JButton();
+        jButton50 = new javax.swing.JButton();
+        jButton49 = new javax.swing.JButton();
+        jButton31 = new javax.swing.JButton();
+        jButton38 = new javax.swing.JButton();
+        jButton32 = new javax.swing.JButton();
+        jButton47 = new javax.swing.JButton();
+        jButton29 = new javax.swing.JButton();
+        jButton37 = new javax.swing.JButton();
+        jButton33 = new javax.swing.JButton();
+        jButton35 = new javax.swing.JButton();
+        jButton45 = new javax.swing.JButton();
+        jButton42 = new javax.swing.JButton();
+        jButton43 = new javax.swing.JButton();
+        jButton30 = new javax.swing.JButton();
+        jButton36 = new javax.swing.JButton();
+        jButton44 = new javax.swing.JButton();
+        jButton39 = new javax.swing.JButton();
+        jButton41 = new javax.swing.JButton();
+        jButton46 = new javax.swing.JButton();
+        jButton40 = new javax.swing.JButton();
+        jButton48 = new javax.swing.JButton();
+        jButton52 = new javax.swing.JButton();
+        jButton53 = new javax.swing.JButton();
+        jButton54 = new javax.swing.JButton();
+        jButton34 = new javax.swing.JButton();
+        jButton55 = new javax.swing.JButton();
+        jButton56 = new javax.swing.JButton();
+        jButton57 = new javax.swing.JButton();
+        jButton58 = new javax.swing.JButton();
+        jButton59 = new javax.swing.JButton();
+        jButton60 = new javax.swing.JButton();
+        jButton61 = new javax.swing.JButton();
+        jButton62 = new javax.swing.JButton();
+        jButton63 = new javax.swing.JButton();
+        jButton64 = new javax.swing.JButton();
+        jButton65 = new javax.swing.JButton();
+        jButton66 = new javax.swing.JButton();
+        jButton67 = new javax.swing.JButton();
+        jButton68 = new javax.swing.JButton();
+        jButton69 = new javax.swing.JButton();
+        jButton70 = new javax.swing.JButton();
+        jButton71 = new javax.swing.JButton();
+        jButton72 = new javax.swing.JButton();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setAutoRequestFocus(false);
+        setMaximumSize(new java.awt.Dimension(1120, 700));
+        setMinimumSize(new java.awt.Dimension(1120, 700));
+        setModalExclusionType(java.awt.Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
+        setPreferredSize(new java.awt.Dimension(1120, 700));
+        setResizable(false);
+        setSize(new java.awt.Dimension(0, 0));
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
+        getContentPane().setLayout(null);
+
+        jPanel1.setBackground(java.awt.SystemColor.activeCaption);
+        jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder(new java.awt.Color(0, 204, 153), new java.awt.Color(0, 204, 153)));
+        jPanel1.setLayout(null);
+
+        newLoanPanel1.setBackground(java.awt.SystemColor.activeCaption);
+        newLoanPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder(java.awt.SystemColor.activeCaption, null));
+        newLoanPanel1.setForeground(new java.awt.Color(255, 255, 255));
+        newLoanPanel1.setLayout(null);
+
+        jButton77.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jButton77.setText("Other Loan Details");
+        jButton77.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton77ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jButton77);
+        jButton77.setBounds(250, 480, 180, 40);
+        jButton77.setVisible(false);
+
+        jButton78.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jButton78.setText("Economic Status");
+        jButton78.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton78ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jButton78);
+        jButton78.setBounds(430, 480, 170, 40);
+        jButton78.setEnabled(false);
+        jButton78.setVisible(false);
+
+        jButton79.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jButton79.setText("Bio Data");
+        jButton79.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton79ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jButton79);
+        jButton79.setBounds(600, 480, 170, 40);
+        jButton79.setEnabled(false);
+        jButton79.setVisible(false);
+
+        jLabel123.setBackground(java.awt.SystemColor.activeCaption);
+        jLabel123.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel123.setForeground(java.awt.SystemColor.controlLtHighlight);
+        jLabel123.setText("Group Id");
+        jLabel123.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        newLoanPanel1.add(jLabel123);
+        jLabel123.setBounds(190, 130, 90, 40);
+        jLabel123.setVisible(false);
+
+        jTextField13.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField13ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jTextField13);
+        jTextField13.setBounds(280, 130, 150, 40);
+        jTextField13.setText("");
+        jTextField13.setEditable(false);
+        jTextField13.setVisible(false);
+
+        jLabel124.setBackground(java.awt.SystemColor.activeCaption);
+        jLabel124.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel124.setForeground(java.awt.SystemColor.controlLtHighlight);
+        jLabel124.setText("Group Name");
+        jLabel124.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        newLoanPanel1.add(jLabel124);
+        jLabel124.setBounds(430, 130, 100, 40);
+        jLabel124.setVisible(false);
+        newLoanPanel1.add(jTextField14);
+        jTextField14.setBounds(530, 130, 180, 40);
+        jTextField14.setText("");
+        jTextField14.setEditable(false);
+        jTextField14.setVisible(false);
+
+        jCheckBox15.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jCheckBox15.setText("Assign Existing Group");
+        jCheckBox15.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBox15ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jCheckBox15);
+        jCheckBox15.setBounds(190, 100, 190, 30);
+        jCheckBox15.setVisible(false);
+
+        jComboBox19.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jComboBox19.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Select", "Individual", "Group" }));
+        jComboBox19.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox19ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jComboBox19);
+        jComboBox19.setBounds(490, 70, 180, 30);
+        jComboBox19.setVisible(false);
+
+        jLabel125.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel125.setText("Borrowing Category");
+        jLabel125.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        newLoanPanel1.add(jLabel125);
+        jLabel125.setBounds(330, 70, 160, 30);
+        jLabel125.setVisible(false);
+
+        updateAllDetails.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        updateAllDetails.setText("Update Other Details");
+        updateAllDetails.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                updateAllDetailsActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(updateAllDetails);
+        updateAllDetails.setBounds(500, 40, 170, 30);
+
+        updateOnlyGroups.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        updateOnlyGroups.setText("Update Groups");
+        updateOnlyGroups.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                updateOnlyGroupsActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(updateOnlyGroups);
+        updateOnlyGroups.setBounds(330, 40, 170, 30);
+
+        jButton1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jButton1.setText("Cancel");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jButton1);
+        jButton1.setBounds(500, 520, 150, 50);
+
+        jButton2.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jButton2.setText("Submit");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jButton2);
+        jButton2.setBounds(350, 520, 150, 50);
+
+        jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        newLoanPanel1.add(jLabel1);
+        jLabel1.setBounds(100, 0, 860, 40);
+
+        jComboBox1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jComboBox1);
+        jComboBox1.setBounds(710, 130, 170, 40);
+        jComboBox1.setVisible(false);
+
+        jPanel2GroupAssignmentPanel.setBackground(java.awt.SystemColor.activeCaption);
+        jPanel2GroupAssignmentPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jPanel2GroupAssignmentPanel.setLayout(null);
+
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+
+            }
+        ));
+        jScrollPane1.setViewportView(jTable1);
+
+        jPanel2GroupAssignmentPanel.add(jScrollPane1);
+        jScrollPane1.setBounds(0, 0, 690, 170);
+
+        jLabel2.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        jLabel2.setText("SEARCH HERE:");
+        jLabel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jPanel2GroupAssignmentPanel.add(jLabel2);
+        jLabel2.setBounds(230, 170, 100, 30);
+
+        jTextField1.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        jPanel2GroupAssignmentPanel.add(jTextField1);
+        jTextField1.setBounds(330, 170, 360, 30);
+
+        newLoanPanel1.add(jPanel2GroupAssignmentPanel);
+        jPanel2GroupAssignmentPanel.setBounds(180, 170, 700, 210);
+        jPanel2GroupAssignmentPanel.setVisible(false);
+
+        jCheckBox16.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jCheckBox16.setText("Assign New Group");
+        jCheckBox16.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBox16ActionPerformed(evt);
+            }
+        });
+        newLoanPanel1.add(jCheckBox16);
+        jCheckBox16.setBounds(610, 100, 190, 30);
+        jCheckBox16.setVisible(false);
+
+        jPanel3LoanDetailsDisplayedPanel.setBackground(java.awt.SystemColor.activeCaption);
+        jPanel3LoanDetailsDisplayedPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jPanel3LoanDetailsDisplayedPanel.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
+        jPanel3LoanDetailsDisplayedPanel.setLayout(null);
+
+        jTable2.setFont(new java.awt.Font("Arial", 0, 10)); // NOI18N
+        jTable2.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+
+            }
+        ));
+        jScrollPane2.setViewportView(jTable2);
+
+        jPanel3LoanDetailsDisplayedPanel.add(jScrollPane2);
+        jScrollPane2.setBounds(0, 30, 1050, 60);
+
+        newLoanPanel1.add(jPanel3LoanDetailsDisplayedPanel);
+        jPanel3LoanDetailsDisplayedPanel.setBounds(0, 390, 1050, 90);
+        jPanel3LoanDetailsDisplayedPanel.setVisible(false);
+
+        jPanel1.add(newLoanPanel1);
+        newLoanPanel1.setBounds(30, 10, 1050, 580);
+
+        getContentPane().add(jPanel1);
+        jPanel1.setBounds(10, 0, 1090, 600);
+
+        jButton51.setBackground(new java.awt.Color(0, 51, 51));
+        jButton51.setText("jButton5");
+        getContentPane().add(jButton51);
+        jButton51.setBounds(1800, 360, 73, 23);
+
+        jButton50.setBackground(java.awt.SystemColor.controlLtHighlight);
+        jButton50.setText("jButton5");
+        getContentPane().add(jButton50);
+        jButton50.setBounds(1790, 330, 73, 23);
+
+        jButton49.setBackground(new java.awt.Color(255, 204, 204));
+        jButton49.setText("jButton5");
+        getContentPane().add(jButton49);
+        jButton49.setBounds(1870, 320, 73, 23);
+
+        jButton31.setBackground(new java.awt.Color(255, 204, 153));
+        jButton31.setText("Blue");
+        getContentPane().add(jButton31);
+        jButton31.setBounds(1810, 310, 53, 23);
+
+        jButton38.setBackground(new java.awt.Color(204, 204, 0));
+        jButton38.setText("Blue");
+        getContentPane().add(jButton38);
+        jButton38.setBounds(1810, 290, 53, 23);
+
+        jButton32.setBackground(new java.awt.Color(0, 153, 153));
+        jButton32.setText("Blue");
+        getContentPane().add(jButton32);
+        jButton32.setBounds(1870, 290, 53, 23);
+
+        jButton47.setBackground(new java.awt.Color(204, 255, 204));
+        jButton47.setText("Blue");
+        getContentPane().add(jButton47);
+        jButton47.setBounds(1930, 290, 53, 23);
+
+        jButton29.setBackground(new java.awt.Color(0, 204, 204));
+        jButton29.setText("Blue");
+        getContentPane().add(jButton29);
+        jButton29.setBounds(1920, 270, 53, 23);
+
+        jButton37.setBackground(new java.awt.Color(204, 153, 255));
+        jButton37.setText("Blue");
+        getContentPane().add(jButton37);
+        jButton37.setBounds(1870, 270, 53, 23);
+
+        jButton33.setBackground(new java.awt.Color(152, 198, 94));
+        jButton33.setText("Blue");
+        getContentPane().add(jButton33);
+        jButton33.setBounds(1810, 270, 53, 23);
+
+        jButton35.setBackground(new java.awt.Color(255, 204, 204));
+        jButton35.setText("Blue");
+        getContentPane().add(jButton35);
+        jButton35.setBounds(1810, 250, 53, 23);
+
+        jButton45.setBackground(new java.awt.Color(255, 255, 204));
+        jButton45.setText("Blue");
+        getContentPane().add(jButton45);
+        jButton45.setBounds(1870, 250, 53, 23);
+
+        jButton42.setBackground(new java.awt.Color(0, 204, 102));
+        jButton42.setText("Blue");
+        getContentPane().add(jButton42);
+        jButton42.setBounds(1920, 230, 53, 23);
+
+        jButton43.setBackground(new java.awt.Color(204, 204, 204));
+        jButton43.setText("Blue");
+        getContentPane().add(jButton43);
+        jButton43.setBounds(1870, 230, 53, 23);
+
+        jButton30.setBackground(new java.awt.Color(0, 153, 255));
+        jButton30.setText("Blue");
+        getContentPane().add(jButton30);
+        jButton30.setBounds(1810, 230, 53, 23);
+
+        jButton36.setBackground(java.awt.SystemColor.activeCaption);
+        jButton36.setText("Blue");
+        getContentPane().add(jButton36);
+        jButton36.setBounds(1810, 210, 53, 23);
+
+        jButton44.setBackground(new java.awt.Color(204, 165, 165));
+        jButton44.setText("Blue");
+        getContentPane().add(jButton44);
+        jButton44.setBounds(1870, 210, 53, 23);
+
+        jButton39.setBackground(new java.awt.Color(204, 204, 255));
+        jButton39.setText("Blue");
+        getContentPane().add(jButton39);
+        jButton39.setBounds(1920, 210, 53, 23);
+
+        jButton41.setBackground(java.awt.SystemColor.activeCaption);
+        jButton41.setText("Blue");
+        getContentPane().add(jButton41);
+        jButton41.setBounds(1920, 190, 53, 23);
+
+        jButton46.setBackground(java.awt.SystemColor.activeCaption);
+        jButton46.setText("Blue");
+        getContentPane().add(jButton46);
+        jButton46.setBounds(1870, 190, 53, 23);
+
+        jButton40.setBackground(java.awt.SystemColor.activeCaption);
+        jButton40.setText("Blue");
+        getContentPane().add(jButton40);
+        jButton40.setBounds(1810, 190, 53, 23);
+
+        jButton48.setBackground(new java.awt.Color(201, 222, 223));
+        jButton48.setText("Blue");
+        getContentPane().add(jButton48);
+        jButton48.setBounds(1870, 170, 53, 23);
+
+        jButton52.setBackground(new java.awt.Color(0, 51, 51));
+        jButton52.setText("jButton5");
+        getContentPane().add(jButton52);
+        jButton52.setBounds(1800, 360, 73, 23);
+
+        jButton53.setBackground(java.awt.SystemColor.controlLtHighlight);
+        jButton53.setText("jButton5");
+        getContentPane().add(jButton53);
+        jButton53.setBounds(1790, 330, 73, 23);
+
+        jButton54.setBackground(new java.awt.Color(255, 204, 204));
+        jButton54.setText("jButton5");
+        getContentPane().add(jButton54);
+        jButton54.setBounds(1870, 320, 73, 23);
+
+        jButton34.setBackground(new java.awt.Color(255, 204, 153));
+        jButton34.setText("Blue");
+        getContentPane().add(jButton34);
+        jButton34.setBounds(1810, 310, 53, 23);
+
+        jButton55.setBackground(new java.awt.Color(204, 204, 0));
+        jButton55.setText("Blue");
+        getContentPane().add(jButton55);
+        jButton55.setBounds(1810, 290, 53, 23);
+
+        jButton56.setBackground(new java.awt.Color(0, 153, 153));
+        jButton56.setText("Blue");
+        getContentPane().add(jButton56);
+        jButton56.setBounds(1870, 290, 53, 23);
+
+        jButton57.setBackground(new java.awt.Color(204, 255, 204));
+        jButton57.setText("Blue");
+        getContentPane().add(jButton57);
+        jButton57.setBounds(1930, 290, 53, 23);
+
+        jButton58.setBackground(new java.awt.Color(0, 204, 204));
+        jButton58.setText("Blue");
+        getContentPane().add(jButton58);
+        jButton58.setBounds(1920, 270, 53, 23);
+
+        jButton59.setBackground(new java.awt.Color(204, 153, 255));
+        jButton59.setText("Blue");
+        getContentPane().add(jButton59);
+        jButton59.setBounds(1870, 270, 53, 23);
+
+        jButton60.setBackground(new java.awt.Color(152, 198, 94));
+        jButton60.setText("Blue");
+        getContentPane().add(jButton60);
+        jButton60.setBounds(1810, 270, 53, 23);
+
+        jButton61.setBackground(new java.awt.Color(255, 204, 204));
+        jButton61.setText("Blue");
+        getContentPane().add(jButton61);
+        jButton61.setBounds(1810, 250, 53, 23);
+
+        jButton62.setBackground(new java.awt.Color(255, 255, 204));
+        jButton62.setText("Blue");
+        getContentPane().add(jButton62);
+        jButton62.setBounds(1870, 250, 53, 23);
+
+        jButton63.setBackground(new java.awt.Color(0, 204, 102));
+        jButton63.setText("Blue");
+        getContentPane().add(jButton63);
+        jButton63.setBounds(1920, 230, 53, 23);
+
+        jButton64.setBackground(new java.awt.Color(204, 204, 204));
+        jButton64.setText("Blue");
+        getContentPane().add(jButton64);
+        jButton64.setBounds(1870, 230, 53, 23);
+
+        jButton65.setBackground(new java.awt.Color(0, 153, 255));
+        jButton65.setText("Blue");
+        getContentPane().add(jButton65);
+        jButton65.setBounds(1810, 230, 53, 23);
+
+        jButton66.setBackground(java.awt.SystemColor.activeCaption);
+        jButton66.setText("Blue");
+        getContentPane().add(jButton66);
+        jButton66.setBounds(1810, 210, 53, 23);
+
+        jButton67.setBackground(new java.awt.Color(204, 165, 165));
+        jButton67.setText("Blue");
+        getContentPane().add(jButton67);
+        jButton67.setBounds(1870, 210, 53, 23);
+
+        jButton68.setBackground(new java.awt.Color(204, 204, 255));
+        jButton68.setText("Blue");
+        getContentPane().add(jButton68);
+        jButton68.setBounds(1920, 210, 53, 23);
+
+        jButton69.setBackground(java.awt.SystemColor.activeCaption);
+        jButton69.setText("Blue");
+        getContentPane().add(jButton69);
+        jButton69.setBounds(1920, 190, 53, 23);
+
+        jButton70.setBackground(java.awt.SystemColor.activeCaption);
+        jButton70.setText("Blue");
+        getContentPane().add(jButton70);
+        jButton70.setBounds(1870, 190, 53, 23);
+
+        jButton71.setBackground(java.awt.SystemColor.activeCaption);
+        jButton71.setText("Blue");
+        getContentPane().add(jButton71);
+        jButton71.setBounds(1810, 190, 53, 23);
+
+        jButton72.setBackground(new java.awt.Color(201, 222, 223));
+        jButton72.setText("Blue");
+        getContentPane().add(jButton72);
+        jButton72.setBounds(1870, 170, 53, 23);
+
+        getAccessibleContext().setAccessibleParent(this);
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+
+        String accountNumber=fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+this.userId+".txt"));
+        
+        
+       loan.fillWithCycleStatus(jComboBox1,accountNumber); 
+     
+        
+   
+jLabel1.setText("\t\t\t"+"                             Updating Loan Details for "+dbq.AccountName(accountNumber));
+//
+//        
+        theCollection=new ArrayList();
+// 
+//    if(loan.borrowerExists(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")))){
+//         
+//     useDefaultBorrowerDetails1.setVisible(false); 
+//     updateExistingBorrowersDetails1.setVisible(true); 
+//     
+//     }else if(!loan.borrowerExists(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")))){
+//     
+//     
+//     useDefaultBorrowerDetails1.setVisible(true); 
+//     updateExistingBorrowersDetails1.setVisible(false); 
+//     
+//     }
+ 
+
+
+    }//GEN-LAST:event_formWindowOpened
+
+    private void jButton77ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton77ActionPerformed
+
+          fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected11"+userId+".txt"),"23");
+        
+        if(!jComboBox1.getSelectedItem().toString().equalsIgnoreCase("Select Loan Cycle")){
+// fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected2"+userId+".txt"),"23");
+        fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected1"+userId+".txt"),"23");
+ 
+ 
+        if(updateAllDetails.isVisible()){
+        
+       if(updateAllDetails.isSelected()){
+       addItemInList("Existing Borrower");
+         if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+      
+              addItemInList("Individual");
+         addItemInList("Group 1");
+            addItemInList("Group 1");
+        }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+        
+        addItemInList("Group");
+        
+        if(jCheckBox15.isSelected()){
+        
+            if(jTextField13.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField13.getText().equalsIgnoreCase("Select Group Id")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("Select")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+            addItemInList(jTextField13.getText());
+            addItemInList(jTextField14.getText());
+            }
+            
+            }
+            
+            }
+            
+            }
+            
+        }else if(!jCheckBox15.isSelected()){
+        
+             addItemInList("Group 1");
+            addItemInList("Group 1");
+            
+        
+        }
+        
+        }
+        
+       
+       
+       }else if(!updateAllDetails.isSelected()){
+      
+          
+       
+       }
+        
+        }else if(!updateAllDetails.isVisible()){
+            
+             String  existance="First Time Borrower";
+     if(loan.borrowerExists(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")))){
+     existance="Existing Borrower";
+     
+     }else if(!loan.borrowerExists(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")))){
+     
+     
+      existance="First Time Borrower";
+     
+     
+     }
+            
+            addItemInList(existance);
+            
+          if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+      
+              addItemInList("Individual");
+         addItemInList("Group 1");
+        addItemInList("Group 1");
+        }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+        
+            
+            addItemInList("Group");
+//        addItemInList("Group 1");
+//        addItemInList("Group 1");
+        if(jCheckBox15.isSelected()){
+        
+            if(jTextField13.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField13.getText().equalsIgnoreCase("Select Group Id")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("Select")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+            addItemInList(jTextField13.getText());
+            addItemInList(jTextField14.getText());
+            }
+            
+            }
+            
+            }
+            
+            }
+            
+        }else if(!jCheckBox15.isSelected()){
+        
+             addItemInList("Group 1");
+            addItemInList("Group 1");
+            
+        
+        }
+        
+        }
+        
+        }
+        
+      
+//          addItemInList("Group 1");
+//            addItemInList("Group 1");
+        
+        addItemInList(jComboBox1.getSelectedItem().toString());
+
+      
+    fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "OtherLoanDetails"+this.userId+".txt"),"7");
+        jButton77.setEnabled(false);
+            jButton78.setEnabled(false);
+//    jButton22.setEnabled(true);
+       OtherLoanDetails2 frm = new OtherLoanDetails2(userId,(BorrowingCharacteristics1)this,jComboBox1.getSelectedItem().toString());
+       
+        frm.setVisible(true);
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        frm.setSize(screen.getSize());
+//        frm.setUserID(userId);
+        frm.pack();
+}else{
+
+ JOptionPane.showMessageDialog(this, "Please select the cycle number to update!");
+//  jCheckBox16.setSelected(false);
+}
+    }//GEN-LAST:event_jButton77ActionPerformed
+
+    private void jButton78ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton78ActionPerformed
+  fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected21"+userId+".txt"),"23");
+        fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "OtherLoanDetails"+this.userId+".txt"),"77");
+    jButton77.setEnabled(false);
+            jButton78.setEnabled(false);
+//    jButton22.setEnabled(true);
+       OtherLoanDetails2 frm = new OtherLoanDetails2(userId,(BorrowingCharacteristics1)this,jComboBox1.getSelectedItem().toString());
+       
+        frm.setVisible(true);
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        frm.setSize(screen.getSize());
+//        frm.setUserID(userId);
+        frm.pack();
+    }//GEN-LAST:event_jButton78ActionPerformed
+
+    private void jButton79ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton79ActionPerformed
+  
+        fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected31"+userId+".txt"),"23");  
+  
+        fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "OtherLoanDetails"+this.userId+".txt"),"777");
+     jButton77.setEnabled(false);
+            jButton78.setEnabled(false);
+    jButton79.setEnabled(false);
+//        jButton17.setEnabled(true);
+       OtherLoanDetails2 frm = new OtherLoanDetails2(userId,(BorrowingCharacteristics1)this,jComboBox1.getSelectedItem().toString());
+       
+        frm.setVisible(true);
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        frm.setSize(screen.getSize());
+//        frm.setUserID(userId);
+        frm.pack();
+    }//GEN-LAST:event_jButton79ActionPerformed
+
+    private void jTextField13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField13ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField13ActionPerformed
+
+    private void jCheckBox15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox15ActionPerformed
+      if(jCheckBox15.isSelected()){
+        jCheckBox16.setSelected(false);
+            jComboBox1.setVisible(true);
+  jLabel123.setVisible(true);
+jTextField13.setVisible(true);
+        jLabel124.setVisible(true);
+                jTextField14.setVisible(true);
+        jTextField14.setEditable(true);
+        jComboBox1.setVisible(true);
+jPanel2GroupAssignmentPanel.setVisible(true);
+ loan.fillWithGroupIdsNames(jTable1);
+ }else if(!jCheckBox15.isSelected()){
+  jLabel123.setVisible(false);
+jTextField13.setVisible(false);
+        jLabel124.setVisible(false);
+                jTextField14.setVisible(false);
+        jTextField14.setEditable(false);
+ jPanel2GroupAssignmentPanel.setVisible(false);
+   jComboBox1.setVisible(false);
+ }
+      
+ sortTable(jTable1,jTextField1);
+        HeaderRenderer headerx1f = new HeaderRenderer(jTable1.getTableHeader().getDefaultRenderer());
+
+        int h1x1f=0;
+
+        //        jTable3.getColumnModel().getColumns().nextElement().setResizable(false);
+        while(h1x1f<jTable1.getColumnModel().getColumnCount()){
+        jTable1.getColumnModel().getColumn(h1x1f).setHeaderRenderer(headerx1f);
+
+        if(h1x1f==0){
+        jTable1.getColumnModel().getColumn(h1x1f).setMinWidth(0);
+        jTable1.getColumnModel().getColumn(h1x1f).setMaxWidth(2000);
+        jTable1.getColumnModel().getColumn(h1x1f).setPreferredWidth(150);
+
+        }
+
+        if(h1x1f==1){
+        jTable1.getColumnModel().getColumn(h1x1f).setMinWidth(0);
+        jTable1.getColumnModel().getColumn(h1x1f).setMaxWidth(2000);
+        jTable1.getColumnModel().getColumn(h1x1f).setPreferredWidth(350);
+
+        }
+
+        h1x1f++;
+
+        }
+        jTable1.setDefaultRenderer(Object.class, new DefaultTableCellRenderer(){
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+
+        this.setHorizontalAlignment(JLabel.LEFT); 
+        this.setFont(new Font("Arial",Font.PLAIN,17));
+
+        this.setText(value.toString());
+        
+        
+
+        if (row%2==0) {
+        setBackground(jButton49.getBackground());
+        setForeground(jButton51.getBackground());
+        if(isSelected){
+
+        setBackground(Color.CYAN);
+        }
+        } else {
+        setBackground(jButton50.getBackground());
+        setForeground(jButton51.getBackground());
+        if(isSelected){setBackground(Color.CYAN);}
+        }
+
+        return this;
+        }
+        });     
+      
+    }//GEN-LAST:event_jCheckBox15ActionPerformed
+
+    private void jComboBox19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox19ActionPerformed
+String accountNumber=fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+this.userId+".txt"));           
+        if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+       jCheckBox16.setVisible(false);
+               jLabel123.setVisible(false);
+               jTextField13.setVisible(false);
+                       jLabel124.setVisible(false);
+                       jTextField14.setVisible(false);
+                               jComboBox1.setVisible(false);
+                               jPanel2GroupAssignmentPanel.setVisible(false);
+                               jComboBox1.setVisible(true);
+            jCheckBox15.setVisible(false);
+            jButton77.setVisible(true);
+            jButton78.setVisible(true);
+            jButton79.setVisible(true);
+
+            jLabel123.setVisible(false);
+            jTextField13.setVisible(false);
+            jLabel124.setVisible(false);
+            jTextField14.setVisible(false);
+//            jTextField14.setEditable(false);
+      
+            jCheckBox15.setSelected(false);
+         }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+      jPanel3LoanDetailsDisplayedPanel.setVisible(false);
+          jCheckBox15.setVisible(true);
+//jLabel123.setVisible(true);
+jTextField13.setVisible(true);
+jLabel124.setVisible(true);
+jTextField14.setVisible(true);
+jCheckBox16.setVisible(true);
+jComboBox1.setVisible(true);
+jButton77.setVisible(true);
+jButton78.setVisible(true);
+jButton79.setVisible(true);
+ loan. otherLoanDetailsForUpate1(jTable2,accountNumber);
+         
+         }
+    }//GEN-LAST:event_jComboBox19ActionPerformed
+
+    private void updateAllDetailsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateAllDetailsActionPerformed
+//String accountNumber=fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+this.userId+".txt"));
+
+if(updateAllDetails.isSelected()){
+   jLabel125.setVisible(true);
+           jComboBox19.setVisible(true);
+    updateOnlyGroups.setSelected(false);
+//     jPanel3LoanDetailsDisplayedPanel.setVisible(true);
+updateAllDetails.setSelected(true);
+
+}else if(!updateAllDetails.isSelected()){
+      jPanel3LoanDetailsDisplayedPanel.setVisible(false);
+jCheckBox15.setVisible(false);
+jLabel123.setVisible(false);
+jTextField13.setVisible(false);
+jLabel124.setVisible(false);
+jTextField14.setVisible(false);
+updateAllDetails.setSelected(false);
+jCheckBox16.setVisible(false);
+jComboBox1.setVisible(false);
+ updateOnlyGroups.setSelected(false);
+jButton77.setVisible(false);
+jButton78.setVisible(false);
+jButton79.setVisible(false);
+
+jLabel125.setVisible(false);
+        jComboBox19.setVisible(false);
+}
+ 
+    }//GEN-LAST:event_updateAllDetailsActionPerformed
+
+    private void updateOnlyGroupsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateOnlyGroupsActionPerformed
+
+
+if(updateOnlyGroups.isSelected()){
+    jLabel125.setVisible(false);
+            jComboBox19.setVisible(false);
+            
+      jPanel3LoanDetailsDisplayedPanel.setVisible(false);
+updateAllDetails.setSelected(false);
+updateOnlyGroups.setSelected(true);
+jCheckBox15.setVisible(true);
+jLabel123.setVisible(true);
+jTextField13.setVisible(true);
+jLabel124.setVisible(true);
+jTextField14.setVisible(true);
+jCheckBox16.setVisible(true);
+jComboBox1.setVisible(true);
+jButton77.setVisible(false);
+jButton78.setVisible(false);
+jButton79.setVisible(false);
+}else if(!updateOnlyGroups.isSelected()){
+      jPanel2GroupAssignmentPanel.setVisible(false);
+      jPanel3LoanDetailsDisplayedPanel.setVisible(false);
+jCheckBox15.setVisible(false);
+jLabel123.setVisible(false);
+jTextField13.setVisible(false);
+jLabel124.setVisible(false);
+jTextField14.setVisible(false);
+updateAllDetails.setSelected(false);
+jCheckBox16.setVisible(false);
+jComboBox1.setVisible(false);
+jButton77.setVisible(false);
+jButton78.setVisible(false);
+jButton79.setVisible(false);
+updateAllDetails.setSelected(false);
+}
+
+
+    }//GEN-LAST:event_updateOnlyGroupsActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+
+String accountNumber=fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+this.userId+".txt"));
+
+if(updateOnlyGroups.isSelected()){
+    if(jComboBox1.getSelectedItem().toString().equalsIgnoreCase("Select Group Id")){
+    
+    JOptionPane.showMessageDialog(this, "Please first select the cycle to update!!");
+    return;
+    }else{
+        
+     
+    if(!jTextField13.equals("")||!jTextField14.equals("")){    
+List theTwo=new ArrayList();
+theTwo.add(jTextField13.getText());//Group Id
+theTwo.add(jTextField14.getText());//Group Name
+theTwo.add(accountNumber);//Account  Number
+theTwo.add(jComboBox1.getSelectedItem().toString());//Cycle number
+
+
+if(loan.updateOnlyGroups(theTwo,this)){
+    
+JOptionPane.showMessageDialog(this, "Loan group for "+dbq.AccountName(accountNumber)+" was successfully updated!!");
+this.dispose();
+}else{
+JOptionPane.showMessageDialog(this, "Updating loan Group Failed!!!");
+this.dispose();
+}
+   
+    }else{
+    
+  JOptionPane.showMessageDialog(this, "Group Name and Group Id fields cannot be empty!!!!");
+    } 
+    
+    }
+
+}else if(updateAllDetails.isSelected()){
+    if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+   
+  if(fios.intFileReader(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected11"+userId+".txt"))==23){
+
+       if(fios.intFileReader(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected21"+userId+".txt"))==23){
+     if(fios.intFileReader(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected31"+userId+".txt"))==23){
+       
+       
+        fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected31"+userId+".txt"),"12");
+           fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected21"+userId+".txt"),"12");   
+            fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected11"+userId+".txt"),"12"); 
+//        JOptionPane.showMessageDialog(this, theCollection.size());
+//    JOptionPane.showMessageDialog(this, theCollection.get(1));
+//     
+  loan.updateLoanStoreAllDetails(theCollection,this);
+       this.dispose();
+        
+        
+       }else{
+      JOptionPane.showMessageDialog(this, "Please first select Bio Data"); 
+     return;
+     }
+       
+   
+       }else{
+       
+          JOptionPane.showMessageDialog(this, "Please first select Economic Status");
+            return;
+       }
+
+   }else{
+  
+       JOptionPane.showMessageDialog(this, "Please first select Other Loan Details");
+         return;
+   
+   }
+ JOptionPane.showMessageDialog(this, "Loan details for "+dbq.AccountName(accountNumber)+" were successfully updated!!");      
+  this.dispose();  
+    
+    }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+    if(jTextField13.getText().equalsIgnoreCase("")||jTextField14.getText().equalsIgnoreCase("")){
+    
+    JOptionPane.showMessageDialog(this, "Please first set the Group Id and Group Name respectively!!!");
+    }else{
+   
+  if(fios.intFileReader(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected11"+userId+".txt"))==23){
+
+       if(fios.intFileReader(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected21"+userId+".txt"))==23){
+     if(fios.intFileReader(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected31"+userId+".txt"))==23){
+       
+       
+        fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected31"+userId+".txt"),"12");
+           fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected21"+userId+".txt"),"12");   
+            fios.intFileWriterReplace(fios.createFileName("loanApplication", "amortValues", "makeSureAnItemSelected11"+userId+".txt"),"12"); 
+//        JOptionPane.showMessageDialog(this, theCollection.size());
+//    JOptionPane.showMessageDialog(this, theCollection.get(1));
+     
+  loan.updateLoanStoreAllDetails(theCollection,this);
+       this.dispose();
+        
+        
+       }else{
+      JOptionPane.showConfirmDialog(this, "Please first select Bio Data"); 
+     return;
+     }
+       
+   
+       }else{
+       
+          JOptionPane.showConfirmDialog(this, "Please first select Economic Status");
+            return;
+       }
+
+   }else{
+  
+       JOptionPane.showConfirmDialog(this, "Please first select Other Loan Details");
+         return;
+   
+   }
+ JOptionPane.showMessageDialog(this, "Loan details for "+dbq.AccountName(accountNumber)+" were successfully updated!!");      
+  this.dispose(); 
+  
+  
+  
+    }
+    }
+}
+
+
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+      this.dispose();
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+  String accountNumber=fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+this.userId+".txt"));
+ if(!jCheckBox16.isSelected()){
+        jTextField14.setText(loan.groupNameIdividual(accountNumber,jComboBox1.getSelectedItem().toString()));
+        jTextField13.setText(loan.getTheGroupIdsIndividual(accountNumber,jComboBox1.getSelectedItem().toString()));
+ }else{
+ jTextField14.setText("");
+ 
+ }
+    }//GEN-LAST:event_jComboBox1ActionPerformed
+
+    private void jCheckBox16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox16ActionPerformed
+
+                   if(!jComboBox1.getSelectedItem().toString().equalsIgnoreCase("Select Loan Cycle")){
+                     if(jCheckBox16.isSelected()){
+        jCheckBox15.setSelected(false);
+            jComboBox1.setVisible(true);
+  jLabel123.setVisible(true);
+jTextField13.setVisible(true);
+        jLabel124.setVisible(true);
+                jTextField14.setVisible(true);
+        jTextField14.setEditable(true);
+        jComboBox1.setVisible(true);
+    jTextField14.setText("");
+                jTextField13.setText(loan.groupNumber(this));
+jPanel2GroupAssignmentPanel.setVisible(false);
+// loan.fillWithGroupIdsNames(jTable1);
+JOptionPane.showMessageDialog(this, "Please Type the Group Name");
+ }else if(!jCheckBox16.isSelected()){
+  jLabel123.setVisible(false);
+jTextField13.setVisible(false);
+        jLabel124.setVisible(false);
+                jTextField14.setVisible(false);
+        jTextField14.setEditable(false);
+ jPanel2GroupAssignmentPanel.setVisible(false);
+   jComboBox1.setVisible(false);
+ }
+                   }else{
+  JOptionPane.showMessageDialog(this, "Please select the cycle number to update!");
+  jCheckBox16.setSelected(false);
+  }
+        
+      
+    }//GEN-LAST:event_jCheckBox16ActionPerformed
+
+    /**
+     * @param args the command line arguments
+     */
+//    public static void main(String args[]) {
+////        public static String u=AddBatch.this.userId;
+//        /* Set the Nimbus look and feel */
+//        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+//        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+//         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+//         */
+//        try {
+//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+//                if ("Nimbus".equals(info.getName())) {
+//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+//                    break;
+//                }
+//            }
+//        } catch (ClassNotFoundException ex) {
+//            java.util.logging.Logger.getLogger(AddBatch.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (InstantiationException ex) {
+//            java.util.logging.Logger.getLogger(AddBatch.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (IllegalAccessException ex) {
+//            java.util.logging.Logger.getLogger(AddBatch.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+//            java.util.logging.Logger.getLogger(AddBatch.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        }
+//        //</editor-fold>
+//
+//        /* Create and display the form */
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {
+//                new AddBatch().setVisible(true);
+//            }
+//        });
+//    }
+   private void sortTable(JTable table,JTextField textField){
+
+   
+    
+TableRowSorter<TableModel> rowSorter  = new TableRowSorter<>(table.getModel());
+                     
+                      table.setRowSorter(rowSorter);
+                     textField.getDocument().addDocumentListener(new DocumentListener(){
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                String text = textField.getText();
+
+                if (text.trim().length() == 0) {
+                    rowSorter.setRowFilter(null);
+                } else {
+                    rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                String text = textField.getText();
+
+                if (text.trim().length() == 0) {
+                    rowSorter.setRowFilter(null);
+                } else {
+                    rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+        });
+    
+
+}
+   
+     
+    
+    
+ public void addItemInList(String theItem){
+ 
+ theCollection.add(theItem);
+ }
+ 
+ public void updateDefaults(String accountNumber){
+ String  existance="First Time Borrower";
+     if(loan.borrowerExists(accountNumber)){
+     existance="Existing Borrower";
+     
+     }else if(!loan.borrowerExists(accountNumber)){
+     
+     
+      existance="First Time Borrower";
+     
+     
+     }
+     
+     
+     
+     
+  theCollection=new ArrayList();
+        theCollection.add(existance);
+        theCollection.add("Individual");
+        theCollection.add("Group 1");
+        theCollection.add("Group 1");
+        theCollection.add("Cycle"+loan.cycleNumber(accountNumber));
+        theCollection.add("Salary Loan");
+        theCollection.add("Friends");
+        theCollection.add("Single Instalment Loan");
+        theCollection .add("Business Financing");
+        theCollection.add("No History");
+        theCollection.add("Can't Tell");
+        theCollection.add("No");
+        theCollection.add("0"); 
+        theCollection.add("Level 1"); 
+        theCollection.add("Monthly Income"); 
+         theCollection.add("100,000-200,000");
+         theCollection.add("Very Low");
+        theCollection.add("Self Employment");
+        theCollection.add("Agriculture");
+         theCollection.add("Male");
+           theCollection.add("Single");
+           theCollection.add("Minor");
+           theCollection.add("No Education");  
+            theCollection.add("Email");
+           theCollection.add("augbazi@mail.com");
+           theCollection.add("Excellent");
+              theCollection.add("0782231039");
+ 
+ 
+ }
+ 
+ 
+ 
+ 
+ 
+ public void addItemFromExistingB(){
+ 
+//     List detailsOfExistingBorrower=loan.pickThoseOtherLoanDe();
+     
+     
+ 
+ }
+ 
+ 
+ public void setTheField(String theItemI){
+ 
+     switch(theItemI){
+         case "Other Loan Details":
+            jButton78.setEnabled(true);
+             
+             break;
+      case "Economic Status":
+          jButton79.setEnabled(true);  
+          break;
+      case "Bio Data":
+          
+//         jButton17 .setEnabled(true);  
+          break;
+          
+//      case "Bio Data":
+//          break;
+     }
+ 
+ }
+    
+  private void completeAmortSpace(String accountNumber2){
+//      Integer xh=1;
+//        fios.intFileWriterReplace(fios.createFileName("amortization", "allowUsage", "showNecessaryAmorts.txt"), xh.toString());
+
+//        SwingWorker<Void,Void>createNewLoan=new SwingWorker(){
+//
+//
+//        @Override
+//        protected Object doInBackground() throws Exception {
+//        loan.createNewLoanAmort(accountNumber2,NewLoanApplication.this);
+//        return null;
+//        }
+//        };
+//        createNewLoan.execute();
+         if(!updateOnlyGroups.isVisible()){ 
+//             JOptionPane.showMessageDialog(this, "Inthem");
+//       if(!useDefaultBorrowerDetails1.isSelected()){
+//         JOptionPane.showMessageDialog(this, "Inthem1");
+           if(updateAllDetails.isVisible()){
+//             JOptionPane.showMessageDialog(this, "Inthem2");
+               if(updateAllDetails.isSelected()){
+//                JOptionPane.showMessageDialog(this, "Inthem3");
+               if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+               if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+// JOptionPane.showMessageDialog(this, "Inthem4");
+      for(Object the:theCollection){
+       
+       JOptionPane.showMessageDialog(this, the);
+       
+       }
+//          component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                   
+                   
+               
+               }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+               
+               
+                   if(jCheckBox15.isSelected()){
+                   
+                        if(jTextField13.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField13.getText().equalsIgnoreCase("Select Group Id")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("Select")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                       
+                       
+               
+            }
+            
+            }
+            
+            }
+            
+            }
+                       
+                       
+                       
+                       
+                   
+                   }else if(!jCheckBox15.isSelected()){
+                   
+                       if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                       
+                       
+                       
+                       
+                   
+                   
+                   }
+                   
+                   
+                   
+               
+               }
+               
+               }else if(!updateAllDetails.isSelected()){
+                theCollection=new ArrayList(); 
+                   addItemInList("Existing Borrower");
+       
+       List theExistingItems=loan.otherLoanDetailsForUpate(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")));
+         
+       addItemInList(theExistingItems.get(0).toString());
+         addItemInList(theExistingItems.get(1).toString());
+          addItemInList(theExistingItems.get(2).toString());
+           addItemInList(theExistingItems.get(3).toString());
+      
+               addItemInList(theExistingItems.get(4).toString());
+         addItemInList(theExistingItems.get(5).toString());
+          addItemInList(theExistingItems.get(6).toString());
+           addItemInList(theExistingItems.get(7).toString());
+            addItemInList(theExistingItems.get(8).toString());
+         addItemInList(theExistingItems.get(9).toString());
+          addItemInList(theExistingItems.get(10).toString());
+           addItemInList(theExistingItems.get(11).toString());
+           
+            addItemInList(theExistingItems.get(12).toString());
+         addItemInList(theExistingItems.get(13).toString());
+          addItemInList(theExistingItems.get(14).toString());
+           addItemInList(theExistingItems.get(15).toString());
+            addItemInList(theExistingItems.get(16).toString());
+         addItemInList(theExistingItems.get(17).toString());
+          addItemInList(theExistingItems.get(18).toString());
+           addItemInList(theExistingItems.get(19).toString());
+           
+            addItemInList(theExistingItems.get(20).toString());
+           addItemInList(theExistingItems.get(21).toString());
+            addItemInList(theExistingItems.get(22).toString());
+         addItemInList(theExistingItems.get(23).toString());
+          addItemInList(theExistingItems.get(24).toString());
+           addItemInList(theExistingItems.get(25).toString());
+          
+           
+//             component.setTheDetailsOfLaon(theCollection);
+            this.dispose(); 
+            }
+               
+               
+               
+           
+           }else if(!updateAllDetails.isVisible()){
+            if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+               if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                   
+                   
+               
+               }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+               
+               
+                   if(jCheckBox15.isSelected()){
+                   
+                        if(jTextField13.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField13.getText().equalsIgnoreCase("Select Group Id")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("Select")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();   
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                       
+                       
+               
+            }
+            
+            }
+            
+            }
+            
+            }
+                       
+                       
+                       
+                       
+                   
+                   }else if(!jCheckBox15.isSelected()){
+                   
+                       if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//        component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }   }  } }  }  }
+       
+       
+//       }else if(useDefaultBorrowerDetails1.isSelected()){
+
+           
+           if(loan.borrowerExists(accountNumber2)){
+                theCollection=new ArrayList();
+            addItemInList("Existing Borrower");
+//       JOptionPane.showMessageDialog(this, fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")));
+       List theExistingItems=loan.otherLoanDetailsForUpate(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")));
+//        JOptionPane.showMessageDialog(this, theExistingItems.size()); 
+       addItemInList(theExistingItems.get(0).toString());
+         addItemInList(theExistingItems.get(1).toString());
+          addItemInList(theExistingItems.get(2).toString());
+           addItemInList(theExistingItems.get(3).toString());
+      
+               addItemInList(theExistingItems.get(4).toString());
+         addItemInList(theExistingItems.get(5).toString());
+          addItemInList(theExistingItems.get(6).toString());
+           addItemInList(theExistingItems.get(7).toString());
+            addItemInList(theExistingItems.get(8).toString());
+         addItemInList(theExistingItems.get(9).toString());
+          addItemInList(theExistingItems.get(10).toString());
+           addItemInList(theExistingItems.get(11).toString());
+           
+            addItemInList(theExistingItems.get(12).toString());
+         addItemInList(theExistingItems.get(13).toString());
+          addItemInList(theExistingItems.get(14).toString());
+           addItemInList(theExistingItems.get(15).toString());
+            addItemInList(theExistingItems.get(16).toString());
+         addItemInList(theExistingItems.get(17).toString());
+          addItemInList(theExistingItems.get(18).toString());
+           addItemInList(theExistingItems.get(19).toString());
+           
+            addItemInList(theExistingItems.get(20).toString());
+           addItemInList(theExistingItems.get(21).toString());
+            addItemInList(theExistingItems.get(22).toString());
+         addItemInList(theExistingItems.get(23).toString());
+          addItemInList(theExistingItems.get(24).toString());
+           addItemInList(theExistingItems.get(25).toString());
+          
+           
+//     component.setTheDetailsOfLaon(theCollection);
+            this.dispose(); 
+           
+           
+           }else {
+    
+//       component.setTheDetailsOfLaon(theCollection);
+            this.dispose(); 
+           }
+//       }
+       
+  }else if(updateOnlyGroups.isVisible()){
+//   if(!useDefaultBorrowerDetails1.isSelected()){
+       
+           if(updateAllDetails.isVisible()){
+           
+               if(updateAllDetails.isSelected()){
+               
+               if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+               if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//          component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                   
+                   
+               
+               }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+               
+               
+                   if(jCheckBox15.isSelected()){
+                   
+                        if(jTextField13.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField13.getText().equalsIgnoreCase("Select Group Id")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("Select")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                       
+                       
+               
+            }
+            
+            }
+            
+            }
+            
+            }
+                       
+                       
+                       
+                       
+                   
+                   }else if(!jCheckBox15.isSelected()){
+                   
+                       if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                       
+                       
+                       
+                       
+                   
+                   
+                   }
+                   
+                   
+                   
+               
+               }
+               
+               }else if(!updateAllDetails.isSelected()){
+                theCollection=new ArrayList(); 
+                   addItemInList("Existing Borrower");
+       
+       List theExistingItems=loan.otherLoanDetailsForUpate(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")));
+         
+       addItemInList(theExistingItems.get(0).toString());
+         addItemInList(theExistingItems.get(1).toString());
+          addItemInList(theExistingItems.get(2).toString());
+           addItemInList(theExistingItems.get(3).toString());
+      
+               addItemInList(theExistingItems.get(4).toString());
+         addItemInList(theExistingItems.get(5).toString());
+          addItemInList(theExistingItems.get(6).toString());
+           addItemInList(theExistingItems.get(7).toString());
+            addItemInList(theExistingItems.get(8).toString());
+         addItemInList(theExistingItems.get(9).toString());
+          addItemInList(theExistingItems.get(10).toString());
+           addItemInList(theExistingItems.get(11).toString());
+           
+            addItemInList(theExistingItems.get(12).toString());
+         addItemInList(theExistingItems.get(13).toString());
+          addItemInList(theExistingItems.get(14).toString());
+           addItemInList(theExistingItems.get(15).toString());
+            addItemInList(theExistingItems.get(16).toString());
+         addItemInList(theExistingItems.get(17).toString());
+          addItemInList(theExistingItems.get(18).toString());
+           addItemInList(theExistingItems.get(19).toString());
+           
+            addItemInList(theExistingItems.get(20).toString());
+           addItemInList(theExistingItems.get(21).toString());
+            addItemInList(theExistingItems.get(22).toString());
+         addItemInList(theExistingItems.get(23).toString());
+          addItemInList(theExistingItems.get(24).toString());
+           addItemInList(theExistingItems.get(25).toString());
+          
+           
+//             component.setTheDetailsOfLaon(theCollection);
+            this.dispose(); 
+            }
+               
+               
+               
+           
+           }else if(!updateAllDetails.isVisible()){
+            if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Individual")){
+               if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                   
+                   
+               
+               }else if(jComboBox19.getSelectedItem().toString().equalsIgnoreCase("Group")){
+               
+               
+                   if(jCheckBox15.isSelected()){
+                   
+                        if(jTextField13.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField13.getText().equalsIgnoreCase("Select Group Id")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Id!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jTextField14.getText().equalsIgnoreCase("Select")){
+            
+            
+            JOptionPane.showMessageDialog(this, "Please first set Group Name!!!!");
+            return;
+            }else{
+             if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//           component.setTheDetailsOfLaon(theCollection);
+            this.dispose();   
+                   
+               
+               }
+               
+               }
+                   
+                   
+               
+               }
+                       
+                       
+               
+            }
+            
+            }
+            
+            }
+            
+            }
+                       
+                       
+                       
+                       
+                   
+                   }else if(!jCheckBox15.isSelected()){
+                   
+                       if(jButton77.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select other loan details");
+               return;
+               }else if(!jButton77.isEnabled()){
+               
+                     if(jButton78.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Economic status details");
+               return;
+               }else if(!jButton78.isEnabled()){
+                    if(jButton79.isEnabled()){
+               JOptionPane.showMessageDialog(this, "Please first select Bio Data details");
+               return;
+               }else if(!jButton79.isEnabled()){
+
+//        component.setTheDetailsOfLaon(theCollection);
+            this.dispose();  
+                   
+               
+               }   }  } }  }  }
+       
+       
+//       }else if(useDefaultBorrowerDetails1.isSelected()){
+
+           
+           if(loan.borrowerExists(accountNumber2)){
+                theCollection=new ArrayList();
+            addItemInList("Existing Borrower");
+//       JOptionPane.showMessageDialog(this, fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")));
+       List theExistingItems=loan.otherLoanDetailsForUpate(fios.stringFileReader(fios.createFileName("loanApplication", "amortValues", "activeAccount"+userId+".txt")));
+//        JOptionPane.showMessageDialog(this, theExistingItems.size()); 
+       addItemInList(theExistingItems.get(0).toString());
+         addItemInList(theExistingItems.get(1).toString());
+          addItemInList(theExistingItems.get(2).toString());
+           addItemInList(theExistingItems.get(3).toString());
+      
+               addItemInList(theExistingItems.get(4).toString());
+         addItemInList(theExistingItems.get(5).toString());
+          addItemInList(theExistingItems.get(6).toString());
+           addItemInList(theExistingItems.get(7).toString());
+            addItemInList(theExistingItems.get(8).toString());
+         addItemInList(theExistingItems.get(9).toString());
+          addItemInList(theExistingItems.get(10).toString());
+           addItemInList(theExistingItems.get(11).toString());
+           
+            addItemInList(theExistingItems.get(12).toString());
+         addItemInList(theExistingItems.get(13).toString());
+          addItemInList(theExistingItems.get(14).toString());
+           addItemInList(theExistingItems.get(15).toString());
+            addItemInList(theExistingItems.get(16).toString());
+         addItemInList(theExistingItems.get(17).toString());
+          addItemInList(theExistingItems.get(18).toString());
+           addItemInList(theExistingItems.get(19).toString());
+           
+            addItemInList(theExistingItems.get(20).toString());
+           addItemInList(theExistingItems.get(21).toString());
+            addItemInList(theExistingItems.get(22).toString());
+         addItemInList(theExistingItems.get(23).toString());
+          addItemInList(theExistingItems.get(24).toString());
+           addItemInList(theExistingItems.get(25).toString());
+          
+           
+//     component.setTheDetailsOfLaon(theCollection);
+            this.dispose(); 
+           
+           
+           }else {
+    
+//       component.setTheDetailsOfLaon(theCollection);
+            this.dispose(); 
+           }
+//       }
+  }
+        
+    }
+       
+    
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton29;
+    private javax.swing.JButton jButton30;
+    private javax.swing.JButton jButton31;
+    private javax.swing.JButton jButton32;
+    private javax.swing.JButton jButton33;
+    private javax.swing.JButton jButton34;
+    private javax.swing.JButton jButton35;
+    private javax.swing.JButton jButton36;
+    private javax.swing.JButton jButton37;
+    private javax.swing.JButton jButton38;
+    private javax.swing.JButton jButton39;
+    private javax.swing.JButton jButton40;
+    private javax.swing.JButton jButton41;
+    private javax.swing.JButton jButton42;
+    private javax.swing.JButton jButton43;
+    private javax.swing.JButton jButton44;
+    private javax.swing.JButton jButton45;
+    private javax.swing.JButton jButton46;
+    private javax.swing.JButton jButton47;
+    private javax.swing.JButton jButton48;
+    private javax.swing.JButton jButton49;
+    private javax.swing.JButton jButton50;
+    private javax.swing.JButton jButton51;
+    private javax.swing.JButton jButton52;
+    private javax.swing.JButton jButton53;
+    private javax.swing.JButton jButton54;
+    private javax.swing.JButton jButton55;
+    private javax.swing.JButton jButton56;
+    private javax.swing.JButton jButton57;
+    private javax.swing.JButton jButton58;
+    private javax.swing.JButton jButton59;
+    private javax.swing.JButton jButton60;
+    private javax.swing.JButton jButton61;
+    private javax.swing.JButton jButton62;
+    private javax.swing.JButton jButton63;
+    private javax.swing.JButton jButton64;
+    private javax.swing.JButton jButton65;
+    private javax.swing.JButton jButton66;
+    private javax.swing.JButton jButton67;
+    private javax.swing.JButton jButton68;
+    private javax.swing.JButton jButton69;
+    private javax.swing.JButton jButton70;
+    private javax.swing.JButton jButton71;
+    private javax.swing.JButton jButton72;
+    private javax.swing.JButton jButton77;
+    private javax.swing.JButton jButton78;
+    private javax.swing.JButton jButton79;
+    public javax.swing.JCheckBox jCheckBox15;
+    public javax.swing.JCheckBox jCheckBox16;
+    public javax.swing.JComboBox<String> jComboBox1;
+    public javax.swing.JComboBox jComboBox19;
+    private javax.swing.JLabel jLabel1;
+    public javax.swing.JLabel jLabel123;
+    public javax.swing.JLabel jLabel124;
+    public javax.swing.JLabel jLabel125;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JPanel jPanel1;
+    public javax.swing.JPanel jPanel2GroupAssignmentPanel;
+    private javax.swing.JPanel jPanel3LoanDetailsDisplayedPanel;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTable jTable1;
+    private javax.swing.JTable jTable2;
+    private javax.swing.JTextField jTextField1;
+    public javax.swing.JTextField jTextField13;
+    public javax.swing.JTextField jTextField14;
+    public javax.swing.JPanel newLoanPanel1;
+    public javax.swing.JCheckBox updateAllDetails;
+    public javax.swing.JCheckBox updateOnlyGroups;
+    // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent me) {
+        
+       if(me.getSource() == jTable1){  
+                
+                    int selectedRow =jTable1.getSelectedRow();
+                    int selectedColumn =jTable1.getSelectedColumn();
+		   if (selectedRow > -1&&selectedColumn>-1)
+	   {
+	 Object groupLoanId = jTable1.getModel().getValueAt(jTable1.convertRowIndexToModel(selectedRow), 0);
+          Object groupLoanName= jTable1.getModel().getValueAt(jTable1.convertRowIndexToModel(selectedRow), 1);
+             
+                    if(!jComboBox1.getSelectedItem().toString().equalsIgnoreCase("Select Loan Cycle")){
+                   
+                        jTextField13.setText(groupLoanId.toString());
+        jTextField14 .setText(groupLoanName.toString());
+         
+         jTextField13.setEditable(false);
+        jTextField14 .setEditable(false);
+                    }else{
+  JOptionPane.showMessageDialog(this, "Please select the cycle number to update!");
+  }
+        
+         
+           }
+        
+  
+                   
+        } 
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+     
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+     
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+     
+    }
+
+    @Override
+    public void updateText(String text) {
+  
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+ 
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+ 
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+    
+    }
+
+    
+}
+

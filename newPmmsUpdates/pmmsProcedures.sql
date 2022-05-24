@@ -287,7 +287,11 @@ CREATE TABLE `savingssharescomputationparameters` (
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
- 
+--  Shares 14% = 20,202,000/=
+-- Savings 5% = 9,484,656/=
+-- Totaling to 29,684,656/=
+-- Leaves a balance of 315,344/= 
+-- I know when u run the reports it will have a plus or minus. The amount agreed is 30m
 
 
 -- INSERT INTO  savingssharescomputationparameters VALUES(1,	'2019-02-23'	,'2019-03-23',	10.67,	5.33	,1	,1	,1	,1	,'NA',	'NA'	,'NA');
@@ -531,7 +535,7 @@ CALL accountNma(accountNumber,@accountName);
 
 SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
 
-SELECT @sql_text1;
+ -- SELECT @sql_text1;
 
   PREPARE stmt1 FROM @sql_text1;
   EXECUTE stmt1;
@@ -584,7 +588,7 @@ CALL accountNma(accountNumber,@accountName);
 
 SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
 
-SELECT @sql_text1;
+-- SELECT @sql_text1;
 
   PREPARE stmt1 FROM @sql_text1;
   EXECUTE stmt1;
@@ -597,7 +601,7 @@ SET @ledgerBalance=0;
 
 END IF;
 
-SELECT @ledgerBalance,@accountName;
+-- SELECT @ledgerBalance,@accountName;
 
 IF @ledgerBalance>0 THEN
 
@@ -3458,7 +3462,7 @@ DELIMITER //
     CREATE PROCEDURE accountNma(IN accountNumber VARCHAR(30),OUT accountName VARCHAR(30))
              BEGIN
 
-            SELECT account_name FROM account_created_store where account_number=accountNumber INTO accountName;
+            SELECT account_name FROM pmms.account_created_store where account_number=accountNumber INTO accountName;
                     
             END //
 			
@@ -4277,17 +4281,17 @@ CREATE TEMPORARY TABLE  runningLoanAnalysis(id INTEGER NOT NULL AUTO_INCREMENT,c
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
-   INSERT INTO  runningLoanAnalysis( 
-  `id` ,
-  `customer_name` ,
-  `customer_account`  
-  ) SELECT 
-   DISTINCT null,
-  customerNameL(AccountNumber),
-  AccountNumber
-       FROM loandisburserepaystatement;
+  --  INSERT INTO  runningLoanAnalysis( 
+  -- `id` ,
+  -- `customer_name` ,
+  -- `customer_account`  
+  -- )
+   SELECT 
+    trnId AS id,
+  AccountNumber AS customer_account
+       FROM loandisburserepaystatement GROUP BY AccountNumber;
        
-       SELECT * FROM runningLoanAnalysis;
+      --  SELECT * FROM runningLoanAnalysis;
 END ##
 DELIMITER ;
 CALL runningLoansDetails();
@@ -4874,7 +4878,7 @@ CREATE PROCEDURE normaliseBalance() READS SQL DATA
 OUTER_BLOCK: BEGIN
 DECLARE theLoanTxnId VARCHAR(20);
 DECLARE outerNotFound, c INTEGER DEFAULT 0; 
-DECLARE forLoanTxnId CURSOR FOR SELECT DISTINCT(loanTrnId) from loandisburserepaystatement WHERE  LoanStatusReport='Running' AND NOT loanTrnId='0';
+DECLARE forLoanTxnId CURSOR FOR SELECT DISTINCT(loanTrnId) from loandisburserepaystatement WHERE  LoanStatusReport='Disbursed' AND NOT loanTrnId='0';
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
 
 OPEN forLoanTxnId; 
@@ -6027,3 +6031,4 @@ SET l_done=0;
 
 END $$
 DELIMITER ;
+

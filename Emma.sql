@@ -1,6 +1,5 @@
 
 
-
 DROP PROCEDURE `smsSummuryReport`;
 DELIMITER $$
 CREATE  PROCEDURE `smsSummuryReport`()
@@ -34,21 +33,7 @@ INSERT INTO smsSummury VALUES("No.CustomP:",@activeCustomersPaid);
   END IF;
 
 
-CALL totalNumberOfCustomersSaving(@activeCustomersSave);
 
-IF @activeCustomersSave>0 THEN
-
-INSERT INTO smsSummury VALUES("No.CustomS:",@activeCustomersSave);
-
-  END IF;
-
-  CALL countNumberOfDisbursements(@numberOfDibusements);
-
-IF @numberOfDibusements>0 THEN
-
-INSERT INTO smsSummury VALUES("No.LoanOut:",@numberOfDibusements);
-
-  END IF;
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 CALL InterestRecover(DATE(NOW()),@InterestR);
 SET @ActualTotalAmountCollectedToday=@princimpalRepaymentsMade+@InterestR;
@@ -57,6 +42,36 @@ IF @ActualTotalAmountCollectedToday>0 THEN
 INSERT INTO smsSummury VALUES("TC:",@ActualTotalAmountCollectedToday);
 
   END IF;
+
+
+CALL countNumberOfRenewedPaid(@numberOfRenewalsPaid);
+
+IF @numberOfRenewalsPaid>0 THEN
+-- SELECT @numberOfDibusements;
+INSERT INTO smsSummury VALUES("No.RenewedPaid:",@numberOfRenewalsPaid);
+
+  END IF;
+
+
+    -- SELECT @totalDisbursement;
+CALL sumRenewalsPaid(@totalRenewalsPaid);
+
+IF @totalRenewalsPaid>0 THEN
+  
+    -- SELECT @totalDisbursement;
+INSERT INTO smsSummury VALUES("AmtRenewedPaid:",@totalRenewalsPaid);
+
+  END IF;
+
+
+  CALL countNumberOfDisbursements(@numberOfDibusements);
+
+IF @numberOfDibusements>0 THEN
+
+INSERT INTO smsSummury VALUES("No.LoanOut:",@numberOfDibusements);
+
+  END IF;
+  
   
   
 CALL sumDisbursements(@totalDisbursement);
@@ -68,6 +83,42 @@ INSERT INTO smsSummury VALUES("TLoanOut:",@totalDisbursement);
   END IF;
   
 
+CALL countNumberOfRenewals(@numberOfRenewals);
+
+IF @numberOfRenewals>0 THEN
+-- SELECT @numberOfDibusements;
+INSERT INTO smsSummury VALUES("No.Renewed:",@numberOfRenewals);
+
+  END IF;
+
+
+    -- SELECT @totalDisbursement;
+CALL sumRenewals(@totalRenewals);
+
+IF @totalRenewals>0 THEN
+  
+    -- SELECT @totalDisbursement;
+INSERT INTO smsSummury VALUES("AmntRenewed:",@totalRenewals);
+
+  END IF;
+  
+
+CALL totalNumberOfSavingDeposited(@activeCustomersSave);
+
+IF @activeCustomersSave>0 THEN
+-- SELECT @activeCustomersSave;
+INSERT INTO smsSummury VALUES("No.CustomSDeposited:",@activeCustomersSave);
+
+  END IF;
+
+
+ CALL totalNumberOfSavingWithdraw(@activeCustomersSave);
+
+IF @activeCustomersSave>0 THEN
+-- SELECT @activeCustomersSave;
+INSERT INTO smsSummury VALUES("No.CustomSWithdrawn:",@activeCustomersSave);
+
+  END IF;
 
 
 
@@ -207,7 +258,7 @@ CALL otherLiabilitiesAndProvisionsMade(DATE(NOW()),@OtherLiabilities);
 SET @OpeningCahdBala=@OpeningCahdBala+@OtherLiabilities;
 
 IF @OtherLiabilities>0 THEN 
-INSERT INTO smsSummury VALUES("Liabilities:",@OtherLiabilities);
+INSERT INTO smsSummury VALUES("UnknownMomoMade:",@OtherLiabilities);
 END IF;
 
 
@@ -260,7 +311,7 @@ CALL refundFromMobileMoneyPayableMade(DATE(NOW()),@mobileMoneyRefund);
 SET @OpeningCahdBala=@OpeningCahdBala+@mobileMoneyRefund;
 
 IF @mobileMoneyRefund>0 THEN 
-INSERT INTO smsSummury VALUES("PCollect:",@mobileMoneyRefund);
+INSERT INTO smsSummury VALUES("MomoW:",@mobileMoneyRefund);
 END IF;
 
 CALL fixedAssetsAndInvestmentsDisposedOff(DATE(NOW()),@fixedAssetsAndInvestmentDisp);
@@ -335,7 +386,7 @@ CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
 SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
 
 IF @mobileMoney>0 THEN 
-INSERT INTO smsSummury VALUES("MobileMoneyReceivableMade:",@mobileMoney);
+INSERT INTO smsSummury VALUES("MomoD:",@mobileMoney);
 END IF;
 
 CALL OtherReceivablesAndPrepaymentsCreated(DATE(NOW()),@otherRecePreMade);
@@ -377,7 +428,7 @@ CALL PayablesOtherLiabilitiesAndProvisionsRefunded(DATE(NOW()),@RefundPayableOth
 SET @OpeningCahdBala=@OpeningCahdBala-@RefundPayableOtherLiabilProvis;
 
 IF @RefundPayableOtherLiabilProvis>0 THEN 
-INSERT INTO smsSummury VALUES("OtherPayablesRefundedAndOtherLiabilitiesCleared:",@RefundPayableOtherLiabilProvis);
+INSERT INTO smsSummury VALUES("UnkownMomoCleared:",@RefundPayableOtherLiabilProvis);
 END IF;
 
 CALL InsurancePayableCleared(DATE(NOW()),@insurancePayableCleared);
@@ -422,7 +473,22 @@ IF @savingDepositWith>0 THEN
 INSERT INTO smsSummury VALUES("SavingsWithdraws:",@savingDepositWith);
 END IF;
 
-INSERT INTO smsSummury VALUES("CC:",@OpeningCahdBala);
+-- INSERT INTO smsSummury VALUES("CC:",@OpeningCahdBala);
+
+CALL closingCash(@closingCashBal); 
+
+INSERT INTO smsSummury VALUES("CC:", @closingCashBal);
+
+
+CALL momoBalance(@TheMomoBalance);
+
+ IF @TheMomoBalance>0 THEN 
+INSERT INTO smsSummury VALUES("MO BAL:",@TheMomoBalance);
+END IF;
+
+ IF @TheMomoBalance>0 THEN 
+INSERT INTO smsSummury VALUES("MO+CC:",@TheMomoBalance+@closingCashBal);
+END IF;
 
 
 SELECT itemName,FORMAT(itemValue,0)  AS itemValue FROM smsSummury;
