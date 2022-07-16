@@ -12127,18 +12127,20 @@ DELIMITER ;
 
 
  ALTER TABLE new_loan_appstore MODIFY COLUMN  loan_id VARCHAR(100) NOT NULL UNIQUE;
-  1062 (23000): Duplicate entry 'newloan05502000110' for key 'loan_id'
-  SELECT trn_id FROM new_loan_appstore where loan_id='newloan05502000110';
-+--------+
-| trn_id |
-+--------+
-| NL0051 |
-| NL0099 |
-+--------+
-DELETE FROM new_loan_appstore WHERE trn_id='NL0099';
-  ALTER TABLE new_loan_appstore1 MODIFY COLUMN  loan_id VARCHAR(100) NOT NULL UNIQUE;
+   ALTER TABLE new_loan_appstore1 MODIFY COLUMN  loan_id VARCHAR(100) NOT NULL UNIQUE;
+       ALTER TABLE new_loan_appstore MODIFY COLUMN applicant_account_name VARCHAR(200) NOT NULL;
+  -- 1062 (23000): Duplicate entry 'newloan05502000110' for key 'loan_id'
+  -- SELECT trn_id FROM new_loan_appstore where loan_id='newloan05502000110';
+-- +--------+
+-- | trn_id |
+-- +--------+
+-- | NL0051 |
+-- | NL0099 |
+-- +--------+
+-- DELETE FROM new_loan_appstore WHERE trn_id='NL0099';
+
     /* ALTER TABLE new_loan_appstore2 MODIFY COLUMN  loan_id VARCHAR(100) NOT NULL UNIQUE; */
-    ALTER TABLE new_loan_appstore MODIFY COLUMN applicant_account_name VARCHAR(200) NOT NULL;
+
      /* ALTER TABLE new_loan_appstore1 MODIFY COLUMN applicant_account_name VARCHAR(200) NOT NULL; */
       /* ALTER TABLE new_loan_appstore2 MODIFY COLUMN applicant_account_name VARCHAR(200) NOT NULL; */
     

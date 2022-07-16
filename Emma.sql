@@ -15,6 +15,34 @@ CREATE  TEMPORARY TABLE smsSummury(itemName VARCHAR(200),itemValue VARCHAR(200))
 
 
 
+CALL totalPrincimpalBalance(@princimpalBalance);
+
+IF @princimpalBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("Princ.Stck:",@princimpalBalance);
+
+  END IF;
+
+
+  CALL totalInterestBalance(@interestBalance);
+
+IF @interestBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("Interes.Stck:",@interestBalance);
+
+  END IF;
+
+IF @interestBalance>0 OR @princimpalBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("Total.Stck:",@interestBalance+@princimpalBalance);
+
+  END IF;
+
+
+
+
+
+
 CALL totalNumberOfActiveCustomers(@activeCustomers);
 
 IF @activeCustomers>0 THEN
@@ -107,7 +135,7 @@ CALL totalNumberOfSavingDeposited(@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
 -- SELECT @activeCustomersSave;
-INSERT INTO smsSummury VALUES("No.CustomSDeposited:",@activeCustomersSave);
+INSERT INTO smsSummury VALUES("No.FuelDeposit:",@activeCustomersSave);
 
   END IF;
 
@@ -116,7 +144,7 @@ INSERT INTO smsSummury VALUES("No.CustomSDeposited:",@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
 -- SELECT @activeCustomersSave;
-INSERT INTO smsSummury VALUES("No.CustomSWithdrawn:",@activeCustomersSave);
+INSERT INTO smsSummury VALUES("No.FuelWithdrawn:",@activeCustomersSave);
 
   END IF;
 
@@ -229,7 +257,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@savingsC;
 
 IF @savingsC>0 THEN 
-INSERT INTO smsSummury VALUES("SavingsAndDeposits:",@savingsC);
+INSERT INTO smsSummury VALUES("FuelDeposit:",@savingsC);
 END IF;
 
 
@@ -470,7 +498,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@savingDepositWith;
 
 IF @savingDepositWith>0 THEN 
-INSERT INTO smsSummury VALUES("SavingsWithdraws:",@savingDepositWith);
+INSERT INTO smsSummury VALUES("FuelWithdraw:",@savingDepositWith);
 END IF;
 
 -- INSERT INTO smsSummury VALUES("CC:",@OpeningCahdBala);
