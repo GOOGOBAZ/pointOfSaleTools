@@ -3296,6 +3296,11 @@ IF @trIdV=@LasttrId THEN
 
 -- postingTxnsX(NULL,'2022-01-21','Centenary Banks Bank Deposit Processed on 21/01/2022\n  From Cash At Hand','2022-01-21','2500000.0','-','1255300.0','01123000110','Centenary Bank','0002','BTN170707','Gen','10004','09:06:58','3','01122000110','01122000010','Dr','Main','NA');
 
+
+
+
+CALL postingTxnsX(NULL,'2022-06-20','OMODING JOHN 0759385796s Savings for Loan Payment\n  Dated 20/06/2022','2022-06-20','-','125000.0','150000.0','05502003910','OMODING JOHN 0759385796','000zib','BTN29294','LoanR','10001','08:56:30','27','01128000210','01128000010','Cr','Main','NA');
+
         DROP PROCEDURE IF EXISTS postingTxnsX;
 
 
