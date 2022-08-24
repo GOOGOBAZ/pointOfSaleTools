@@ -20,7 +20,7 @@ DECLARE l_done INT DEFAULT 0;
  DECLARE RunningBalanceNumberShares INT DEFAULT 0;
  DECLARE RunningBalanceValueOfShares INT DEFAULT 0;
 
-
+-- SELECT * FROM pmms.INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_TYPE = 'PROCEDURE';
 
  DECLARE accountNumbersShares CURSOR FOR SELECT DISTINCT account_number  FROM pmms.shares_run_bal;
 

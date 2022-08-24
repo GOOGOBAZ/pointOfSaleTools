@@ -2299,7 +2299,7 @@ END//
 
 -- SELECT SloanTrnId;
 
--- DROP TABLE IF EXISTS autoRenewalSettings;
+DROP TABLE IF EXISTS autoRenewalSettings;
 
 CREATE  TABLE autoRenewalSettings(
 id INTEGER NOT NULL, -- 0
@@ -3629,14 +3629,14 @@ INSERT INTO businessDetails VALUES(null,"BODA BODA","CUSTOMERS INVOLVED IN RIDIN
 
 
 
--- DROP TABLE IF EXISTS oneTimeUpdate;
--- CREATE  TABLE  IF NOT EXISTS   oneTimeUpdate(
--- id INTEGER NOT NULL,
---  PRIMARY KEY (id))
--- ENGINE = InnoDB
--- DEFAULT CHARACTER SET = utf8;
+DROP TABLE IF EXISTS oneTimeUpdate;
+CREATE  TABLE  IF NOT EXISTS   oneTimeUpdate(
+id INTEGER NOT NULL,
+ PRIMARY KEY (id))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
 
--- INSERT INTO oneTimeUpdate VALUES(1);
+INSERT INTO oneTimeUpdate VALUES(1);
 
 
 
@@ -13397,7 +13397,7 @@ END//
 
 UPDATE loandisburserepaystatement SET  LoanBalance=ExpectedTotalAmount WHERE ExpectedTotalAmount>0;
 
--- 02/06/2022	6	2022	0.0	0.0	0.0	0%	21200000	19975840	1224160	0	0	24160
+
 
 -- DROP TABLE backupEmailRecepients;
 -- -----------------------------------------------------
@@ -13421,7 +13421,7 @@ CREATE TABLE IF NOT EXISTS backupEmailRecepients (
 
 
 
-INSERT INTO backupEmailRecepients VALUES (NULL,2,'Cyprian','cypriangk@gmail.com');
+
 
 
 DROP PROCEDURE IF EXISTS TransactedAccountsNumbers;
@@ -13460,8 +13460,8 @@ account_loop: LOOP
 LEAVE account_loop;
 
  END IF;
- 
-SET @dueDateX = concat(CAST("SELECT COUNT(trn_id) INTO @itemsExist  FROM bsanca" AS CHAR CHARACTER SET utf8),accountNumber,CAST(" WHERE  trn_date=DATE(NOW())" AS CHAR CHARACTER SET utf8));
+--  WHERE trn_date>=DATE_SUB(DATE(NOW()), INTERVAL (DAYOFMONTH(DATE(NOW()))-1) DAY) AND trn_date<=DATE(NOW())
+SET @dueDateX = concat(CAST("SELECT COUNT(trn_id) INTO @itemsExist  FROM bsanca" AS CHAR CHARACTER SET utf8),accountNumber,CAST(" WHERE trn_date=DATE(NOW())" AS CHAR CHARACTER SET utf8));
   -- select  @dueDateX;
   PREPARE stmt2 FROM @dueDateX;
   EXECUTE stmt2;
@@ -13480,166 +13480,27 @@ END IF;
 SELECT * FROM theAccounts;
 
 END//
-DELIMITER ;
 
-
-DROP PROCEDURE IF EXISTS reculculateBalances;
-
- DELIMITER //
-
-CREATE PROCEDURE reculculateBalances() READS SQL DATA 
-
-OUTER_BLOCK: BEGIN
-DECLARE theId,counter INTEGER;
-DECLARE theLoanTxnId VARCHAR(20);
-DECLARE outerNotFound, c INTEGER DEFAULT 0;
-DECLARE totalPenaltyX,totalAccumlatedInterestX,AccumInterestPaid,PenaltyPaid,priBal,intBal,accumIntBal,loanPenBal,loanBal DOUBLE;
-DECLARE forLoanTxnId CURSOR FOR SELECT trn_id from pmms_loans.new_loan_appstore;
-
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
-
-
-
-OPEN forLoanTxnId; 
-
-LOANTXN_LOOP: LOOP 
-
-FETCH forLoanTxnId into theLoanTxnId;
-
-
- IF outerNotFound=1 THEN
-LEAVE LOANTXN_LOOP;
- END IF;
- 
-INNER_BLOCK: BEGIN
-DECLARE AmountPaidX,PrincipalPaidX,InterestPaidX,AccumulatedInterestPaidX,LoanPenaltyPaidX,PrincipalBalanceX,InterestBalanceX,AccumulatedInterestBalanceX,LoanPenaltyBalanceX,LoanBalanceX,
-AmountPaidXX,PrincipalPaidXX,InterestPaidXX,AccumulatedInterestPaidXX,LoanPenaltyPaidXX,PrincipalBalanceXX,InterestBalanceXX,AccumulatedInterestBalanceXX,LoanPenaltyBalanceXX,LoanBalanceXX
- DOUBLE; 
-DECLARE innerNotFound,theBatchNoS,TrnIdX INTEGER DEFAULT 0; 
-
-DECLARE forBatchNos CURSOR FOR SELECT  TrnId FROM loandisburserepaystatement WHERE loanTrnId= theLoanTxnId;
-
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
-
-
-SET counter=0;
- SET  @PrincipalBalanceX=NULL,@InterestBalanceX=NULL,@AccumulatedInterestBalanceX=NULL,@LoanPenaltyBalanceX=NULL,@LoanBalanceX=NULL;
-
-OPEN forBatchNos; 
-
-TXNIDS_LOOP:LOOP
-
-FETCH forBatchNos INTO theBatchNoS;
-
-IF counter=0 THEN
-
-SET @dueDateX1 = concat(CAST("SELECT AmountDisbursed,ExpectedInterest,AccumulatedInterestBalance,LoanPenaltyBalance,ExpectedTotalAmount INTO @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX FROM loandisburserepaystatement WHERE TrnId=" AS CHAR CHARACTER SET utf8),theBatchNoS,CAST(" AND ExpectedTotalAmount>0" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt21 FROM @dueDateX1;
-  EXECUTE stmt21;
-DROP PREPARE stmt21;
-
-END IF;
-
-
- IF innerNotFound=1 THEN
-LEAVE TXNIDS_LOOP;
- END IF;
-
-
-
-SET @dueDateX = concat(CAST("SELECT AmountPaid,PrincipalPaid,InterestPaid,AccumulatedInterestPaid,LoanPenaltyPaid INTO @AmountPaidX,@PrincipalPaidX,@InterestPaidX,@AccumulatedInterestPaidX,@LoanPenaltyPaidX FROM loandisburserepaystatement WHERE TrnId=" AS CHAR CHARACTER SET utf8),theBatchNoS);
-
-  PREPARE stmt2 FROM @dueDateX;
-  EXECUTE stmt2;
-DROP PREPARE stmt2;
-
-
-
- SELECT @AmountPaidX,@PrincipalPaidX,@InterestPaidX,@AccumulatedInterestPaidX,@LoanPenaltyPaidX ,theBatchNoS;
-
-
-
-SELECT @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX;
-
-SET @PrincipalBalanceX=@PrincipalBalanceX-@PrincipalPaidX,@InterestBalanceX=@InterestBalanceX-@InterestPaidX,@AccumulatedInterestBalanceX=@AccumulatedInterestBalanceX-@AccumulatedInterestPaidX,@LoanPenaltyBalanceX=@LoanPenaltyBalanceX-@LoanPenaltyPaidX,@LoanBalanceX=@LoanBalanceX-@AmountPaidX;
-
-
-IF ISNULL(@PrincipalBalanceX) THEN
-SET @PrincipalBalanceX=0.0;
-END IF;
-
-IF ISNULL(@InterestBalanceX) THEN
-SET @InterestBalanceX=0.0;
-END IF;
-
-IF ISNULL(@AccumulatedInterestBalanceX) THEN
-SET @AccumulatedInterestBalanceX=0.0;
-END IF;
-
-IF ISNULL(@LoanPenaltyBalanceX) THEN
-SET @LoanPenaltyBalanceX=0.0;
-END IF;
-
-IF ISNULL(@LoanBalanceX) THEN
-SET @LoanBalanceX=0.0;
-END IF;
-
-SELECT @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX,theBatchNoS;
-
-UPDATE loandisburserepaystatement SET PrincipalBalance=@PrincipalBalanceX,InterestBalance=@InterestBalanceX,AccumulatedInterestBalance=@AccumulatedInterestBalanceX,LoanPenaltyBalance=@LoanPenaltyBalanceX,LoanBalance=@LoanBalanceX WHERE  TrnId=theBatchNoS;
-
-
-
-SET @AmountPaidX=NULL,@PrincipalPaidX=NULL,@InterestPaidX=NULL,@AccumulatedInterestPaidX=NULL,@LoanPenaltyPaidX=NULL;
-SET counter=counter+1;
-SET innerNotFound=0;
-
-END LOOP TXNIDS_LOOP;
- CLOSE forBatchNos; 
-END INNER_BLOCK;
-
-
-SET outerNotFound=0;
- END LOOP LOANTXN_LOOP;
-CLOSE forLoanTxnId;
-END OUTER_BLOCK //
-
-DELIMITER ;
+ DELIMITER ;
 
 
 
 
--- 8	75786	closedloan805502088810	Completed
--- Credits	MURUNGI  SUZAN 0754607952	05502088810	Customer Deposits	0
--- 70051	GLADYS NAIRUBA 0757546932	SALARY	24	55000000	28929238	578585	0	29507823	1 MONTHS	28/02/2022	10001	Disbursed
--- call createdRenewedLoan(
---   '05502088810',
---   83000,
---   240,
---   30,
---   '2022-08-15',
---   1,
---   'DAYS',10001,1,'2022-07-13',10001,0,1,'BTN34249',1,4,75786);
--- 164	OLWENYI FREDRICK 0781-255501	
--- 5	70771	newloan05502016610	Renewed
--- CALL RepayTheLoanNow('05502085910',150000.0,'BTN34249',10001,'2022-08-10',10001);
 
--- CALL createNewLoan('05502088010',150000,240,30,'2022-08-09',1,'DAYS',10001,1.0,'2022-08-09',10003,0,1,'BTN34249',1) ;
+call createdRenewedLoan(
+  '05502002610',
+  178000,
+  240,
+  30,
+  '2022-08-17',
+  1,
+  'DAYS',10001,1,'2022-07-09',10001,0,1,'BTN34249',1,4,70584);
+2	70296	newloan05502036610	Disbursed
+-- CALL RepayTheLoanNow('05502036610',400000.0,'BTN34249',10001,'2022-08-05',10001);
 
--- CCOUNT FOR ACCOUNT NUMBER: 05502085910
+-- CALL createNewLoan('05502016110',300000,240,1,'2022-07-20',4,'MONTHS',10001,1.0,'2022-07-20',10005,0,1,'BTN34249',1) ;
 
--- 04/08/2022	04/08/2022	Sanyu Rehema 0757231081 Loan payment for Renewal Processed on 04/08/2022
-  -- LOAN PAYMENT	1045000.0	-	-1045000.0	BTN232287
-  -- CREATE PROCEDURE createdRenewedLoan(
-  -- IN accountNumber VARCHAR(60),
-  -- IN amount DOUBLE,
-  -- IN rate DOUBLE,
-  -- IN tenure DOUBLE,
-  -- IN theLastTransactionDate DATE,
-  -- IN periodTypeNumber DOUBLE,
-  -- IN periodTypeString VARCHAR(60),IN userId INT,IN interestRegime DOUBLE,IN initialDisburseDate DATE,IN loanOfficerId INT,IN thePeriodSet DOUBLE,IN theCompuM INT,IN batchNumber VARCHAR(30),IN buzId INT,IN renewals INT,IN theDisId INT) 
-
-
-
-  --  SELECT trn_id, remaining_instalments, princimpal_amount, total_interest, total_loanAmount,balance_due, TotalAccruedInterestPaid,TotalAccruedInterestRemaining,TotalAccumulatedInterestPaid,TotalAccumulatedInterestRemaining,TotalInterestPaid,TotalInterestRemaining,TotalLoanPenaltyPaid,TotalLoanPenaltyRemaining,TotalPrincipalPaid,TotalPrincipalRemaining,instalments_paid,instalment_next_due_date,trn_date,applicant_account_number,applicant_account_name FROM new_loan_appstore WHERE  loan_cycle_status='Disbursed';
+-- 25	BATE FRED 0758-542276	05502002610
+-- 3	70584	closedloan405502002610	Completed
+-- 09/07/2022	7	2022	350000	70000	420000	240%	0.0	0.0	0.0	0.0	0.0	420000
+-- 17/08/2022	8	2022	0.0	0.0	0.0	0%	178000	149994	28006	0	0	0
