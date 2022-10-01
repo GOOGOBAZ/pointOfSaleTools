@@ -3287,20 +3287,46 @@ IF @trIdV=@LasttrId THEN
 
 --  (1013,'2021-06-21','Provision for bad loans ,\n  Dated  21/06/2021','2021-06-21','3093225.7940000296','-','3.6965227214299995E8','05509000110','Provision for Bad Debts','000zib','BTN8576','System','10000','10:09:29','20','02235000110','02235000010','Dr','Main','NA')
 
--- CALL postingTxnsX(NULL,'2021-11-24','Rwehayo Chrispuss Savings for Loan Payment\n  Dated 24/11/2021','2021-11-24','5500000.0','-','5802688.0','05502035410','Rwehayo Chrispuss ','000zib','BTN33714','LoanR','10000','10:40:08','5','01122000210','01122000010','Dr','Main','NA');
+-- CALL postingTxnsX(NULL,'2022-09-16','Henry deposit Processed on 16/09/2022\n  From Equity float account','2022-09-16','-','1000000.0','427486.0','01122000610','Equity float account','0002','BTN165955','Gen','10019','16:36:58','184','01122000610','01122000010','Cr','Main','NA');
 
--- CALL postingTxnsX(NULL,'2021-07-22','Provision for bad loans ,\n  Dated  22/07/2021','2021-07-22','-','9736250.0','4.425071537943021E8','02235000110','Provision for Bad Debts','000zib','BTN8594','System','10000','13:28:43','10','05509000110','05509000010','Cr','Main','NA');
+-- CALL postingTxnsX(NULL,'2022-07-31','reversal nssf 5% Processed on 31/07/2022\n  From Accounts Payable','2022-07-31','-','219615.0','287741.0','05523000210','Accounts Payable','0002','BTN44551','Gen','10001','10:25:35','2','05501000110','05501000010','Cr','Main','NA');
 
 -- select  trn_id,trn_date,debit,credit, ledger_balance from   bsanca01122000110 WHERE trn_date>='2021-06-01' INTO OUTFILE 'aadesk1.sql' FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
 -- select * from bsanca01122000010 INTO OUTFILE 'AAFIE.sql'  FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
 
--- postingTxnsX(NULL,'2022-01-21','Centenary Banks Bank Deposit Processed on 21/01/2022\n  From Cash At Hand','2022-01-21','2500000.0','-','1255300.0','01123000110','Centenary Bank','0002','BTN170707','Gen','10004','09:06:58','3','01122000110','01122000010','Dr','Main','NA');
+
+
+
+-- CALL postingTxnsX(NULL,'2022-08-30','KOMUJUNI MONIC 0706838684s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','83333.0','5804000.0','05502003410','KOMUJUNI MONIC 0706838684','000zib','BTN36890','LoanR','10001','16:34:38','40','01128000110','01128000010','Cr','Main','NA');
+
+-- CALL postingTxnsX(NULL,'2022-08-30','KOMUJUNI MONIC 0706838684s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','30167.0','5804000.0','05502003410','KOMUJUNI MONIC 0706838684','000zib','BTN36890','LoanR','10001','16:34:38','40','03301000110','03301000010','Cr','Main','NA');
+
+-- CALL postingTxnsX(NULL,'2022-08-30','MAUDAH  JACENTAH 0750468649s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','191667','6768700.0','05502020610','MAUDAH  JACENTAH 0750468649','000zib','BTN36897','LoanR','10001','17:55:07','56','01128000110','01128000010','Cr','Main','NA');																											
+
+-- CALL postingTxnsX(NULL,'2022-08-30','MAUDAH  JACENTAH 0750468649s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','69033','6768700.0','05502020610','MAUDAH  JACENTAH 0750468649','000zib','BTN36897','LoanR','10001','17:55:07','56','03301000110','03301000010','Cr','Main','NA');	
+
+
+
+-- CALL postingTxnsX(NULL,'2022-08-30','ATUHAIRE OLIVIOUS 0742940856s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','166667','6995400.0','05502020710','ATUHAIRE OLIVIOUS 0742940856','000zib','BTN36898','LoanR','10001','17:56:53','60','01128000110','01128000010','Cr','Main','NA');																											
+
+-- CALL postingTxnsX(NULL,'2022-08-30','ATUHAIRE OLIVIOUS 0742940856s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','60033','6995400.0','05502020710','ATUHAIRE OLIVIOUS 0742940856','000zib','BTN36898','LoanR','10001','17:56:53','60','03301000110','03301000010','Cr','Main','NA');
+
+
+-- CALL postingTxnsX(NULL,'2022-08-30','NTIZIBWE ALEX 0752458511s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','125000','5594400.0','05502020110','NTIZIBWE ALEX 0752458511','000zib','BTN36911','LoanR','10001','18:29:00','88','01128000110','01128000010','Cr','Main','NA');																										
+																											
+
+-- CALL postingTxnsX(NULL,'2022-08-30','NTIZIBWE ALEX 0752458511s Account Deposit for Loan Payment\n  Dated 30/08/2022','2022-08-30','-','45000','5594400.0','05502020110','NTIZIBWE ALEX 0752458511','000zib','BTN36911','LoanR','10001','18:29:00','88','03301000110','03301000010','Cr','Main','NA');
+
+-- CALL postingTxnsX(NULL,'2022-09-02','Loan Insurance fees from AKABAFUNZAKI ANNET NIGHT 0755952577 Processed on 02/09/2022\n  Dated 02/09/2022','2022-09-02','-','36000.0','2803000.0','05502001310','AKABAFUNZAKI ANNET NIGHT 0755952577','000zib','BTN36980','Gen','10001','14:57:19','34','03310000110','03310000010','Cr','Main','NA');
+
+
+-- CALL postingTxnsX(NULL,'2022-05-17','mortgage fee from muhumuza Processed on 17/05/2022\n  From Accounts Payable','2022-05-17','-','600000.0','3000000.0','05502019610','Accounts Payable','0002','BTN43488','Gen','10001','06:07:21','23','05501000110','05501000010','Cr','Main','NA');
 
 
 
 
-CALL postingTxnsX(NULL,'2022-06-20','OMODING JOHN 0759385796s Savings for Loan Payment\n  Dated 20/06/2022','2022-06-20','-','125000.0','150000.0','05502003910','OMODING JOHN 0759385796','000zib','BTN29294','LoanR','10001','08:56:30','27','01128000210','01128000010','Cr','Main','NA');
 
+-- 30/08/2022	8	2022	0.0	0.0	0.0	0	260700	191667	69033	0	0	2487800
         DROP PROCEDURE IF EXISTS postingTxnsX;
 
 
@@ -3907,7 +3933,13 @@ SELECT @accountCat,@runngbal;
 -- SELECT Year, Product, SUM(Sale) AS Total_Sales FROM Sales GROUP BY Year ORDER BY Product;  
 
 -- SELECT Year, Product, Sale, SUM(Sale) OVER(PARTITION BY Year) AS Total_Sales FROM Sales;  
--- CALL adjustIds(3159,'01122000010');
+-- CALL adjustIds(384,'05501000010');
+
+
+-- CALL postingTxnsX(NULL,'2022-08-31','5% nssf reversal-wrong posting from last month Processed on 31/08/2022\n  From Accounts Payable','2022-08-31','-','219615.0','2239240.0','01118000110','Accounts Payable','0002','BTN44976','Gen','10001','15:20:45','237','05501000110','05501000010','Cr','Main','NA')
+
+
+-- CALL postingTxnsX(NULL,'2022-08-31','paye reversal-wrong posting from lst month Processed on 31/08/2022\n  From Accounts Payable','2022-08-31','-','912269.0','3151509.0','01118000110','Accounts Payable','0002','BTN44977','Gen','10001','15:20:46','239','05501000110','05501000010','Cr','Main','NA');
 
  DROP PROCEDURE IF EXISTS adjustIds;
 
@@ -3979,10 +4011,15 @@ DROP PREPARE stmt2;
 -- (23599,'2021-05-31','Tusaasirwe Jonards Account Deposit for Loan Payment\n  Dated 31/05/2021','2021-05-31','780000.0','-','01123000110','05502029910','Cash At Hand','000zib','BTN32271','LoanR','10000','12:26:48','4')
 
 
--- CALL postingTxnsX(1022,'2021-05-31','Tusaasirwe Jonards Account Deposit for Loan Payment\n  Dated 31/05/2021','2021-05-31','-','780000.0','785000.0','01123000110','Cash At Hand','0002','BTN32271','LoanR','10000','12:26:48','2','05502029910','05502000010','Cr','Main','NA');
+-- CALL postingTxnsX(NULL,'2022-04-30','phionah ampulire Processed on 30/04/2022\n  From Accounts Payable','2022-04-30','-','600000.0','24000010','05502032810','Accounts Payable','0002','BTN43269','Gen','10001','10:49:16','160','05501000110','05501000010','Cr','Main','NA');
+
+-- (1383,'2022-06-20','OMODING JOHN 0759385796s Savings for Loan Payment\n  Dated 20/06/2022','2022-06-20','150000.0','-','3.5399155E7','05502003910','OMODING JOHN 0759385796','000zib','BTN29294','LoanR','10001','08:56:30','26','01122000210','01122000010','Dr','Main','NA')
 
 
--- CALL postingTxnsX(NULL,'2021-10-01','Reversal of Excess Provision for bad loans,\n  Recognized on 01/10/2021','2021-10-01','2150375.675999999','-','4.956685208014726E8','02235000110','Provision for Bad Debts','000zib','BTN8647','System','10000','16:20:29','99','05509000110','05509000010','Dr','Main','NA');
+
+-- CALL postingTxnsX(NULL,'2022-07-31','reversal nssf Processed on 31/07/2022\n  From Accounts Payable','2022-07-31','-','219615.0','1707356','01122000210','Accounts Payable','0002','BTN44553','Gen','10001','10:43:44','6','05501000110','05501000010','Cr','Main','NA');
+
+
 -- trn_id ,trn_date ,value_date ,debit ,credit ,ledger_balance ,credit_account_no ,credit_account_name ,tra_ref_number ,chq_number ,trn_type ,staff_id ,trn_time ,trn_sq_no ,account_number ,master_number ,other_one ,other_two ,other_three 
 
 -- CALL adjustIds(1085,'05509000110');
@@ -3992,7 +4029,7 @@ DROP PREPARE stmt2;
 
 -- CALL postingTxnsX(NULL,'2021-10-06','Reversal of Excess Provision for bad loans,\n  Recognized on 06/10/2021','2021-10-06','4209779.509800136','-','4.9306077660685253E8','02235000110','Provision for Bad Debts','000zib','BTN8651','System','10000','13:56:56','74','05509000110','05509000010','Dr','Main','NA')
 
--- CALL adjustIds(1089,'05509000110');
+-- CALL adjustIds(1384,'05501000110');
 -- CALL adjustIds(90,'05509000010');
 
  /*=========================================SEQUENCE NUMBERING SYSTEM======================================================*/
@@ -6037,3 +6074,85 @@ SET l_done=0;
 END $$
 DELIMITER ;
 
+
+
+
+
+DROP PROCEDURE IF EXISTS deleteOldData;
+DELIMITER //
+CREATE PROCEDURE deleteOldData() READS SQL DATA 
+
+OUTER_BLOCK: BEGIN
+DECLARE theAccount VARCHAR(60);
+DECLARE outerNotFound, c INTEGER DEFAULT 0; 
+DECLARE forAccountNumbers CURSOR FOR SELECT account_number from account_created_store;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
+
+OPEN forAccountNumbers; 
+
+ACCOUNTS_LOOP: LOOP 
+
+FETCH forAccountNumbers INTO theAccount;
+
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
+ 
+ SELECT theAccount; 
+
+/* SET c=c+1; */
+/* SELECT c; */
+	-- Total					1584000			
+INNER_BLOCK: BEGIN
+
+DECLARE theBatchNoS INT;
+DECLARE innerNotFound INTEGER DEFAULT 0; 
+DECLARE forBatchNos CURSOR FOR SELECT instalment_no FROM new_loan_appstoreamort WHERE master1_id=theLoanTxnId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
+
+
+
+
+OPEN forBatchNos; 
+
+SELECT instalment_due_date INTO @theDueDate FROM new_loan_appstoreamort where instalment_no=1 AND master1_id=theLoanTxnId;
+ SELECT @theDueDate,theLoanTxnId;
+ SET @nextInstal=1;
+TXNIDS_LOOP:LOOP
+SET @theDueDate=DATE_ADD(@theDueDate, INTERVAL 1 DAY);
+SELECT @theDueDate;
+FETCH forBatchNos INTO theBatchNoS;
+SELECT  theBatchNoS;
+
+SELECT @nextInstal;
+  SET @sql_text = concat(CAST("UPDATE new_loan_appstoreamort SET instalment_due_date='" AS CHAR CHARACTER SET utf8),@theDueDate ,CAST("' WHERE instalment_no=" AS CHAR CHARACTER SET utf8),@nextInstal,CAST(" AND master1_id='" AS CHAR CHARACTER SET utf8),theLoanTxnId,CAST("'" AS CHAR CHARACTER SET utf8));
+    SELECT @sql_text; 
+PREPARE stmt FROM @sql_text;
+  EXECUTE stmt;
+DROP PREPARE stmt;
+SET @nextInstal=theBatchNoS+1;
+ IF innerNotFound=1 THEN
+ SET @nextInstal=NULL;
+LEAVE TXNIDS_LOOP;
+ END IF;
+
+
+
+SET innerNotFound=0;
+END LOOP TXNIDS_LOOP; 
+CLOSE forBatchNos; 
+END INNER_BLOCK;
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK//
+
+DELIMITER ;
+
+
+
+-- delete pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId where new_loan_appstore1.loan_cycle_status='Completed';
+
+-- delete pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId where new_loan_appstore1.loan_cycle_status='Completed';
