@@ -3287,7 +3287,7 @@ IF @trIdV=@LasttrId THEN
 
 --  (1013,'2021-06-21','Provision for bad loans ,\n  Dated  21/06/2021','2021-06-21','3093225.7940000296','-','3.6965227214299995E8','05509000110','Provision for Bad Debts','000zib','BTN8576','System','10000','10:09:29','20','02235000110','02235000010','Dr','Main','NA')
 
--- CALL postingTxnsX(NULL,'2022-09-16','Henry deposit Processed on 16/09/2022\n  From Equity float account','2022-09-16','-','1000000.0','427486.0','01122000610','Equity float account','0002','BTN165955','Gen','10019','16:36:58','184','01122000610','01122000010','Cr','Main','NA');
+-- CALL postingTxnsX(NULL,'2022-07-21','Loan processing fees from MUSOGA JAMAWA Processed on 21/07/2022\n  Dated 21/07/2022','2022-07-21','-','15000.0','3605800.0','01123000110','MUSOGA JAMAWA','000zib','BTN35716','Gen','10001','11:40:07','45','03315000110','03315000010','Cr','Main','NA');
 
 -- CALL postingTxnsX(NULL,'2022-07-31','reversal nssf 5% Processed on 31/07/2022\n  From Accounts Payable','2022-07-31','-','219615.0','287741.0','05523000210','Accounts Payable','0002','BTN44551','Gen','10001','10:25:35','2','05501000110','05501000010','Cr','Main','NA');
 
@@ -3871,10 +3871,6 @@ SELECT @accountCat,@runngbal;
 
 
 
-
-
-
-
  DROP PROCEDURE IF EXISTS updateAccountCreatedStoreBalance;
 
         DELIMITER //
@@ -3921,7 +3917,8 @@ SELECT @accountCat,@runngbal;
 
 --         DELIMITER ;
 
-
+-- 25/07/2022	25/07/2022	Loan processing fees from BANGA CHARLES 0757990172 Processed on 25/07/2022
+  -- Dated 25/07/2022	-	50000.0	50000.0	BTN35773
 -- START TRANSACTION: Start the transaction, autocommit is set to 0, if a transaction is already running, it will trigger a hidden COMMIT
 -- COMMIT: commit the transaction, save the changes, release the lock
 -- ROLLBACK: Roll back all changes to the database by this transaction, then end the transaction, release the lock
@@ -3933,10 +3930,11 @@ SELECT @accountCat,@runngbal;
 -- SELECT Year, Product, SUM(Sale) AS Total_Sales FROM Sales GROUP BY Year ORDER BY Product;  
 
 -- SELECT Year, Product, Sale, SUM(Sale) OVER(PARTITION BY Year) AS Total_Sales FROM Sales;  
--- CALL adjustIds(384,'05501000010');
+
+-- CALL adjustIds(70,'03325000010');
 
 
--- CALL postingTxnsX(NULL,'2022-08-31','5% nssf reversal-wrong posting from last month Processed on 31/08/2022\n  From Accounts Payable','2022-08-31','-','219615.0','2239240.0','01118000110','Accounts Payable','0002','BTN44976','Gen','10001','15:20:45','237','05501000110','05501000010','Cr','Main','NA')
+-- CALL postingTxnsX(NULL,'2022-07-25','Loan processing fees from BANGA CHARLES 0757990172 Processed on 25/07/2022\n  Dated 25/07/2022','2022-07-25','-','50000.0','3695800.0','05502019310','BANGA CHARLES 0757990172','000zib','BTN35773','Gen','10001','11:08:08','20','03315000110','03315000010','Cr','Main','NA');
 
 
 -- CALL postingTxnsX(NULL,'2022-08-31','paye reversal-wrong posting from lst month Processed on 31/08/2022\n  From Accounts Payable','2022-08-31','-','912269.0','3151509.0','01118000110','Accounts Payable','0002','BTN44977','Gen','10001','15:20:46','239','05501000110','05501000010','Cr','Main','NA');

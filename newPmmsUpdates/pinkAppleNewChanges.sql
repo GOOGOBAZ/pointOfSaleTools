@@ -3016,7 +3016,7 @@ CREATE PROCEDURE InterestManagementForLendersNonCompounded(IN loanIdZ VARCHAR(60
 
 
  /* DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;Decclare the variable for testing whether the cursor has ended */
-
+-- 1	LoanPyt	P&I	05502012410	01128000110	NAKATO FAUSTA RITAH NALWADDA 0708872755's Loan Payment	57,200	0	0	01/10/2022
 
  /* OPEN forSelectingLoanIds; Open the cursor holding loan ids for each customer */
 
@@ -3044,7 +3044,7 @@ SET @Ended=0;
 /*  SELECT lastDate;  *//*Testing*/
 
 SELECT instalment_next_due_date, interest_rate,TotalPrincipalRemaining,TotalInterestRemaining INTO lastDate,InterestRate,TotalprincinpalRemainingX,TotalinterestRemainingX FROM new_loan_appstore WHERE loan_id=loanIdZ; /* The due date since the last instalment is stored in the instalment_next_due_date column*/
-/* SELECT  lastDate,InterestRate,TotalprincinpalRemaining; */
+ SELECT  lastDate,InterestRate,TotalprincinpalRemainingX,TotalinterestRemainingX; 
 SELECT instalment_due_date INTO originalDueDate FROM new_loan_appstoreamort WHERE master2_id=loanIdZ;/* The instalment due date is the last due date*/
 
 SELECT interestinvoRemaining INTO totalInterest FROM interestcomputed WHERE loanId=loanIdZ AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1;/* The last interest computed*/
@@ -3053,14 +3053,12 @@ SELECT interestinvoRemaining INTO totalInterest FROM interestcomputed WHERE loan
 -- select lastDate;
 IF lastDate>=current_date() THEN /* Test whether the arrears last date is more than today's date*/
 
-
-
 SET @Ended=1;
 
 LEAVE Date_loop;
 
 END IF;
-
+-- 70045	05502000910	RUTH KIGOZI 0772397777	422.5072455050587	0	0	21125.362275252934	21547.86952075799	2022-10-08
 
 /* INSERT INTO new_loan_appstore2 SELECT * FROM new_loan_appstore WHERE loan_id=loanIdZ;
 
@@ -3081,6 +3079,8 @@ SET NEWTotalprincinpalRemainingX=@computableAmount;
 
 
 SET @pureDate=lastDate;  
+ 
+ SELECT @pureDat;
 
 CALL newDateConverted(@pureDate);
 
