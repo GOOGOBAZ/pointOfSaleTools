@@ -6151,6 +6151,11 @@ DELIMITER ;
 
 
 
--- delete pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId where new_loan_appstore1.loan_cycle_status='Completed';
+-- DELETE new_loan_appstore,new_loan_appstoreamort from new_loan_appstore INNER JOIN new_loan_appstoreamort ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.loan_cycle_status='Completed' AND new_loan_appstore.trn_date<='2022-07-30';
 
--- delete pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId where new_loan_appstore1.loan_cycle_status='Completed';
+-- DELETE pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId WHERE new_loan_appstore1.loan_cycle_status='Completed' AND new_loan_appstore1.trn_date<='2022-07-30';
+
+-- Debits	OFFICE FURNITURE & FITTINGS-HEF SACCO 018	01103001110	Furniture, Fixtures & Equipment	517966.0
+
+
+-- CALL postingTxnsX(NULL,'2022-09-30','Furniniture Processed on 30/09/2022\n  From Accounts Payable','2022-09-30','-','200','1358707.0','01103001110','SUSPENSE ACCOUNT FOR ADJUSTMENTS','0002','BTN44551','Gen','10001','10:25:35','2','05523000110','05523000010','Cr','Main','NA');

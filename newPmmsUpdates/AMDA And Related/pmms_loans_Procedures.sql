@@ -8748,7 +8748,7 @@ END IF;
 
 --  CALL cashAccountWasDebited(@batch,@cashDebited);
  
- 
+
 --   CALL cashAccountWasCredited(@batch,@cashCredited);
   
 -- /*   SELECT @cashDebited,@amountCredit; */
@@ -12195,7 +12195,7 @@ DELIMITER ; */
 
 
 
-   INSERT INTO loanArrearsSettings VALUES (NULL,0,4,1,1,10.0,2,1,1);
+   INSERT INTO loanArrearsSettings VALUES (NULL,1,4,1,1,10.0,2,1,1);
   /* DROP TABLE IF EXISTS loanArrearsIndividualSettings; */
 
  CREATE TABLE loanArrearsIndividualSettings (
