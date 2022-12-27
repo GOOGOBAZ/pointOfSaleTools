@@ -83,9 +83,9 @@ DROP PREPARE stmt2;
 
  CALL accountNma(accountNumber,@accountName);
 
-INSERT INTO  new_loan_appstore VALUES(theLoanTxnId,DATE(NOW()),theLoanId,tenure,tenure,amount,@totalInterestComputed,(amount+@totalInterestComputed),(amount+@totalInterestComputed),initialDisburseDate,@startDate,@endDate,rate,@accountName,'Renewed',TIME(CURRENT_TIMESTAMP),'0.0',((amount+@totalInterestComputed)/tenure),tenure,accountNumber,userId,theDisId,loanOfficerId,'G0001','GROUP1','1;NA;NA',buzId,renewals+1,batchNumber,'0.0',@totalInterestComputed,'0.0',amount,'0.0','0.0','0.0','0.0','0.0','0.0');
+INSERT INTO  new_loan_appstore VALUES(theLoanTxnId,DATE(NOW()),theLoanId,tenure,tenure,ROUND(amount,0),ROUND(@totalInterestComputed,0),ROUND((amount+@totalInterestComputed),0),ROUND((amount+@totalInterestComputed),0),initialDisburseDate,@startDate,@endDate,rate,@accountName,'Renewed',TIME(CURRENT_TIMESTAMP),'0.0',ROUND(((amount+@totalInterestComputed)/tenure),0),tenure,accountNumber,userId,theDisId,loanOfficerId,'G0001','GROUP1','1;NA;NA',buzId,renewals+1,batchNumber,'0.0',ROUND(@totalInterestComputed,0),'0.0',ROUND(amount,0),'0.0','0.0','0.0','0.0','0.0','0.0');
 
-INSERT INTO loanprocessingstore VALUES(NULL,theLastTransactionDate,amount,@totalInterestComputed,@nextDate,@endDate,tenure,'Renewed',@accountName,accountNumber);
+INSERT INTO loanprocessingstore VALUES(NULL,theLastTransactionDate,ROUND(amount,0),ROUND(@totalInterestComputed,0),@nextDate,@endDate,tenure,'Renewed',@accountName,accountNumber);
 
 INSERT INTO  new_loan_appstore1 VALUES(
   theLoanTxnId,
@@ -93,10 +93,10 @@ INSERT INTO  new_loan_appstore1 VALUES(
   theLoanId,
   tenure,
   tenure,
-  amount,
-  @totalInterestComputed,
-  (amount+@totalInterestComputed),
-  (amount+@totalInterestComputed),
+  ROUND(amount,0),
+  ROUND(@totalInterestComputed,0),
+  ROUND((amount+@totalInterestComputed),0),
+  ROUND((amount+@totalInterestComputed),0),
   initialDisburseDate,
   @startDate,
   @endDate,
@@ -105,7 +105,7 @@ INSERT INTO  new_loan_appstore1 VALUES(
   'Renewed',
   TIME(CURRENT_TIMESTAMP),
   '0.0',
-  ((amount+@totalInterestComputed)/tenure),
+  ROUND(((amount+@totalInterestComputed)/tenure),0),
   CONCAT(tenure," ",periodTypeString),
   accountNumber,
   userId,
@@ -118,9 +118,9 @@ INSERT INTO  new_loan_appstore1 VALUES(
   renewals+1,
   batchNumber,
   '0.0',
-  @totalInterestComputed,
+  ROUND(@totalInterestComputed,0),
   '0.0',
-  amount,
+  ROUND(amount,0),
   '0.0',
   '0.0',
   '0.0',
@@ -162,7 +162,7 @@ INSERT INTO  new_loan_appstore1 VALUES(
   );
 
 
-INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,DATE(NOW()),MONTH(DATE(NOW())),YEAR(DATE(NOW())),theLoanTxnId,theLoanId,accountNumber,batchNumber,amount,@totalInterestComputed,(amount+@totalInterestComputed),rate,'0.0','0.0','0.0','0.0','0.0',amount,@totalInterestComputed,'0.0','0.0',(amount+@totalInterestComputed),'Renewed',userId,loanOfficerId,'NA','NA');
+INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,DATE(NOW()),MONTH(DATE(NOW())),YEAR(DATE(NOW())),theLoanTxnId,theLoanId,accountNumber,batchNumber,ROUND(amount,0),ROUND(@totalInterestComputed,0),ROUND((amount+@totalInterestComputed),0),rate,'0.0','0.0','0.0','0.0','0.0',ROUND(amount,0),ROUND(@totalInterestComputed,0),'0.0','0.0',ROUND((amount+@totalInterestComputed),0),'Renewed',userId,loanOfficerId,'NA','NA');
 
 
 
@@ -247,19 +247,19 @@ DROP PREPARE stmt2;
 
  CALL accountNma(accountNumber,@accountName);
 -- SELECT buzId;
-INSERT INTO  new_loan_appstore VALUES(theLoanTxnId,amortizationDate,theLoanId,tenure,tenure,amount,@totalInterestComputed,(amount+@totalInterestComputed),(amount+@totalInterestComputed),amortizationDate,@startDate,@endDate,rate,@accountName,'Disbursed',TIME(CURRENT_TIMESTAMP),'0.0',((amount+@totalInterestComputed)/tenure),tenure,accountNumber,userId,theLoanTxnId,loanOfficerId,'G0001','GROUP1','1;NA;NA',buzId,0,batchNumber,'0.0',@totalInterestComputed,'0.0',amount,'0.0','0.0','0.0','0.0','0.0','0.0');
+INSERT INTO  new_loan_appstore VALUES(theLoanTxnId,amortizationDate,theLoanId,tenure,tenure,ROUND(amount,0),ROUND(@totalInterestComputed,0),ROUND((amount+@totalInterestComputed),0),ROUND((amount+@totalInterestComputed),0),amortizationDate,@startDate,@endDate,rate,@accountName,'Disbursed',TIME(CURRENT_TIMESTAMP),'0.0',ROUND(((amount+@totalInterestComputed)/tenure),0),tenure,accountNumber,userId,theLoanTxnId,loanOfficerId,'G0001','GROUP1','1;NA;NA',buzId,0,batchNumber,'0.0',ROUND(@totalInterestComputed,0),'0.0',ROUND(amount,0),'0.0','0.0','0.0','0.0','0.0','0.0');
 
-INSERT INTO loanprocessingstore VALUES(NULL,amortizationDate,amount,@totalInterestComputed,@startDate,@endDate,tenure,'Disbursed',@accountName,accountNumber);
+INSERT INTO loanprocessingstore VALUES(NULL,amortizationDate,ROUND(amount,0),ROUND(@totalInterestComputed,0),@startDate,@endDate,tenure,'Disbursed',@accountName,accountNumber);
 
 INSERT INTO  new_loan_appstore1 VALUES(
   theLoanTxnId,
   amortizationDate,
   theLoanId,tenure,
   tenure,
-  amount,
-  @totalInterestComputed,
-  (amount+@totalInterestComputed),
-  (amount+@totalInterestComputed),
+  ROUND(amount,0),
+  ROUND(@totalInterestComputed,0),
+  ROUND((amount+@totalInterestComputed),0),
+  ROUND((amount+@totalInterestComputed),0),
   amortizationDate,
   @startDate,
   @endDate,
@@ -268,7 +268,7 @@ INSERT INTO  new_loan_appstore1 VALUES(
   'Disbursed',
   TIME(CURRENT_TIMESTAMP),
   '0.0',
-  ((amount+@totalInterestComputed)/tenure),
+  ROUND(((amount+@totalInterestComputed)/tenure),0),
   CONCAT(tenure," ",periodTypeString),
   accountNumber,
   userId,
@@ -281,9 +281,9 @@ INSERT INTO  new_loan_appstore1 VALUES(
   0,
   batchNumber,
   '0.0',
-  @totalInterestComputed,
+  ROUND(@totalInterestComputed,0),
   '0.0',
-  amount,
+  ROUND(amount,0),
   '0.0',
   '0.0',
   '0.0',
@@ -325,11 +325,11 @@ INSERT INTO  new_loan_appstore1 VALUES(
   );
 
 
-INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,amortizationDate,MONTH(amortizationDate),YEAR(amortizationDate),theLoanTxnId,theLoanId,accountNumber,batchNumber,amount,@totalInterestComputed,(amount+@totalInterestComputed),rate,'0.0','0.0','0.0','0.0','0.0',amount,@totalInterestComputed,'0.0','0.0',(amount+@totalInterestComputed),'Disbursed',userId,loanOfficerId,'NA','NA');
+INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,amortizationDate,MONTH(amortizationDate),YEAR(amortizationDate),theLoanTxnId,theLoanId,accountNumber,batchNumber,ROUND(amount,0),ROUND(@totalInterestComputed,0),ROUND((amount+@totalInterestComputed),0),rate,'0.0','0.0','0.0','0.0','0.0',ROUND(amount,0),ROUND(@totalInterestComputed,0),'0.0','0.0',ROUND((amount+@totalInterestComputed),0),'Disbursed',userId,loanOfficerId,'NA','NA');
 
 SET @Month=  CONCAT(tenure," ",periodTypeString);
  IF @Month='1 MONTHS' OR @Month='1.O MONTHS' THEN 
- CALL createFirstInterestIntalment(theLoanId,@nextDate,amount,@totalInterestComputed);
+ CALL createFirstInterestIntalment(theLoanId,@startDate,ROUND(amount,0),ROUND(@totalInterestComputed,0));
  CALL createTheIndividualMethod(theLoanId);
 END IF;
 COMMIT;
@@ -1919,8 +1919,9 @@ DROP PREPARE stmt2;
 
 UPDATE new_loan_appstoreamort SET  instalment_paid=totalAmountPaid, InstalmentRemaining=totatAmountRemaianing,PrincipalPaid=totalPrincipalPaid,PrincipalRemaining=totalPrincipalRemaining WHERE  instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
+ CALL updatePrincimpalBalanceForAcrrualInterest(theLoanIdActual(theLoanId),totalPrincipalRemaining);
         -- SELECT 'PRINCIPAL',amountRemaining; 
-    IF totatAmountRemaianing<1 THEN
+    IF totatAmountRemaianing<9 THEN
       
      
 UPDATE  new_loan_appstoreamort  SET 
@@ -2293,6 +2294,21 @@ DELIMITER ;
 
 
 
+/* CURRENT SHIFT FUNCTION */
+
+DROP FUNCTION IF EXISTS theLoanIdActual;
+DELIMITER ##
+CREATE FUNCTION theLoanIdActual(theLoanTxnId INT) 
+RETURNS VARCHAR(100)
+DETERMINISTIC
+BEGIN
+DECLARE theIdLoan VARCHAR(100);
+
+SELECT loan_id INTO theIdLoan FROM new_loan_appstore WHERE  trn_id=theLoanTxnId;
+
+RETURN theIdLoan;
+END ##
+DELIMITER ;
 
 
 
@@ -2920,6 +2936,9 @@ DELIMITER ;
 
 
 
+
+
+
 DROP PROCEDURE IF EXISTS InitialInterestManagement;
 
 DELIMITER //
@@ -3270,6 +3289,30 @@ DELIMITER ;
 
 
 
+
+DROP PROCEDURE IF EXISTS newDateConverted;
+
+DELIMITER //
+
+CREATE PROCEDURE newDateConverted(INOUT  oldNewDate DATE) READS SQL DATA BEGIN
+
+
+
+SELECT DATE_ADD(oldNewDate, INTERVAL 1 MONTH) INTO oldNewDate;
+
+
+
+END //
+
+DELIMITER ;
+
+
+
+
+
+
+
+
 DROP PROCEDURE IF EXISTS updateAccountsAfterCompounded;
 
 DELIMITER //
@@ -3530,9 +3573,11 @@ SELECT interest_rate,TotalPrincipalRemaining INTO @InterestRate,@princinpalRemai
 
 SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE master2_id=loanIdUsed;
 
+-- SELECT @InterestRate,@princinpalRemaining,@originalDueDate;
 
 interestPayment_Loop: LOOP
 
+-- select 'loopNu';
 
 SELECT TrnId,InterestInvoRemaining, InterestPaidIn,InterestInvolved INTO 
 @theId,
@@ -3543,18 +3588,23 @@ FROM interestcomputed WHERE loanId=loanIdUsed AND loanStatusI='Pending' ORDER BY
 
 
  SET @inteDiff=InterestPaid-@interestRemaining;
+
+--  SELECT @inteDiff,InterestPaid,@interestRemaining;
  
  IF @inteDiff<=0 THEN 
  
 
  
  
- IF @inteDiff=0 THEN
+ IF @inteDiff<=1 THEN
  
 /*  SET @A=10;
   SELECT @A; */
  CALL newDateConverted(@originalDueDate);
- 
+--  SELECT @theId,
+-- @interestRemaining,
+-- @interestPaidnow,
+-- @InterestInveo ;
  UPDATE interestComputed SET InterestInvoRemaining=0.0,InterestPaidIn=@InterestInveo,loanStatusI='Paid' WHERE TrnId=@theId;
 
  SET InterestPaid=0.0;
@@ -3591,8 +3641,8 @@ FROM interestcomputed WHERE loanId=loanIdUsed AND loanStatusI='Pending' ORDER BY
 
 IF InterestPaid<=0.0 THEN
 
-/* 
-  SELECT @originalDueDate; */
+
+  -- SELECT @originalDueDate; 
 UPDATE new_loan_appstoreamort SET instalment_due_date=@originalDueDate WHERE master2_id=loanIdUsed;
 
 LEAVE interestPayment_Loop;
@@ -3609,8 +3659,10 @@ END //
 DELIMITER ;
 
 
-
-
+-- 9	CHRISTINE NABIRYE 0785095847	05502001010
+-- CALL DateManagementForLenders(1301071.0,'newloan05502001010');
+-- 03/08/2022	8	2022	0.0	0.0	0.0	0%	3210000	1908928.4951942377	1301071.5048057623	0	0	35892118.224005766
+-- CALL InitialInterestManagement()
 
 DROP PROCEDURE IF EXISTS createFirstInterestIntalment;
 
@@ -3619,6 +3671,19 @@ DELIMITER //
 CREATE PROCEDURE createFirstInterestIntalment(IN loanIdUsed VARCHAR(30),IN dueDate DATE,IN princinpalRemaining DOUBLE,IN interestInvo DOUBLE) READS SQL DATA BEGIN
 
 INSERT INTO interestComputed VALUES(null,loanIdUsed,dueDate,princinpalRemaining,interestInvo,0.0,interestInvo,interestInvo,0.0,interestInvo,'Pending'); 
+
+END //
+
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS updatePrincimpalBalanceForAcrrualInterest;
+
+DELIMITER //
+
+CREATE PROCEDURE updatePrincimpalBalanceForAcrrualInterest(IN loanIdUsed VARCHAR(60),IN princinpalRemaining DOUBLE) READS SQL DATA BEGIN
+
+UPDATE  interestComputed SET PrincimpalInvolved=princinpalRemaining WHERE loanId=loanIdUsed; 
 
 END //
 
@@ -3809,1461 +3874,61 @@ DELIMITER ;
 
 
 
--- CURRENT
-
-
-
--- /* AGING ANYLYSIS */
-
--- DROP PROCEDURE IF EXISTS agingAnalysis;
-
--- DELIMITER ##
-
--- CREATE PROCEDURE   agingAnalysis()
--- BEGIN
-   
---  DECLARE l_done,ID,arrears,numberOfGaurantors INT;
-
---  DECLARE loanPort,paidport,remainport,prince,princepaid,princeremain,p_remain,i_remain,interestRem DOUBLE;
-
---  DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,theLoanStatus,gaurantorName1,gaurantorContact1,gaurantorContact2,gaurantorName2 VARCHAR(45);
-
--- DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed' ;
- 
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
- 
--- SET ID =0;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis1x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis1x(id_1x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_1x));
-
--- DROP TABLE IF EXISTS aging_loan_analysis1;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, loan_deadline VARCHAR(60),PRIMARY KEY (id_1));
-
--- DROP TABLE IF EXISTS aging_loan_analysis2;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_2))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis3;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_3))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis4;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_4))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
--- DROP TABLE IF EXISTS aging_loan_analysis5;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_5))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
--- DROP TABLE IF EXISTS aging_loan_analysis6;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_6))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
--- DROP TABLE IF EXISTS aging_loan_analysis7;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 VARCHAR(60),customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining VARCHAR(60),principal_remaining VARCHAR(60),interest_remaining VARCHAR(60),principal_inarrears VARCHAR(60),interest_inarrears VARCHAR(60),number_of_days_in_arrears VARCHAR(60),loan_deadline VARCHAR(60))ENGINE = InnoDB
--- DEFAULT CHARACTER SET = utf8;
-
-
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis2x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis2x(id_2x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_2x))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis3x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis3x(id_3x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_3x))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis4x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis4x(id_4x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_4x))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
--- DROP TABLE IF EXISTS aging_loan_analysis5x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis5x(id_5x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_5x))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
--- DROP TABLE IF EXISTS aging_loan_analysis6x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis6x(id_6x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_6x))ENGINE = InnoDB
--- AUTO_INCREMENT =0
--- DEFAULT CHARACTER SET = utf8;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis8x;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis8x(id_8x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_8x))ENGINE = InnoDB
--- DEFAULT CHARACTER SET = utf8;
-
--- DROP TABLE IF EXISTS aging_loan_analysis8;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis8(id_8 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_8))ENGINE = InnoDB
--- DEFAULT CHARACTER SET = utf8;
-
-
--- DROP TABLE IF EXISTS aging_loan_analysis9;
-
--- CREATE TEMPORARY  TABLE aging_loan_analysis9(id_9 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_9))ENGINE = InnoDB
--- DEFAULT CHARACTER SET = utf8;
-
---  OPEN forSelectingLoanIds;
-
--- accounts_loop: LOOP 
-
-
-
---  FETCH forSelectingLoanIds into loanId;
- 
--- --  SELECT loanId;
-
---  IF l_done=1 THEN
-
--- LEAVE accounts_loop;
-
---  END IF;
--- -- SELECT loanId;
--- SELECT pl.applicant_account_name,m.mobile1,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.loan_cycle_status INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theLoanStatus FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
-
--- -- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain,loanId;
-
--- SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
-
-
--- SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=loanId;
--- -- SELECT loanId,numberOfGaurantors;
--- IF numberOfGaurantors=0 THEN
-
--- SET gaurantorName1='-',gaurantorContact1='-',gaurantorName2='-',gaurantorContact2='-';
--- END IF;
-
--- IF numberOfGaurantors=1 THEN
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId;
-
--- SET gaurantorName2='-',gaurantorContact2='-';
--- END IF;
-
-
-
--- IF numberOfGaurantors=2 THEN
--- -- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id ASC LIMIT 1;
--- SET @sql_text2 = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName1,@gaurantorContact1 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),loanId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
---   PREPARE stmt2 FROM @sql_text2;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
-
-
-
--- -- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName2,gaurantorContact2 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id DESC LIMIT 1;
-
-
--- SET @sql_text2X = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName2,@gaurantorContact2 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),loanId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
---   PREPARE stmt2X FROM @sql_text2X;
---   EXECUTE stmt2X;
--- DROP PREPARE stmt2X;
-
-
--- SELECT @gaurantorName1,@gaurantorContact1 INTO gaurantorName1,gaurantorContact1;
--- SELECT @gaurantorName2,@gaurantorContact2 INTO gaurantorName2,gaurantorContact2;
--- END IF;
-
---  SET ID=ID+1;
-
---  IF ISNULL(customerContactNumber) THEN
--- SET customerContactNumber="-";
---  END IF;
-
---  IF ISNULL(remainport) THEN
--- SET remainport=0;
---  END IF;
-
---   IF ISNULL(princeremain) THEN
--- SET princeremain=0;
---  END IF;
-
---  IF ISNULL(interestRem) THEN
--- SET interestRem=0;
---  END IF;
-
---   IF ISNULL(p_remain) THEN
--- SET p_remain=0;
---  END IF;
-
---   IF ISNULL(i_remain) THEN
--- SET i_remain=0;
---  END IF;
-
---    IF ISNULL(arrears) THEN
--- SET arrears=0;
---  END IF;
- 
-
--- SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
-
--- -- SELECT @INST;
-
---   IF ISNULL(@INST) THEN
--- SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
---  END IF;
-
--- IF theLoanStatus='Disbursed' THEN
-
--- INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
-
--- END IF;
-
-
--- IF theLoanStatus='Renewed' THEN
-
--- INSERT INTO aging_loan_analysis1x VALUES (ID,customerName,customerContactNumber,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
-
--- END IF;
-
-
-
---     SET l_done=0;
---  END LOOP accounts_loop;
-
---  CLOSE forSelectingLoanIds;
-
--- SELECT COUNT(id_1) INTO @port0  FROM aging_loan_analysis1 ;
---  SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
---  SELECT COUNT(id_1) INTO @port2  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
---   SELECT COUNT(id_1) INTO @port3  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
---    SELECT COUNT(id_1) INTO @port4  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
---  SELECT COUNT(id_1) INTO @port5  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360;
-
-
-
- 
--- IF @port1 >0 THEN
-
---   INSERT INTO  aging_loan_analysis2( 
---   id_2,
---   customer_name ,
---   customer_contact ,
---   date_taken,
---   due_date,
---   loans_remaining ,
---   principal_remaining ,
--- interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,
---   loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-  
--- END IF;
-
--- IF @port2 >0 THEN
-
---   INSERT INTO  aging_loan_analysis3( 
---   id_3,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
- 
--- END IF;
-
--- IF @port3 >0 THEN
-
-
---     INSERT INTO  aging_loan_analysis4( 
---   id_4,
---   customer_name ,
---   customer_contact ,
---      date_taken,
---      due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
-   
-
--- END IF;
-
--- IF @port4 >0 THEN
-
---     INSERT INTO  aging_loan_analysis5( 
---   id_5,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
- 
-
--- END IF;
-
--- IF @port5 >0 THEN
-
---     INSERT INTO  aging_loan_analysis6( 
---   id_6,
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
--- interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
--- END IF;
-
-
--- SELECT COUNT(id_1x) INTO @port0x  FROM aging_loan_analysis1x;
---  SELECT COUNT(id_1x) INTO @port1x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
---  SELECT COUNT(id_1x) INTO @port2x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
---   SELECT COUNT(id_1x) INTO @port3x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-
---    SELECT COUNT(id_1x) INTO @port4x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
---  SELECT COUNT(id_1x) INTO @port5x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360;
-
-
--- IF @port1x >0 THEN
-
---   INSERT INTO  aging_loan_analysis2x( 
---   id_2x,
---   customer_name ,
---   customer_contact ,
---   date_taken,
---   due_date,
---   loans_remaining ,
---   principal_remaining ,
--- interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
--- END IF;
-
--- IF @port2x >0 THEN
-
-  
---   INSERT INTO  aging_loan_analysis3x( 
---   id_3x,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
-  
--- END IF;
-
-
-
--- IF @port3x >0 THEN
- 
---     INSERT INTO  aging_loan_analysis4x( 
---   id_4x,
---   customer_name ,
---   customer_contact ,
---      date_taken,
---      due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
- 
--- END IF;
-
-
-
--- IF @port4x >0 THEN
-
---     INSERT INTO  aging_loan_analysis5x( 
---   id_5x,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
-  
--- END IF;
-
-
-
--- IF @port5x >0 THEN
-
---     INSERT INTO  aging_loan_analysis6x( 
---   id_6x,
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
--- interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   "-",
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-
--- END IF;
---  IF @port0 >0 THEN 
-   
--- INSERT INTO  aging_loan_analysis8( 
---   id_8,
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port0,
---   'TOTAL ACTIVE LOANS' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-","-"  FROM aging_loan_analysis1; 
--- END IF;
---  IF @port0x >0 THEN 
-   
--- INSERT INTO  aging_loan_analysis8x( 
---   id_8x,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---  @port0x,
---   'TOTAL RENEWED LOANS' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-" ,  "-" FROM aging_loan_analysis1x; 
-
-    
--- END IF;
-
---     IF @port0 >0 OR   @port0x >0 THEN   
--- INSERT INTO  aging_loan_analysis9( 
---   id_9,
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline
---   ) SELECT 
---   (@port0+@port0x),
---   'OVERALL TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( ot.loans_remaining) ,
---   SUM(ot.principal_remaining) ,
---   SUM(ot.interest_remaining),
---   SUM(ot.principal_inarrears) ,
---   SUM(ot.interest_inarrears) ,
---  "-" ,"-" FROM (SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1 UNION ALL SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1x) ot;  
---  END IF;
-
---  IF @port0 >0 THEN 
---  INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","ACTIVE LOANS","-","-","-","-","-","-","-");
--- END IF;
--- IF @port1 >0 THEN
---  INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
--- END IF;
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline
---   ) SELECT 
---    id_2,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline FROM aging_loan_analysis2;
-
- 
--- IF @port1 >0 THEN  
---   INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline
---   ) SELECT 
---   @port1,
---   'TOTAL' ,
---   "-" ,
---   "-" ,
---   "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-" , "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
-
--- END IF;
-
-
-  
--- IF @port2 >0 THEN
---    INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-  
--- END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline
---   ) SELECT 
---    id_3,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline FROM aging_loan_analysis3;
-    
-    
--- IF @port2 >0 THEN  
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline
---   ) SELECT 
---   @port2,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-" ,
---  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
---   --  INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-","-","-","-","-");
-
--- END IF;
-
---   IF @port3 >0 THEN
-
---    INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-",
---  "-" );
-
--- END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline
---   ) SELECT 
---    id_4,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline FROM aging_loan_analysis4;
-  
-  
--- IF @port3 >0 THEN
-   
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears   ,loan_deadline
---   ) SELECT 
---   @port3,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-",
---  "-" FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
--- END IF;
-
---   IF @port4 >0 THEN
---    INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-    
--- END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline
---   ) SELECT 
---    id_5,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline FROM aging_loan_analysis5;
-
-  
--- IF @port4 >0 THEN
-   
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears  ,loan_deadline
---   ) SELECT 
---   @port4,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-" ,"-" FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
--- END IF;
-  
-  
---   IF @port5 >0 THEN
---    INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-","-");
--- END IF;
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_6,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis6;
-  
-  
--- IF @port5 >0 THEN
- 
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port5,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-" ,"-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360; 
-
--- END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---      principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_8,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis8;
-
-
---  IF @port0x >0 THEN 
---  INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","RENEWED LOANS","-","-","-","-","-","-","-");
--- END IF;
-
--- IF @port1x >0 THEN
-
---  INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","RENEWED PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
--- END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_2x,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis2x;
-    
---     IF @port1x >0 THEN
-  
---   INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port1x,
---   'TOTAL' ,
---   "-" ,
---   "-" ,
---   "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
--- END IF;
-  
-  
--- IF @port2x >0 THEN
---    INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-
--- END IF;
-
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_3x,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis3x;
-    
-    
--- IF @port2x >0 THEN  
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port2x,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
--- END IF;
-  
---   IF @port3x >0 THEN
-
---    INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
--- END IF;
-
-
-
-
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_4x,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis4x;
-  
---   IF @port3x >0 THEN
-
-   
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port3x,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
--- END IF;
-  
--- IF @port4x >0 THEN
---    INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","RENEWED NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-
--- END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_5x,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis5x;
-
---   IF @port4x >0 THEN
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---     date_taken,
---     due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port4x,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
--- END IF;
-  
-  
---   IF @port5x >0 THEN
---    INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","RENEWED PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-","-");
---    END IF;
-
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_6x,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis6x;
-  
-  
--- IF @port5x >0 THEN
-   
--- INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---     date_taken,due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---   @port5x,
---   'TOTAL' ,
---   "-" ,
---     "-" ,
---       "-" ,
---  SUM( loans_remaining) ,
---   SUM(principal_remaining) ,
---   SUM(interest_remaining),
---   SUM(principal_inarrears) ,
---   SUM(interest_inarrears) ,
---  "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360; 
-
--- END IF;
-  
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,due_date,
---   loans_remaining ,
---      principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_8x,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis8x;
-
- 
--- IF @port0x >0 OR @port0 >0 THEN
---    INSERT INTO  aging_loan_analysis7( 
---   id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---     principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline
---   ) SELECT 
---    id_9,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis9;
--- END IF;
-
--- SELECT  id_7,
---   customer_name ,
---   customer_contact ,
---       date_taken,
---       due_date,
---   loans_remaining ,
---   principal_remaining ,
---   interest_remaining,
---   principal_inarrears ,
---   interest_inarrears ,
---   number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis7;
-  
--- END
-
--- ##
--- DELIMITER ;
-
--- -- CALL agingAnalysis();
-
-
-
-
-/* AGING ANYLYSIS */
-
-DROP PROCEDURE IF EXISTS agingAnalysis;
-
-DELIMITER ##
-
-CREATE PROCEDURE   agingAnalysis()
+DELIMITER //
+CREATE  PROCEDURE `agingAnalysis`()
 BEGIN
    
- DECLARE l_done,ID,arrears,numberOfGaurantors,TrnId INT;
+ DECLARE l_done,ID,arrears INT;
 
  DECLARE loanPort,paidport,remainport,prince,princepaid,princeremain,p_remain,i_remain,interestRem DOUBLE;
 
- DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,theLoanStatus,gaurantorName1,gaurantorContact1,gaurantorContact2,gaurantorName2 VARCHAR(45);
+ DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate VARCHAR(45);
 
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed' ;
+DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' ;
  
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
  
 SET ID =0;
 
-
-DROP TABLE IF EXISTS aging_loan_analysis1x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1x(id_1x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_1x));
-
 DROP TABLE IF EXISTS aging_loan_analysis1;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, loan_deadline VARCHAR(60),PRIMARY KEY (id_1));
+CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT);
 
 DROP TABLE IF EXISTS aging_loan_analysis2;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_2))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_2`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 
 DROP TABLE IF EXISTS aging_loan_analysis3;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_3))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_3`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 
 DROP TABLE IF EXISTS aging_loan_analysis4;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_4))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_4`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 DROP TABLE IF EXISTS aging_loan_analysis5;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_5))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_5`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 DROP TABLE IF EXISTS aging_loan_analysis6;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_6))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_6`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 DROP TABLE IF EXISTS aging_loan_analysis7;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 VARCHAR(60),customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining VARCHAR(60),principal_remaining VARCHAR(60),interest_remaining VARCHAR(60),principal_inarrears VARCHAR(60),interest_inarrears VARCHAR(60),number_of_days_in_arrears VARCHAR(60),loan_deadline VARCHAR(60))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-
-
-DROP TABLE IF EXISTS aging_loan_analysis2x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2x(id_2x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_2x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3x(id_3x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_3x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4x(id_4x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_4x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5x(id_5x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_5x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6x(id_6x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_6x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis8x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8x(id_8x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_8x))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis8;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8(id_8 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_8))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis9;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis9(id_9 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_9))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 INTEGER,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT)ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
  OPEN forSelectingLoanIds;
@@ -5274,1397 +3939,19 @@ accounts_loop: LOOP
 
  FETCH forSelectingLoanIds into loanId;
  
---  SELECT loanId;
+
+
 
  IF l_done=1 THEN
 
 LEAVE accounts_loop;
 
  END IF;
--- SELECT loanId;
-SELECT pl.applicant_account_name,m.mobile1,pl.trn_id,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.loan_cycle_status INTO customerName, customerContactNumber,TrnId,TrnDate,remainport,princeremain,interestRem,p_remain,theLoanStatus FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
+SELECT pl.applicant_account_name,m.mobile1,pl.trn_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
 
--- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain,loanId;
+SELECT SUM(PrincipalRemaining),SUM(InterestRemaing),numberOfDayInArrears(loanId) INTO p_remain,i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
 
-SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
 
-
-SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=TrnId;
--- SELECT loanId,numberOfGaurantors;
-IF numberOfGaurantors=0 THEN
-
-SET gaurantorName1='-',gaurantorContact1='-',gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-IF numberOfGaurantors=1 THEN
-SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=TrnId;
-
-SET gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-
-
-IF numberOfGaurantors=2 THEN
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id ASC LIMIT 1;
-SET @sql_text2 = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName1,@gaurantorContact1 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),TrnId,CAST(" ORDER BY id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2 FROM @sql_text2;
-  EXECUTE stmt2;
-DROP PREPARE stmt2;
-
-
-
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName2,gaurantorContact2 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id DESC LIMIT 1;
-
-
-SET @sql_text2X = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName2,@gaurantorContact2 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),TrnId,CAST(" ORDER BY id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2X FROM @sql_text2X;
-  EXECUTE stmt2X;
-DROP PREPARE stmt2X;
-
-
-SELECT @gaurantorName1,@gaurantorContact1 INTO gaurantorName1,gaurantorContact1;
-SELECT @gaurantorName2,@gaurantorContact2 INTO gaurantorName2,gaurantorContact2;
-END IF;
--- SELECT @gaurantorName1,@gaurantorContact1,@gaurantorName2,@gaurantorContact2;
- SET ID=ID+1;
-
- IF ISNULL(customerContactNumber) THEN
-SET customerContactNumber="-";
- END IF;
-
- IF ISNULL(remainport) THEN
-SET remainport=0;
- END IF;
-
-  IF ISNULL(princeremain) THEN
-SET princeremain=0;
- END IF;
-
- IF ISNULL(interestRem) THEN
-SET interestRem=0;
- END IF;
-
-  IF ISNULL(p_remain) THEN
-SET p_remain=0;
- END IF;
-
-  IF ISNULL(i_remain) THEN
-SET i_remain=0;
- END IF;
-
-   IF ISNULL(arrears) THEN
-SET arrears=0;
- END IF;
- 
-
-SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
-
--- SELECT @INST;
-
-  IF ISNULL(@INST) THEN
-SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
- END IF;
-
-IF theLoanStatus='Disbursed' THEN
-
-INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
-
-END IF;
-
-
-IF theLoanStatus='Renewed' THEN
-
-INSERT INTO aging_loan_analysis1x VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
-
-END IF;
-
-
-
-    SET l_done=0;
- END LOOP accounts_loop;
-
- CLOSE forSelectingLoanIds;
-
-SELECT COUNT(id_1) INTO @port0  FROM aging_loan_analysis1 ;
- SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
- SELECT COUNT(id_1) INTO @port2  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-  SELECT COUNT(id_1) INTO @port3  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-   SELECT COUNT(id_1) INTO @port4  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
- SELECT COUNT(id_1) INTO @port5  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360;
-
-
-
- 
-IF @port1 >0 THEN
-
-  INSERT INTO  aging_loan_analysis2( 
-  id_2,
-  customer_name ,
-  customer_contact ,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,
-  loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-  
-END IF;
-
-IF @port2 >0 THEN
-
-  INSERT INTO  aging_loan_analysis3( 
-  id_3,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-IF @port3 >0 THEN
-
-
-    INSERT INTO  aging_loan_analysis4( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port4 >0 THEN
-
-    INSERT INTO  aging_loan_analysis5( 
-  id_5,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
-
-IF @port5 >0 THEN
-
-    INSERT INTO  aging_loan_analysis6( 
-  id_6,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-SELECT COUNT(id_1x) INTO @port0x  FROM aging_loan_analysis1x;
- SELECT COUNT(id_1x) INTO @port1x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
- SELECT COUNT(id_1x) INTO @port2x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  SELECT COUNT(id_1x) INTO @port3x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-
-   SELECT COUNT(id_1x) INTO @port4x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
- SELECT COUNT(id_1x) INTO @port5x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360;
-
-
-IF @port1x >0 THEN
-
-  INSERT INTO  aging_loan_analysis2x( 
-  id_2x,
-  customer_name ,
-  customer_contact ,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port2x >0 THEN
-
-  
-  INSERT INTO  aging_loan_analysis3x( 
-  id_3x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port3x >0 THEN
- 
-    INSERT INTO  aging_loan_analysis4x( 
-  id_4x,
-  customer_name ,
-  customer_contact ,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-
-IF @port4x >0 THEN
-
-    INSERT INTO  aging_loan_analysis5x( 
-  id_5x,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port5x >0 THEN
-
-    INSERT INTO  aging_loan_analysis6x( 
-  id_6x,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
- IF @port0 >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8( 
-  id_8,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port0,
-  'TOTAL ACTIVE LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1; 
-END IF;
- IF @port0x >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8x( 
-  id_8x,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
- @port0x,
-  'TOTAL RENEWED LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,  "-" FROM aging_loan_analysis1x; 
-
-    
-END IF;
-
-    IF @port0 >0 OR   @port0x >0 THEN   
-INSERT INTO  aging_loan_analysis9( 
-  id_9,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline
-  ) SELECT 
-  (@port0+@port0x),
-  'OVERALL TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(ot.interest_remaining),
-  SUM(ot.principal_inarrears) ,
-  SUM(ot.interest_inarrears) ,
- "-" ,"-" FROM (SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1 UNION ALL SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1x) ot;  
- END IF;
-
- IF @port0 >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","ACTIVE LOANS","-","-","-","-","-","-","-");
-END IF;
-IF @port1 >0 THEN
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline
-  ) SELECT 
-   id_2,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline FROM aging_loan_analysis2;
-
- 
-IF @port1 >0 THEN  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline
-  ) SELECT 
-  @port1,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" , "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
-
-END IF;
-
-
-  
-IF @port2 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-  
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline
-  ) SELECT 
-   id_3,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline FROM aging_loan_analysis3;
-    
-    
-IF @port2 >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline
-  ) SELECT 
-  @port2,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  --  INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-","-","-","-","-");
-
-END IF;
-
-  IF @port3 >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-",
- "-" );
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline
-  ) SELECT 
-   id_4,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline FROM aging_loan_analysis4;
-  
-  
-IF @port3 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears   ,loan_deadline
-  ) SELECT 
-  @port3,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-",
- "-" FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-
-  IF @port4 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-    
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline
-  ) SELECT 
-   id_5,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline FROM aging_loan_analysis5;
-
-  
-IF @port4 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline
-  ) SELECT 
-  @port4,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-" FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_6,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis6;
-  
-  
-IF @port5 >0 THEN
- 
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port5,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360; 
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_8,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis8;
-
-
- IF @port0x >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","RENEWED LOANS","-","-","-","-","-","-","-");
-END IF;
-
-IF @port1x >0 THEN
-
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","RENEWED PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_2x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis2x;
-    
-    IF @port1x >0 THEN
-  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port1x,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
-END IF;
-  
-  
-IF @port2x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-
-END IF;
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_3x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis3x;
-    
-    
-IF @port2x >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port2x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-END IF;
-  
-  IF @port3x >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-END IF;
-
-
-
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_4x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis4x;
-  
-  IF @port3x >0 THEN
-
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port3x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-  
-IF @port4x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","RENEWED NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_5x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis5x;
-
-  IF @port4x >0 THEN
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port4x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","RENEWED PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-","-");
-   END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_6x,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis6x;
-  
-  
-IF @port5x >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port5x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360; 
-
-END IF;
-  
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_8x,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis8x;
-
- 
-IF @port0x >0 OR @port0 >0 THEN
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-    principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_9,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis9;
-END IF;
-
-SELECT  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis7;
-  
-END
-
-##
-DELIMITER ;
-
--- CALL agingAnalysis();
-
-
-
-
-
-
-/*  aging Analysis Staff */
-DROP PROCEDURE IF EXISTS agingAnalysisStaff;
-
-DELIMITER ##
-
-CREATE PROCEDURE   agingAnalysisStaff(IN staffId INT)
-BEGIN
-   
-   
- DECLARE l_done,ID,arrears,numberOfGaurantors,TrnId INT;
-
- DECLARE loanPort,paidport,remainport,prince,princepaid,princeremain,p_remain,i_remain,interestRem DOUBLE;
-
- DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,theLoanStatus,gaurantorName1,gaurantorContact1,gaurantorContact2,gaurantorName2 VARCHAR(45); 
-
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed') AND gruop_id=staffId  ;
- 
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
- 
-SET ID =0;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis1x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1x(id_1x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_1x));
-
-DROP TABLE IF EXISTS aging_loan_analysis1;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, loan_deadline VARCHAR(60),PRIMARY KEY (id_1));
-
-DROP TABLE IF EXISTS aging_loan_analysis2;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_2))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_3))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_4))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_5))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_6))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis7;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 VARCHAR(60),customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining VARCHAR(60),principal_remaining VARCHAR(60),interest_remaining VARCHAR(60),principal_inarrears VARCHAR(60),interest_inarrears VARCHAR(60),number_of_days_in_arrears VARCHAR(60),loan_deadline VARCHAR(60))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-
-
-DROP TABLE IF EXISTS aging_loan_analysis2x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2x(id_2x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_2x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3x(id_3x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_3x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4x(id_4x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_4x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5x(id_5x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60),PRIMARY KEY (id_5x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6x(id_6x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_6x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis8x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8x(id_8x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_8x))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis8;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8(id_8 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_8))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis9;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis9(id_9 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining  VARCHAR(60),principal_remaining  VARCHAR(60),interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,loan_deadline VARCHAR(60), PRIMARY KEY (id_9))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
- OPEN forSelectingLoanIds;
-
-accounts_loop: LOOP 
-
-
-
- FETCH forSelectingLoanIds into loanId;
- 
---  SELECT loanId;
-
- IF l_done=1 THEN
-
-LEAVE accounts_loop;
-
- END IF;
-
-SELECT pl.applicant_account_name,m.mobile1,pl.trn_id,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.loan_cycle_status INTO customerName, customerContactNumber,TrnId,TrnDate,remainport,princeremain,interestRem,p_remain,theLoanStatus FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
--- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain;
-SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
-
--- SELECT p_remain,i_remain,arrears;
-
-
-
-
-SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=TrnId;
--- SELECT loanId,numberOfGaurantors;
-IF numberOfGaurantors=0 THEN
-
-SET gaurantorName1='-',gaurantorContact1='-',gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-IF numberOfGaurantors=1 THEN
-SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=TrnId;
-
-SET gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-
-
-IF numberOfGaurantors=2 THEN
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id ASC LIMIT 1;
-SET @sql_text2 = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName1,@gaurantorContact1 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),TrnId,CAST(" ORDER BY id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2 FROM @sql_text2;
-  EXECUTE stmt2;
-DROP PREPARE stmt2;
-
-
-
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName2,gaurantorContact2 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id DESC LIMIT 1;
-
-
-SET @sql_text2X = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName2,@gaurantorContact2 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),TrnId,CAST(" ORDER BY id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2X FROM @sql_text2X;
-  EXECUTE stmt2X;
-DROP PREPARE stmt2X;
-
-
-SELECT @gaurantorName1,@gaurantorContact1 INTO gaurantorName1,gaurantorContact1;
-SELECT @gaurantorName2,@gaurantorContact2 INTO gaurantorName2,gaurantorContact2;
-END IF;
 
  SET ID=ID+1;
 
@@ -6691,2930 +3978,16 @@ SET i_remain=0;
    IF ISNULL(arrears) THEN
 SET arrears=0;
  END IF;
- 
 
-SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
-
--- SELECT @INST;
-
-  IF ISNULL(@INST) THEN
-SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
- END IF;
-
-IF theLoanStatus='Disbursed' THEN
-
-INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
-
-END IF;
-
-
-IF theLoanStatus='Renewed' THEN
-
-INSERT INTO aging_loan_analysis1x VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
-
-END IF;
-
+INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,DATE_FORMAT(TrnDate,'%d/%m/%Y'),DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y'),remainport,princeremain,interestRem,p_remain,i_remain,arrears);
 
 
     SET l_done=0;
  END LOOP accounts_loop;
 
  CLOSE forSelectingLoanIds;
-SELECT COUNT(id_1) INTO @port0  FROM aging_loan_analysis1 ;
- SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
- SELECT COUNT(id_1) INTO @port2  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-  SELECT COUNT(id_1) INTO @port3  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-   SELECT COUNT(id_1) INTO @port4  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
 
- SELECT COUNT(id_1) INTO @port5  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360;
-
-
-
- 
-IF @port1 >0 THEN
-
-  INSERT INTO  aging_loan_analysis2( 
-  id_2,
-  customer_name ,
-  customer_contact ,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-  
-END IF;
-
-IF @port2 >0 THEN
-
-  INSERT INTO  aging_loan_analysis3( 
-  id_3,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-IF @port3 >0 THEN
-
-
-    INSERT INTO  aging_loan_analysis4( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port4 >0 THEN
-
-    INSERT INTO  aging_loan_analysis5( 
-  id_5,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
-
-IF @port5 >0 THEN
-
-    INSERT INTO  aging_loan_analysis6( 
-  id_6,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-SELECT COUNT(id_1x) INTO @port0x  FROM aging_loan_analysis1x;
- SELECT COUNT(id_1x) INTO @port1x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
- SELECT COUNT(id_1x) INTO @port2x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  SELECT COUNT(id_1x) INTO @port3x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-
-   SELECT COUNT(id_1x) INTO @port4x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
- SELECT COUNT(id_1x) INTO @port5x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360;
-
-
-IF @port1x >0 THEN
-
-  INSERT INTO  aging_loan_analysis2x( 
-  id_2x,
-  customer_name ,
-  customer_contact ,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port2x >0 THEN
-
-  
-  INSERT INTO  aging_loan_analysis3x( 
-  id_3x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port3x >0 THEN
- 
-    INSERT INTO  aging_loan_analysis4x( 
-  id_4x,
-  customer_name ,
-  customer_contact ,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-
-IF @port4x >0 THEN
-
-    INSERT INTO  aging_loan_analysis5x( 
-  id_5x,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port5x >0 THEN
-
-    INSERT INTO  aging_loan_analysis6x( 
-  id_6x,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
-
- IF @port0 >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8( 
-  id_8,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port0,
-  'TOTAL ACTIVE LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1; 
-END IF;
- IF @port0x >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8x( 
-  id_8x,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
- @port0x,
-  'TOTAL RENEWED LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-"  FROM aging_loan_analysis1x; 
-
-    
-END IF;
-
-   
-INSERT INTO  aging_loan_analysis9( 
-  id_9,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  (@port0+@port0x),
-  'OVERALL TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(ot.interest_remaining),
-  SUM(ot.principal_inarrears) ,
-  SUM(ot.interest_inarrears) ,
- "-" ,"-" FROM (SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1 UNION ALL SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1x) ot;  
- 
-
- IF @port0 >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","ACTIVE LOANS","-","-","-","-","-","-","-");
-END IF;
-IF @port1 >0 THEN
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_2,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis2;
-
- 
-IF @port1 >0 THEN  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port1,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-",
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
-
-END IF;
-
-
-  
-IF @port2 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-  
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_3,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis3;
-    
-    
-IF @port2 >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port2,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  --  INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-","-","-","-","-");
-
-END IF;
-
-  IF @port3 >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_4,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis4;
-  
-  
-IF @port3 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port3,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-" FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-
-  IF @port4 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-    
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_5,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis5;
-
-  
-IF @port4 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port4,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_6,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears,loan_deadline  FROM aging_loan_analysis6;
-  
-  
-IF @port5 >0 THEN
- 
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port5,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" , "-" FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360; 
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_8,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline FROM aging_loan_analysis8;
-
-
- IF @port0x >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","RENEWED LOANS","-","-","-","-","-","-","-");
-END IF;
-
-IF @port1x >0 THEN
-
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","RENEWED PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_2x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis2x;
-    
-    IF @port1x >0 THEN
-  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port1x,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-" FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
-END IF;
-  
-  
-IF @port2x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-
-END IF;
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_3x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis3x;
-    
-    
-IF @port2x >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-  @port2x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-" FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-END IF;
-  
-  IF @port3x >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-","-");
-END IF;
-
-
-
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline
-  ) SELECT 
-   id_4x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis4x;
-  
-  IF @port3x >0 THEN
-
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline 
-  ) SELECT 
-  @port3x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-","-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-  
-IF @port4x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","RENEWED NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline 
-  ) SELECT 
-   id_5x,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline  FROM aging_loan_analysis5x;
-
-  IF @port4x >0 THEN
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline 
-  ) SELECT 
-  @port4x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-" ,"-" FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","RENEWED PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-","-");
-   END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline 
-  ) SELECT 
-   id_6x,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline  FROM aging_loan_analysis6x;
-  
-  
-IF @port5x >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline 
-  ) SELECT 
-  @port5x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-  "-" ,
-      "-" ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-", "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360; 
-
-END IF;
-  
-IF @port0 >0 OR @port0x >0 THEN
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline 
-  ) SELECT 
-   id_8x,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline  FROM aging_loan_analysis8x;
-END IF;
-IF @port0 >0 OR @port0x >0 THEN
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-    principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline 
-  ) SELECT 
-   id_9,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  ,loan_deadline FROM aging_loan_analysis9;
-END IF;
-SELECT  id_7,
-  customer_name ,
-  customer_contact ,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears ,loan_deadline FROM aging_loan_analysis7;
-  
-END
-
-##
-DELIMITER ;
-
--- CALL agingAnalysisStaff();
-
-
-
-
-
-
-
-/* AGING ANYLYSIS */
-
-DROP PROCEDURE IF EXISTS agingAnalysisG;
-
-DELIMITER ##
-
-CREATE PROCEDURE   agingAnalysisG()
-BEGIN
-   
- DECLARE l_done,ID,arrears,numberOfGaurantors,numberOfGaurantors INT;
-
- DECLARE loanPort,paidport,remainport,prince,princepaid,princeremain,p_remain,i_remain,interestRem DOUBLE;
-
- DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,theLoanStatus,gaurantorName1,gaurantorContact1,gaurantorContact2,gaurantorName2 VARCHAR(60);
-
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed' ;
- 
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
- 
-SET ID =0;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis1x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1x(id_1x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_1x));
-
-DROP TABLE IF EXISTS aging_loan_analysis1;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_1));
-
-DROP TABLE IF EXISTS aging_loan_analysis2;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_2))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_3))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_4))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_5))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_6))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis7;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 VARCHAR(60),customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining VARCHAR(60),principal_remaining VARCHAR(60),interest_remaining VARCHAR(60),principal_inarrears VARCHAR(60),interest_inarrears VARCHAR(60),number_of_days_in_arrears VARCHAR(60))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-
-
-DROP TABLE IF EXISTS aging_loan_analysis2x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2x(id_2x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_2x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3x(id_3x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_3x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4x(id_4x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_4x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5x(id_5x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_5x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6x(id_6x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_6x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis8x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8x(id_8x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_8x))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis8;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8(id_8 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_8))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis9;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis9(id_9 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_9))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
- OPEN forSelectingLoanIds;
-
-accounts_loop: LOOP 
-
-
-
- FETCH forSelectingLoanIds into loanId;
- 
---  SELECT loanId;
-
- IF l_done=1 THEN
-
-LEAVE accounts_loop;
-
- END IF;
-
-SELECT pl.applicant_account_name,m.mobile1,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.loan_cycle_status INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theLoanStatus FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
--- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain;
-SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
-
-
-SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=loanId;
--- SELECT loanId,numberOfGaurantors;
-IF numberOfGaurantors=0 THEN
-
-SET gaurantorName1='-',gaurantorContact1='-',gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-IF numberOfGaurantors=1 THEN
-SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId;
-
-SET gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-
-
-IF numberOfGaurantors=2 THEN
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id ASC LIMIT 1;
-SET @sql_text2 = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName1,@gaurantorContact1 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),loanId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2 FROM @sql_text2;
-  EXECUTE stmt2;
-DROP PREPARE stmt2;
-
-
-
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName2,gaurantorContact2 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id DESC LIMIT 1;
-
-
-SET @sql_text2X = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName2,@gaurantorContact2 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),loanId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2X FROM @sql_text2X;
-  EXECUTE stmt2X;
-DROP PREPARE stmt2X;
-
-
-SELECT @gaurantorName1,@gaurantorContact1 INTO gaurantorName1,gaurantorContact1;
-SELECT @gaurantorName2,@gaurantorContact2 INTO gaurantorName2,gaurantorContact2;
-END IF;
-
- SET ID=ID+1;
-
- IF ISNULL(remainport) THEN
-SET remainport=0;
- END IF;
-
-  IF ISNULL(princeremain) THEN
-SET princeremain=0;
- END IF;
-
- IF ISNULL(interestRem) THEN
-SET interestRem=0;
- END IF;
-
-  IF ISNULL(p_remain) THEN
-SET p_remain=0;
- END IF;
-
-  IF ISNULL(i_remain) THEN
-SET i_remain=0;
- END IF;
-
-   IF ISNULL(arrears) THEN
-SET arrears=0;
- END IF;
- 
-
-SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
-
--- SELECT @INST;
-
-  IF ISNULL(@INST) THEN
-SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
- END IF;
-
-IF theLoanStatus='Disbursed' THEN
-
-INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
-
-END IF;
-
-
-IF theLoanStatus='Renewed' THEN
-
-INSERT INTO aging_loan_analysis1x VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
-
-END IF;
-
-
-
-
-
-    SET l_done=0;
- END LOOP accounts_loop;
-
- CLOSE forSelectingLoanIds;
-SELECT COUNT(id_1) INTO @port0  FROM aging_loan_analysis1 ;
- SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
- SELECT COUNT(id_1) INTO @port2  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-  SELECT COUNT(id_1) INTO @port3  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-   SELECT COUNT(id_1) INTO @port4  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
- SELECT COUNT(id_1) INTO @port5  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360;
-
-
-
- 
-IF @port1 >0 THEN
-
-  INSERT INTO  aging_loan_analysis2( 
-  id_2,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-  
-END IF;
-
-IF @port2 >0 THEN
-
-  INSERT INTO  aging_loan_analysis3( 
-  id_3,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-IF @port3 >0 THEN
-
-
-    INSERT INTO  aging_loan_analysis4( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port4 >0 THEN
-
-    INSERT INTO  aging_loan_analysis5( 
-  id_5,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
-
-IF @port5 >0 THEN
-
-    INSERT INTO  aging_loan_analysis6( 
-  id_6,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-SELECT COUNT(id_1x) INTO @port0x  FROM aging_loan_analysis1x;
- SELECT COUNT(id_1x) INTO @port1x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
- SELECT COUNT(id_1x) INTO @port2x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  SELECT COUNT(id_1x) INTO @port3x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-
-   SELECT COUNT(id_1x) INTO @port4x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
- SELECT COUNT(id_1x) INTO @port5x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360;
-
-
-IF @port1x >0 THEN
-
-  INSERT INTO  aging_loan_analysis2x( 
-  id_2x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port2x >0 THEN
-
-  
-  INSERT INTO  aging_loan_analysis3x( 
-  id_3x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port3x >0 THEN
- 
-    INSERT INTO  aging_loan_analysis4x( 
-  id_4x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-
-IF @port4x >0 THEN
-
-    INSERT INTO  aging_loan_analysis5x( 
-  id_5x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port5x >0 THEN
-
-    INSERT INTO  aging_loan_analysis6x( 
-  id_6x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
- IF @port0 >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8( 
-  id_8,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port0,
-  'TOTAL ACTIVE LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
-         "-" ,
-            "-" ,
-               "-" ,
-                  "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1; 
-END IF;
- IF @port0x >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8x( 
-  id_8x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
- @port0x,
-  'TOTAL RENEWED LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
-      "-" ,
-      "-" ,
-      "-" ,
-      "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x; 
-
-    
-END IF;
-
-    IF @port0 >0 OR   @port0x >0 THEN   
-INSERT INTO  aging_loan_analysis9( 
-  id_9,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  (@port0+@port0x),
-  'OVERALL TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
-            "-" ,
-              "-" ,
- SUM( ot.loans_remaining) ,
-  SUM(ot.principal_remaining) ,
-  SUM(ot.interest_remaining),
-  SUM(ot.principal_inarrears) ,
-  SUM(ot.interest_inarrears) ,
- "-"  FROM (SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1 UNION ALL SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1x) ot;  
- END IF;
-
- IF @port0 >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","-","-","-","-","ACTIVE LOANS","-","-","-","-","-","-");
-END IF;
-IF @port1 >0 THEN
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","-","-","-","-","PERFORMING PORTFOLIO","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_2,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis2;
-
- 
-IF @port1 >0 THEN  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port1,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
-
-END IF;
-
-
-  
-IF @port2 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","-","-","-","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-");
-  
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_3,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis3;
-    
-    
-IF @port2 >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port2,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-            "-" ,
-                  "-" ,
-                        "-" ,
-                              "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  --  INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-","-","-","-","-");
-
-END IF;
-
-  IF @port3 >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_4,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis4;
-  
-  
-IF @port3 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port3,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-           "-" ,
-                "-" ,
-                     "-" ,
-                          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-
-  IF @port4 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","-" ,"-" , "-" ,"-" ,"NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-");
-    
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_5,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis5;
-
-  
-IF @port4 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port4,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-          "-" ,
-              "-" ,
-                  "-" ,
-                      "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","-","-","-","-","PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_6,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis6;
-  
-  
-IF @port5 >0 THEN
- 
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port5,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-       "-" ,
-        "-" ,
-         "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360; 
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_8,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis8;
-
-
- IF @port0x >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","-","-","-","-","RENEWED LOANS","-","-","-","-","-","-");
-END IF;
-
-IF @port1x >0 THEN
-
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","-","-","-","-","RENEWED PERFORMING PORTFOLIO","-","-","-","-","-","-","-");
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_2x,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis2x;
-    
-    IF @port1x >0 THEN
-  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port1x,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
-END IF;
-  
-  
-IF @port2x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","-","-","-","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-");
-
-END IF;
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_3x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis3x;
-    
-    
-IF @port2x >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port2x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
-            "-" ,
-              "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-END IF;
-  
-  IF @port3x >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","-","-","-","-","RENEWED PORTFOLIO AT RISK","-","-","-","-","-","-","-");
-END IF;
-
-
-
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_4x,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis4x;
-  
-  IF @port3x >0 THEN
-
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port3x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-         "-" ,
-            "-" ,
-               "-" ,
-                  "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-  
-IF @port4x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","-","-","-","-","RENEWED NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_5x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis5x;
-
-  IF @port4x >0 THEN
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port4x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
-            "-" ,
-              "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","-","-","-","-","RENEWED PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-");
-   END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_6x,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis6x;
-  
-  
-IF @port5x >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port5x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-       "-" ,
-        "-" ,
-         "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360; 
-
-END IF;
-  
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_8x,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis8x;
-
- 
-IF @port0x >0 OR @port0 >0 THEN
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-    principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_9,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis9;
-END IF;
-
-SELECT  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears FROM aging_loan_analysis7;
-  
-END
-
-##
-DELIMITER ;
-
--- CALL agingAnalysisG();
-
-
-
-
-
-
-
-
- 
-
- 
-
-
-
-/* AGING ANYLYSIS */
-
-DROP PROCEDURE IF EXISTS agingAnalysisStaffG;
-
-DELIMITER ##
-
-CREATE PROCEDURE   agingAnalysisStaffG(IN staffId INT)
-BEGIN
-   
- DECLARE l_done,ID,arrears,numberOfGaurantors INT;
-
- DECLARE loanPort,paidport,remainport,prince,princepaid,princeremain,p_remain,i_remain,interestRem DOUBLE;
-
- DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,theTrnId,theLoanStatus VARCHAR(100);
-
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed') AND  gruop_id=staffId  ;
- 
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
- 
-SET ID =0;
-
-DROP TABLE IF EXISTS aging_loan_analysis1;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT);
-
-DROP TABLE IF EXISTS aging_loan_analysis2;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_2))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_3))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_4))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_5))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_6))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis7;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 INTEGER,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT)ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis8;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8(id_8 INTEGER,customer_name VARCHAR(100),customer_contact VARCHAR(100),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(100),due_date VARCHAR(100),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT)ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
- OPEN forSelectingLoanIds;
-
-accounts_loop: LOOP 
-
-
-
- FETCH forSelectingLoanIds into loanId;
- 
---  SELECT loanId;
-
- IF l_done=1 THEN
-
-LEAVE accounts_loop;
-
- END IF;
-SELECT pl.applicant_account_name,m.mobile1,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.trn_id INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theTrnId FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
--- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain;
-SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
-
--- SELECT p_remain,i_remain,arrears;
-
-SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=theTrnId;
--- SELECT loanId,numberOfGaurantors;
-IF numberOfGaurantors=0 THEN
-
-SET gaurantorName1='MISSING',gaurantorContact1='MISSING',gaurantorName2='MISSING',gaurantorContact2='MISSING';
-END IF;
-
-IF numberOfGaurantors=1 THEN
-SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId;
-
-SET gaurantorName2='MISSING',gaurantorContact2='MISSING';
-END IF;
-
-
-
-IF numberOfGaurantors=2 THEN
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id ASC LIMIT 1;
-SET @sql_text2 = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName1,@gaurantorContact1 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),theTrnId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2 FROM @sql_text2;
-  EXECUTE stmt2;
-DROP PREPARE stmt2;
-
-
-
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName2,gaurantorContact2 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id DESC LIMIT 1;
-
-
-SET @sql_text2X = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName2,@gaurantorContact2 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),theTrnId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2X FROM @sql_text2X;
-  EXECUTE stmt2X;
-DROP PREPARE stmt2X;
-
-
-SELECT @gaurantorName1,@gaurantorContact1 INTO gaurantorName1,gaurantorContact1;
-SELECT @gaurantorName2,@gaurantorContact2 INTO gaurantorName2,gaurantorContact2;
-END IF;
-
- SET ID=ID+1;
-
- IF ISNULL(remainport) THEN
-SET remainport=0;
- END IF;
-
-  IF ISNULL(princeremain) THEN
-SET princeremain=0;
- END IF;
-
- IF ISNULL(interestRem) THEN
-SET interestRem=0;
- END IF;
-
-  IF ISNULL(p_remain) THEN
-SET p_remain=0;
- END IF;
-
-  IF ISNULL(i_remain) THEN
-SET i_remain=0;
- END IF;
-
-   IF ISNULL(arrears) THEN
-SET arrears=0;
- END IF;
- 
-
-SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
-
--- SELECT @INST;
-
-  IF ISNULL(@INST) THEN
-SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
- END IF;
-
-
-INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
-
-
-    SET l_done=0;
- END LOOP accounts_loop;
-
- CLOSE forSelectingLoanIds;
-
- SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
+ SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=1 AND number_of_days_in_arrears<30 ;
  SELECT COUNT(id_1) INTO @port2  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
   SELECT COUNT(id_1) INTO @port3  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
    SELECT COUNT(id_1) INTO @port4  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
@@ -9625,746 +3998,487 @@ INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,g
 
 
 IF @port1 >0 THEN
- INSERT INTO aging_loan_analysis2 VALUES(0,'1-30',"-","-","-","-",'PERFORMING PORTFOLIO',"-","-","-","-","-","-","-","-");
+ INSERT INTO aging_loan_analysis2 VALUES(0,'1-30','PERFORMING PORTFOLIO',"-","-","-","-","-","-","-","-");
 
   INSERT INTO  aging_loan_analysis2( 
-  id_2,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-  date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_2`,
+  `customer_name` ,
+  `customer_contact` ,
+  `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+`interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-  gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=1 AND number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
    
 
   
   INSERT INTO  aging_loan_analysis2( 
-  id_2,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_2`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
   'TOTAL' ,
   "-" ,
   "-" ,
   "-" ,
-   "-" ,
-  "-" ,
-   "-" ,
-  "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
+ "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=1 AND number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
 
-  --  INSERT INTO aging_loan_analysis2 VALUES(0,"-","-","-","-","-","-","-","-");
+  
 END IF;
 
 IF @port2 >0 THEN
-   INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-",'30-60','PORTFOLIO AT RISK',"-","-","-","-","-","-","-","-");
+   INSERT INTO aging_loan_analysis3 VALUES(0,'30-60','PORTFOLIO AT RISK',"-","-","-","-","-","-","-","-");
   
   INSERT INTO  aging_loan_analysis3( 
-  id_3,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_3`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
    
 INSERT INTO  aging_loan_analysis3( 
-  id_3,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_3`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-   "-" ,
-      "-" ,
-       "-" ,
-      "-" ,
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
 
-  --  INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-","-","-","-","-");
+  
 
 END IF;
 
 IF @port3 >0 THEN
 
-   INSERT INTO aging_loan_analysis4 VALUES(0,"-","-","-","-",'60-90','PORTFOLIO AT RISK',"-","-","-","-","-","-","-","-");
+   INSERT INTO aging_loan_analysis4 VALUES(0,'60-90','PORTFOLIO AT RISK',"-","-","-","-","-","-","-","-");
 
     
     INSERT INTO  aging_loan_analysis4( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_4`,
+  `customer_name` ,
+  `customer_contact` ,
+     `date_taken`,
+     `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
    
 INSERT INTO  aging_loan_analysis4( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_4`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-   "-" ,
-      "-" ,
-       "-" ,
-      "-" ,
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
 
-  --  INSERT INTO aging_loan_analysis4 VALUES(0,"-","-","-","-","-","-","-","-");
+  
 
 
 END IF;
 
 IF @port4 >0 THEN
-   INSERT INTO aging_loan_analysis5 VALUES(0,"-","-","-","-",'90-360','NON PERFORMING PORTFOLIO',"-","-","-","-","-","-","-","-");
+   INSERT INTO aging_loan_analysis5 VALUES(0,'90-360','NON PERFORMING PORTFOLIO',"-","-","-","-","-","-","-","-");
     
    
     INSERT INTO  aging_loan_analysis5( 
-  id_5,
-  customer_name ,
-  customer_contact ,
-  gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,
+    `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-  gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,
+    `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
    
 INSERT INTO  aging_loan_analysis5( 
-  id_5,
-  customer_name ,
-  customer_contact ,
-  gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,
+    `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-   "-" ,
-      "-" ,
-       "-" ,
-      "-" ,
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
 
-  --  INSERT INTO aging_loan_analysis5 VALUES(0,"-","-","-","-","-","-","-","-");
+  
 
 
 END IF;
 
 IF @port5 >0 THEN
-   INSERT INTO aging_loan_analysis6 VALUES(0,"-","-","-","-",'360 AND Above','PORTFOLIO DUE FOR WRITE OFF',"-","-","-","-","-","-","-","-");
+   INSERT INTO aging_loan_analysis6 VALUES(0,'360 AND Above','PORTFOLIO DUE FOR WRITE OFF',"-","-","-","-","-","-","-","-");
 
    
     INSERT INTO  aging_loan_analysis6( 
-  id_6,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_6`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+`interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
    
-INSERT INTO  aging_loan_analysis6( 
-  id_6,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+INSERT INTO  aging_loan_analysis5( 
+  `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-   "-" ,
-      "-" ,
-       "-" ,
-      "-" ,
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360; 
 
 END IF;
 
-   
-INSERT INTO  aging_loan_analysis8( 
-  id_8,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-   "-" ,
-    "-" ,
-     "-" ,
-    "-" ,
-  'OVERALL TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1; 
-
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_2,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis2;
+   `id_2`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis2;
 
   
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_3,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis3;
+   `id_3`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis3;
 
   
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_4,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis4;
+   `id_4`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis4;
   
   
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_5,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis5;
+   `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis5;
 
-  
-  
-  
   
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_6,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis6;
-  
-  
-  
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_8,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis8;
+   `id_6`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis6;
 
-SELECT  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears FROM aging_loan_analysis7;
-  
-END
-
-##
+SELECT  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` FROM aging_loan_analysis7;
+END //
 DELIMITER ;
-
-
-
-
-
- 
-
- 
-
-
-
-/* AGING ANYLYSIS */
-
-DROP PROCEDURE IF EXISTS agingAnalysisStaffG;
-
-DELIMITER ##
-
-CREATE PROCEDURE   agingAnalysisStaffG(IN staffId INT)
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `agingAnalysisStaff` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = cp850 */ ;
+/*!50003 SET character_set_results = cp850 */ ;
+/*!50003 SET collation_connection  = cp850_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = '' */ ;
+DELIMITER //
+CREATE  PROCEDURE `agingAnalysisStaff`(IN staffId INT)
 BEGIN
    
- DECLARE l_done,ID,arrears,numberOfGaurantors INT;
+ DECLARE l_done,ID,arrears INT;
 
  DECLARE loanPort,paidport,remainport,prince,princepaid,princeremain,p_remain,i_remain,interestRem DOUBLE;
 
- DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,theTrnId, theLoanStatus VARCHAR(100);
+ DECLARE customerContactNumber,loanId,customerName,TrnDate,DisDate VARCHAR(45);
 
-DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed') AND  gruop_id=staffId  ;
+DECLARE forSelectingLoanIds CURSOR FOR SELECT loan_id   FROM new_loan_appstore WHERE loan_cycle_status='Disbursed' AND gruop_id=staffId ;
  
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
-
-
  
 SET ID =0;
 
-
-DROP TABLE IF EXISTS aging_loan_analysis1x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis1x(id_1x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_1x));
-
 DROP TABLE IF EXISTS aging_loan_analysis1;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_1));
+CREATE TEMPORARY  TABLE aging_loan_analysis1(id_1 INTEGER,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT);
 
 DROP TABLE IF EXISTS aging_loan_analysis2;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_2))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis2(id_2 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_2`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 
 DROP TABLE IF EXISTS aging_loan_analysis3;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_3))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis3(id_3 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_3`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 
 DROP TABLE IF EXISTS aging_loan_analysis4;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_4))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis4(id_4 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_4`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 DROP TABLE IF EXISTS aging_loan_analysis5;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_5))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis5(id_5 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_5`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 DROP TABLE IF EXISTS aging_loan_analysis6;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_6))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis6(id_6 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (`id_6`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
 DROP TABLE IF EXISTS aging_loan_analysis7;
 
-CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 VARCHAR(60),customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining VARCHAR(60),principal_remaining VARCHAR(60),interest_remaining VARCHAR(60),principal_inarrears VARCHAR(60),interest_inarrears VARCHAR(60),number_of_days_in_arrears VARCHAR(60))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-
-
-DROP TABLE IF EXISTS aging_loan_analysis2x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis2x(id_2x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_2x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis3x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis3x(id_3x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_3x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis4x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis4x(id_4x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_4x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis5x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis5x(id_5x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT,PRIMARY KEY (id_5x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis6x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis6x(id_6x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_6x))ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis8x;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8x(id_8x INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_8x))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-DROP TABLE IF EXISTS aging_loan_analysis8;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis8(id_8 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_8))ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
-DROP TABLE IF EXISTS aging_loan_analysis9;
-
-CREATE TEMPORARY  TABLE aging_loan_analysis9(id_9 INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_contact VARCHAR(60),gaurantor1_name VARCHAR(100),gaurantor1_contact VARCHAR(100),gaurantor2_name VARCHAR(100),gaurantor2_contact VARCHAR(100),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT, PRIMARY KEY (id_9))ENGINE = InnoDB
+CREATE TEMPORARY  TABLE aging_loan_analysis7(id_7 INTEGER,customer_name VARCHAR(60),customer_contact VARCHAR(60),date_taken VARCHAR(60),due_date VARCHAR(60),loans_remaining DOUBLE,principal_remaining DOUBLE,interest_remaining DOUBLE,principal_inarrears DOUBLE,interest_inarrears DOUBLE,number_of_days_in_arrears INT)ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
  OPEN forSelectingLoanIds;
@@ -10375,57 +4489,18 @@ accounts_loop: LOOP
 
  FETCH forSelectingLoanIds into loanId;
  
---  SELECT loanId;
+
 
  IF l_done=1 THEN
 
 LEAVE accounts_loop;
 
  END IF;
+SELECT pl.applicant_account_name,m.mobile1,pl.trn_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
 
-SELECT pl.applicant_account_name,m.mobile1,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.loan_cycle_status INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theLoanStatus FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
--- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain;
-SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
-
-
-SELECT COUNT(id) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId=loanId;
--- SELECT loanId,numberOfGaurantors;
-IF numberOfGaurantors=0 THEN
-
-SET gaurantorName1='-',gaurantorContact1='-',gaurantorName2='-',gaurantorContact2='-';
-END IF;
-
-IF numberOfGaurantors=1 THEN
-SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId;
-
-SET gaurantorName2='-',gaurantorContact2='-';
-END IF;
+SELECT SUM(PrincipalRemaining),SUM(InterestRemaing),numberOfDayInArrears(loanId) INTO p_remain,i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
 
 
-
-IF numberOfGaurantors=2 THEN
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName1,gaurantorContact1 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id ASC LIMIT 1;
-SET @sql_text2 = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName1,@gaurantorContact1 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),loanId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2 FROM @sql_text2;
-  EXECUTE stmt2;
-DROP PREPARE stmt2;
-
-
-
--- SELECT gaurantorsName,gaurantorsContact1 INTO gaurantorName2,gaurantorContact2 FROM gaurantors WHERE loanTrnId=theTrnId  ORDER BY id DESC LIMIT 1;
-
-
-SET @sql_text2X = concat(CAST("SELECT gaurantorsName,gaurantorsContact1 INTO @gaurantorName2,@gaurantorContact2 FROM gaurantors WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),loanId,CAST("'" AS CHAR CHARACTER SET utf8),CAST(" ORDER BY id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-  PREPARE stmt2X FROM @sql_text2X;
-  EXECUTE stmt2X;
-DROP PREPARE stmt2X;
-
-
-SELECT @gaurantorName1,@gaurantorContact1 INTO gaurantorName1,gaurantorContact1;
-SELECT @gaurantorName2,@gaurantorContact2 INTO gaurantorName2,gaurantorContact2;
-END IF;
 
  SET ID=ID+1;
 
@@ -10452,39 +4527,16 @@ SET i_remain=0;
    IF ISNULL(arrears) THEN
 SET arrears=0;
  END IF;
- 
 
-SELECT DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y') INTO @INST;
-
--- SELECT @INST;
-
-  IF ISNULL(@INST) THEN
-SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
- END IF;
-
-IF theLoanStatus='Disbursed' THEN
-
-INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
-
-END IF;
-
-
-IF theLoanStatus='Renewed' THEN
-
-INSERT INTO aging_loan_analysis1x VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,gaurantorName2,gaurantorContact2,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,princeremain,interestRem,p_remain,i_remain,arrears);
-
-END IF;
-
-
-
+INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,DATE_FORMAT(TrnDate,'%d/%m/%Y'),DATE_FORMAT(instalmentDueDate(loanId),'%d/%m/%Y'),remainport,princeremain,interestRem,p_remain,i_remain,arrears);
 
 
     SET l_done=0;
  END LOOP accounts_loop;
 
  CLOSE forSelectingLoanIds;
-SELECT COUNT(id_1) INTO @port0  FROM aging_loan_analysis1 ;
- SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
+
+ SELECT COUNT(id_1) INTO @port1  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=1 AND number_of_days_in_arrears<30;
  SELECT COUNT(id_1) INTO @port2  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
   SELECT COUNT(id_1) INTO @port3  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
    SELECT COUNT(id_1) INTO @port4  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
@@ -10493,1374 +4545,421 @@ SELECT COUNT(id_1) INTO @port0  FROM aging_loan_analysis1 ;
 
 
 
- 
+
 IF @port1 >0 THEN
+ INSERT INTO aging_loan_analysis2 VALUES(0,'1-30','PERFORMING PORTFOLIO',"-","-","-","-","-","-","-","-");
 
   INSERT INTO  aging_loan_analysis2( 
-  id_2,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_2`,
+  `customer_name` ,
+  `customer_contact` ,
+  `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+`interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=1 AND number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
    
+
+  
+  INSERT INTO  aging_loan_analysis2( 
+  `id_2`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+  "-",
+  'TOTAL' ,
+  "-" ,
+  "-" ,
+  "-" ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
+ "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=1 AND number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
 
   
 END IF;
 
 IF @port2 >0 THEN
-
+   INSERT INTO aging_loan_analysis3 VALUES(0,'30-60','PORTFOLIO AT RISK',"-","-","-","-","-","-","-","-");
+  
   INSERT INTO  aging_loan_analysis3( 
-  id_3,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_3`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-IF @port3 >0 THEN
-
-
-    INSERT INTO  aging_loan_analysis4( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
    
-
-END IF;
-
-IF @port4 >0 THEN
-
-    INSERT INTO  aging_loan_analysis5( 
-  id_5,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+INSERT INTO  aging_loan_analysis3( 
+  `id_3`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
   "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
-
-IF @port5 >0 THEN
-
-    INSERT INTO  aging_loan_analysis6( 
-  id_6,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-SELECT COUNT(id_1x) INTO @port0x  FROM aging_loan_analysis1x;
- SELECT COUNT(id_1x) INTO @port1x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
- SELECT COUNT(id_1x) INTO @port2x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-
-  SELECT COUNT(id_1x) INTO @port3x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-
-   SELECT COUNT(id_1x) INTO @port4x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
- SELECT COUNT(id_1x) INTO @port5x  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360;
-
-
-IF @port1x >0 THEN
-
-  INSERT INTO  aging_loan_analysis2x( 
-  id_2x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-  date_taken,
-  due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30 ORDER BY number_of_days_in_arrears ASC;
-   
-
-END IF;
-
-IF @port2x >0 THEN
-
-  
-  INSERT INTO  aging_loan_analysis3x( 
-  id_3x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port3x >0 THEN
- 
-    INSERT INTO  aging_loan_analysis4x( 
-  id_4,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-     date_taken,
-     due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
- 
-END IF;
-
-
-
-IF @port4x >0 THEN
-
-    INSERT INTO  aging_loan_analysis5x( 
-  id_5x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
-  
-END IF;
-
-
-
-IF @port5x >0 THEN
-
-    INSERT INTO  aging_loan_analysis6x( 
-  id_6x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  "-",
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
- 
-
-END IF;
- IF @port0 >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8( 
-  id_8,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port0,
-  'TOTAL ACTIVE LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
-         "-" ,
-            "-" ,
-               "-" ,
-                  "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1; 
-END IF;
- IF @port0x >0 THEN 
-   
-INSERT INTO  aging_loan_analysis8x( 
-  id_8x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
- @port0x,
-  'TOTAL RENEWED LOANS' ,
-  "-" ,
-    "-" ,
-      "-" ,
-      "-" ,
-      "-" ,
-      "-" ,
-      "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x; 
-
-    
-END IF;
-
-    IF @port0 >0 OR   @port0x >0 THEN   
-INSERT INTO  aging_loan_analysis9( 
-  id_9,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  (@port0+@port0x),
-  'OVERALL TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
-            "-" ,
-              "-" ,
- SUM( ot.loans_remaining) ,
-  SUM(ot.principal_remaining) ,
-  SUM(ot.interest_remaining),
-  SUM(ot.principal_inarrears) ,
-  SUM(ot.interest_inarrears) ,
- "-"  FROM (SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1 UNION ALL SELECT loans_remaining,principal_remaining,interest_remaining,principal_inarrears,interest_inarrears FROM aging_loan_analysis1x) ot;  
- END IF;
-
- IF @port0 >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","-","-","-","-","ACTIVE LOANS","-","-","-","-","-","-");
-END IF;
-IF @port1 >0 THEN
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","-","-","-","-","PERFORMING PORTFOLIO","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_2,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis2;
-
- 
-IF @port1 >0 THEN  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port1,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears<30;
-
-END IF;
-
-
-  
-IF @port2 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","-","-","-","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-");
-  
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_3,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis3;
-    
-    
-IF @port2 >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port2,
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
-            "-" ,
-                  "-" ,
-                        "-" ,
-                              "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
 
-  --  INSERT INTO aging_loan_analysis3 VALUES(0,"-","-","-","-","-","-","-","-");
+  
 
 END IF;
 
-  IF @port3 >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","PORTFOLIO AT RISK","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_4,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis4;
-  
-  
 IF @port3 >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+
+   INSERT INTO aging_loan_analysis4 VALUES(0,'60-90','PORTFOLIO AT RISK',"-","-","-","-","-","-","-","-");
+
+    
+    INSERT INTO  aging_loan_analysis4( 
+  `id_4`,
+  `customer_name` ,
+  `customer_contact` ,
+     `date_taken`,
+     `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-  @port3,
+  "-",
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ORDER BY number_of_days_in_arrears ASC;
+   
+INSERT INTO  aging_loan_analysis4( 
+  `id_4`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+  "-",
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
-           "-" ,
-                "-" ,
-                     "-" ,
-                          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-
-  IF @port4 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","-" ,"-" , "-" ,"-" ,"NON PERFORMING PORTFOLIO","-","-","-","-","-","-","-");
-    
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_5,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis5;
 
   
+
+
+END IF;
+
 IF @port4 >0 THEN
+   INSERT INTO aging_loan_analysis5 VALUES(0,'90-360','NON PERFORMING PORTFOLIO',"-","-","-","-","-","-","-","-");
+    
    
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+    INSERT INTO  aging_loan_analysis5( 
+  `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,
+    `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-  @port4,
+  "-",
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,
+    `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ORDER BY number_of_days_in_arrears ASC;
+   
+INSERT INTO  aging_loan_analysis5( 
+  `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,
+    `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+  "-",
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
-          "-" ,
-              "-" ,
-                  "-" ,
-                      "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
 
+  
+
+
 END IF;
-  
-  
-  IF @port5 >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","-","-","-","-","PORTFOLIO DUE FOR WRITE OFF","-","-","-","-","-","-","-");
-END IF;
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_6,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis6;
-  
-  
+
 IF @port5 >0 THEN
- 
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-      gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+   INSERT INTO aging_loan_analysis6 VALUES(0,'360 AND Above','PORTFOLIO DUE FOR WRITE OFF',"-","-","-","-","-","-","-","-");
+
+   
+    INSERT INTO  aging_loan_analysis6( 
+  `id_6`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+`interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-  @port5,
+  "-",
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360 ORDER BY number_of_days_in_arrears ASC;
+   
+INSERT INTO  aging_loan_analysis5( 
+  `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+    `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+  "-",
   'TOTAL' ,
   "-" ,
     "-" ,
       "-" ,
-       "-" ,
-        "-" ,
-         "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
+ SUM( `loans_remaining`) ,
+  SUM(`principal_remaining`) ,
+  SUM(`interest_remaining`),
+  SUM(`principal_inarrears`) ,
+  SUM(`interest_inarrears`) ,
  "-"  FROM aging_loan_analysis1 WHERE number_of_days_in_arrears>=360; 
 
 END IF;
 
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_8,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis8;
+   `id_2`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis2;
 
-
- IF @port0x >0 THEN 
- INSERT INTO aging_loan_analysis7 VALUES("-","-","-","-","-","-","-","-","RENEWED LOANS","-","-","-","-","-","-");
-END IF;
-
-IF @port1x >0 THEN
-
- INSERT INTO aging_loan_analysis7 VALUES("-","1-30","-","-","-","-","-","PERFORMING PORTFOLIO RENEWED","-","-","-","-","-","-","-");
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_2x,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis2x;
-    
-    IF @port1x >0 THEN
-  
-  INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port1x,
-  'TOTAL' ,
-  "-" ,
-  "-" ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears<30;
-
-END IF;
-  
-  
-IF @port2x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","30-60","-","-","-","-","-","PORTFOLIO AT RISK RENEWED ","-","-","-","-","-","-","-");
-
-END IF;
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_3x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis3x;
-    
-    
-IF @port2x >0 THEN  
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port2x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
-            "-" ,
-              "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=30 AND number_of_days_in_arrears<60 ;
-END IF;
-  
-  IF @port3x >0 THEN
-
-   INSERT INTO aging_loan_analysis7 VALUES("-","60-90","-","-","-","-","-","PORTFOLIO AT RISK RENEWED ","-","-","-","-","-","-","-");
-END IF;
-
-
-
-
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_4x,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis4x;
-  
-  IF @port3x >0 THEN
-
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port3x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-         "-" ,
-            "-" ,
-               "-" ,
-                  "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=60 AND number_of_days_in_arrears<90 ;
-END IF;
-  
-IF @port4x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","90-360","-","-","-","-","-","NON PERFORMING PORTFOLIO RENEWED ","-","-","-","-","-","-","-");
-
-END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_5x,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis5x;
-
-  IF @port4x >0 THEN
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-   gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,
-    due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port4x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-        "-" ,
-          "-" ,
-            "-" ,
-              "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=90 AND number_of_days_in_arrears<360 ;
-
-END IF;
-  
-  
-  IF @port5x >0 THEN
-   INSERT INTO aging_loan_analysis7 VALUES("-","360 AND Above","-","-","-","-","-","PORTFOLIO DUE FOR WRITE OFF RENEWED ","-","-","-","-","-","-","-");
-   END IF;
-
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_6x,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis6x;
-  
-  
-IF @port5x >0 THEN
-   
-INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-    gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-    date_taken,due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-  @port5x,
-  'TOTAL' ,
-  "-" ,
-    "-" ,
-      "-" ,
-       "-" ,
-        "-" ,
-         "-" ,
-          "-" ,
- SUM( loans_remaining) ,
-  SUM(principal_remaining) ,
-  SUM(interest_remaining),
-  SUM(principal_inarrears) ,
-  SUM(interest_inarrears) ,
- "-"  FROM aging_loan_analysis1x WHERE number_of_days_in_arrears>=360; 
-
-END IF;
   
    INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,due_date,
-  loans_remaining ,
-     principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
   ) SELECT 
-   id_8x,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis8x;
+   `id_3`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis3;
 
- 
-IF @port0x >0 OR @port0 >0 THEN
-   INSERT INTO  aging_loan_analysis7( 
-  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-    principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears 
-  ) SELECT 
-   id_9,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears  FROM aging_loan_analysis9;
-END IF;
-
-SELECT  id_7,
-  customer_name ,
-  customer_contact ,
-     gaurantor1_name,
-  gaurantor1_contact,
-  gaurantor2_name,
-  gaurantor2_contact,
-      date_taken,
-      due_date,
-  loans_remaining ,
-  principal_remaining ,
-  interest_remaining,
-  principal_inarrears ,
-  interest_inarrears ,
-  number_of_days_in_arrears FROM aging_loan_analysis7;
   
-END
+   INSERT INTO  aging_loan_analysis7( 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+   `id_4`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis4;
+  
+  
+   INSERT INTO  aging_loan_analysis7( 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+   `id_5`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis5;
 
-##
+  
+   INSERT INTO  aging_loan_analysis7( 
+  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,`due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` 
+  ) SELECT 
+   `id_6`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears`  FROM aging_loan_analysis6;
+
+SELECT  `id_7`,
+  `customer_name` ,
+  `customer_contact` ,
+      `date_taken`,
+      `due_date`,
+  `loans_remaining` ,
+  `principal_remaining` ,
+  `interest_remaining`,
+  `principal_inarrears` ,
+  `interest_inarrears` ,
+  `number_of_days_in_arrears` FROM aging_loan_analysis7;
+END //
 DELIMITER ;
-
--- CALL agingAnalysisStaffG();
 
 
 -- Cash At Hand	.0

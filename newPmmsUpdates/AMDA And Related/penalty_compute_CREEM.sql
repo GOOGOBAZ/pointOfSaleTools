@@ -11,7 +11,7 @@ DECLARE lDone1 INTEGER DEFAULT 0;
 
 DECLARE instalmentNo,theInstalmentNo,existsIn1,instalmentStatus,theInstalmentStatus,counter,firstInstalment,idExists INT; 
 
-DECLARE newBalance,oldBalance,computedPenalty,newPenaltyRemaining,oldPenaltyRemaining,newInstalmentAmount,oldInstalmentAmount,newLoanPenalty,oldLoanPenalty,newLoanPenaltyRemaining,oldLoanPenaltyRemaining,newInstalmnetAmount,oldInstalmnetAmount DOUBLE;
+DECLARE newBalance,oldBalance,computedPenalty,newPenaltyRemaining,oldPenaltyRemaining,newInstalmentAmount,oldInstalmentAmount,newLoanPenalty,oldLoanPenalty,newLoanPenaltyRemaining,oldLoanPenaltyRemaining,newInstalmnetAmount,oldInstalmnetAmount,oldTotalAmount,oldTotalAmortAmt,newTotalAmount,newTotalAmortAmt DOUBLE;
 
 DECLARE penaltyStatusN,thePenaltyS,numberOfItems  INTEGER;
 DECLARE endDate DATE;
@@ -84,9 +84,9 @@ END IF;
 
 
 
-SELECT balance_due,TotalLoanPenaltyRemaining,instalment_amount INTO oldBalance,oldPenaltyRemaining,oldInstalmentAmount FROM new_loan_appstore WHERE trn_id=trnId;
+SELECT balance_due,TotalLoanPenaltyRemaining,instalment_amount,total_loanAmount INTO oldBalance,oldPenaltyRemaining,oldInstalmentAmount,oldTotalAmount FROM new_loan_appstore WHERE trn_id=trnId;
 
-SELECT LoanPenalty, LoanPenaltyRemaining, InstalmentRemaining INTO oldLoanPenalty,oldLoanPenaltyRemaining,oldInstalmnetAmount FROM new_loan_appstoreamort WHERE master1_id=trnId AND instalment_no=firstInstalment;
+SELECT LoanPenalty, LoanPenaltyRemaining, InstalmentRemaining,instalment_amount INTO oldLoanPenalty,oldLoanPenaltyRemaining,oldInstalmnetAmount,oldTotalAmortAmt FROM new_loan_appstoreamort WHERE master1_id=trnId AND instalment_no=firstInstalment;
 
 
 
@@ -94,7 +94,7 @@ SET computedPenalty=(oldInstalmnetAmount*.0112);
 
 
 
-SET newBalance=oldBalance+computedPenalty,newPenaltyRemaining=oldPenaltyRemaining+computedPenalty,newInstalmentAmount=oldInstalmentAmount+computedPenalty,newLoanPenalty=oldLoanPenalty+computedPenalty,newLoanPenaltyRemaining=oldLoanPenaltyRemaining+computedPenalty,newInstalmnetAmount=oldInstalmnetAmount+computedPenalty;
+SET newBalance=oldBalance+computedPenalty,newPenaltyRemaining=oldPenaltyRemaining+computedPenalty,newInstalmentAmount=oldInstalmentAmount+computedPenalty,newLoanPenalty=oldLoanPenalty+computedPenalty,newLoanPenaltyRemaining=oldLoanPenaltyRemaining+computedPenalty,newInstalmnetAmount=oldInstalmnetAmount+computedPenalty,newTotalAmount=oldTotalAmount+computedPenalty,newTotalAmortAmt=oldTotalAmortAmt+computedPenalty;
 
 
  SELECT COUNT(id) INTO idExists FROM amdapenaltycomputenowdetails WHERE loanTrnId=trnId AND instalmentNo=firstInstalment;
@@ -105,11 +105,11 @@ INSERT INTO  amdapenaltycomputenowdetails VALUES(NULL,trnId,firstInstalment,2,2,
 
 END IF;
 
-UPDATE new_loan_appstore SET balance_due=newBalance,TotalLoanPenaltyRemaining=newPenaltyRemaining,instalment_amount=newInstalmentAmount WHERE trn_id=trnId;
+UPDATE new_loan_appstore SET balance_due=newBalance,TotalLoanPenaltyRemaining=newPenaltyRemaining,instalment_amount=newInstalmentAmount,total_loanAmount=newTotalAmount WHERE trn_id=trnId;
+UPDATE new_loan_appstore1 SET balance_due=newBalance,TotalLoanPenaltyRemaining=newPenaltyRemaining,instalment_amount=newInstalmentAmount,total_loanAmount=newTotalAmount WHERE trn_id=trnId;
 
 
-
-UPDATE new_loan_appstoreamort SET LoanPenalty=newLoanPenalty, LoanPenaltyRemaining=newLoanPenaltyRemaining, InstalmentRemaining=newInstalmnetAmount WHERE instalment_no=firstInstalment AND master1_id=trnId;
+UPDATE new_loan_appstoreamort SET LoanPenalty=newLoanPenalty, LoanPenaltyRemaining=newLoanPenaltyRemaining, InstalmentRemaining=newInstalmnetAmount,instalment_amount=newTotalAmortAmt WHERE instalment_no=firstInstalment AND master1_id=trnId;
 
 END IF;
 

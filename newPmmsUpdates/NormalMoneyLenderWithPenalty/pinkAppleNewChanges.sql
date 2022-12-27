@@ -2,7 +2,7 @@
 -- 05/06/2022	05/06/2022	LWANGA IBRAH 0759775579s Account Deposit for Loan Payment
   -- Dated 05/06/2022	159331.0	-	921531.0
 
-
+-- 70624	TUMWINE ROGDERS 0757537197	BODA BODA	240	200000	0	0	0	0	30 DAYS	25/09/2022	10006	Completed
 -- -----------------------------------------------------
 -- createdRenewedLoan
 
@@ -2324,7 +2324,7 @@ END//
 
 -- SELECT SloanTrnId;
 
-DROP TABLE IF EXISTS autoRenewalSettings;
+-- DROP TABLE IF EXISTS autoRenewalSettings;
 
 CREATE  TABLE autoRenewalSettings(
 id INTEGER NOT NULL, -- 0
@@ -12010,6 +12010,15 @@ DELIMITER ;
 
 
 
+DROP PROCEDURE IF EXISTS totalNumberOfActiveNewCustomers;
+DELIMITER $$
+CREATE  PROCEDURE totalNumberOfActiveNewCustomers(OUT activeCustomers INT)
+BEGIN
+SELECT DISTINCT COUNT(new_loan_appstore.trn_id) INTO activeCustomers FROM pmms_loans.new_loan_appstore INNER JOIN pmms.account_created_store ON new_loan_appstore.applicant_account_number=account_created_store.account_number WHERE (new_loan_appstore.loan_cycle_status='Disbursed') AND account_created_store.creation_date=DATE(NOW());
+
+END $$
+DELIMITER ;
+
 
 DROP PROCEDURE IF EXISTS totalNumberOfCustomersPaid;
 DELIMITER $$
@@ -12103,6 +12112,10 @@ DELIMITER $$
 CREATE  PROCEDURE sumRenewals(OUT totalRenewals INT)
 BEGIN
 SELECT SUM(princimpal_amount) INTO totalRenewals  FROM new_loan_appstore WHERE trn_date=DATE(NOW()) AND loan_cycle_status='Renewed';
+
+IF ISNULL(totalRenewals) THEN
+SET totalRenewals=0.0;
+END IF;
 
 END $$
 DELIMITER ;
@@ -12815,6 +12828,19 @@ SELECT @annualFeesRecovered; */
 
 
 
+DROP PROCEDURE IF EXISTS InterestRenewed;
+DELIMITER //
+CREATE PROCEDURE InterestRenewed(IN theDate DATE,OUT InterestR VARCHAR(100)) READS SQL DATA 
+BEGIN
+SELECT  SUM(credit) INTO InterestR FROM pmms.general_ledger WHERE  trn_date=theDate AND  debit_account_no LIKE '03322%';
+IF ISNULL(InterestR) THEN
+SET InterestR=0.0;
+END IF;
+
+END //
+DELIMITER ;
+
+
 
 
 
@@ -12823,7 +12849,7 @@ DELIMITER //
 CREATE PROCEDURE InterestRecover(IN theDate DATE,OUT InterestR VARCHAR(100)) READS SQL DATA 
 
 BEGIN
-SELECT  SUM(credit) INTO InterestR FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '03301%';
+SELECT  SUM(credit) INTO InterestR FROM pmms.general_ledger WHERE  trn_date=theDate AND (debit_account_no LIKE '03301%' OR debit_account_no LIKE '03322%');
 IF ISNULL(InterestR) THEN
 SET InterestR=0.0;
 END IF;
@@ -19077,11 +19103,15 @@ CREATE  TEMPORARY TABLE smsSummury(itemName VARCHAR(200),itemValue VARCHAR(200))
 
 
 
+
+
+
+
 CALL totalNumberOfActiveCustomers(@activeCustomers);
 -- SELECT @activeCustomers;
 IF @activeCustomers>0 THEN
 -- SELECT @activeCustomers;
-INSERT INTO smsSummury VALUES("No.OfActiveLoans:",@activeCustomers);
+INSERT INTO smsSummury VALUES("No.OfActiveLoans:",FORMAT(@activeCustomers,0));
 
   END IF;
 
@@ -19092,18 +19122,37 @@ CALL totalNumberOfCustomersPaid(@activeCustomersPaid);
 
 IF @activeCustomersPaid>0 THEN
 -- SELECT @activeCustomersPaid;
-INSERT INTO smsSummury VALUES("No.OfCustomersPaid:",@activeCustomersPaid);
+INSERT INTO smsSummury VALUES("No.OfCustomersPaid:",FORMAT(@activeCustomersPaid,0));
+SET @rate=ROUND(((@activeCustomersPaid/@activeCustomers)*100),0);
+SELECT CONCAT(@rate,'%') INTO @rate;
+INSERT INTO smsSummury VALUES("CollectionRate:",@rate);
+  END IF;
+
+
+CALL totalNumberOfActiveNewCustomers(@activeNewCustomers);
+-- SELECT @activeCustomers;
+IF @activeNewCustomers>0 THEN
+-- SELECT @activeCustomers;
+INSERT INTO smsSummury VALUES("NewCustomers:",FORMAT(@activeNewCustomers,0));
 
   END IF;
 
+
 -- SELECT @princimpalRepaymentsMade;
   -- SELECT @princimpalRepaymentsMade;
+  CALL sumRenewals(@totalRenewals);
+  -- select @totalRenewals;
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 CALL InterestRecover(DATE(NOW()),@InterestR);
-SET @ActualTotalAmountCollectedToday=@princimpalRepaymentsMade+@InterestR;
+
+CALL InterestRenewed(DATE(NOW()),@InterestRenew);
+-- SELECT @princimpalRepaymentsMade,@InterestR;
+SET @ActualTotalAmountCollectedToday=(@princimpalRepaymentsMade+@InterestR)-@totalRenewals;
+
+-- select @ActualTotalAmountCollectedToday;
 IF @ActualTotalAmountCollectedToday>0 THEN
   -- SELECT @ActualTotalAmountCollectedToday;
-INSERT INTO smsSummury VALUES("TotalCollections:",@ActualTotalAmountCollectedToday);
+INSERT INTO smsSummury VALUES("TotalCollections:",FORMAT(@ActualTotalAmountCollectedToday,0));
 
   END IF;
 
@@ -19113,7 +19162,7 @@ CALL countNumberOfRenewedPaid(@numberOfRenewalsPaid);
 
 IF @numberOfRenewalsPaid>0 THEN
 -- SELECT @numberOfDibusements;
-INSERT INTO smsSummury VALUES("No.OfRenewedPaid:",@numberOfRenewalsPaid);
+INSERT INTO smsSummury VALUES("No.OfRenewedPaid:",FORMAT(@numberOfRenewalsPaid,0));
 
   END IF;
 
@@ -19124,7 +19173,7 @@ CALL sumRenewalsPaid(@totalRenewalsPaid);
 IF @totalRenewalsPaid>0 THEN
   
     -- SELECT @totalDisbursement;
-INSERT INTO smsSummury VALUES("TotalAmntRenewedPaid:",@totalRenewalsPaid);
+INSERT INTO smsSummury VALUES("TotalAmntRenewedPaid:",FORMAT(@totalRenewalsPaid,0));
 
   END IF;
 
@@ -19134,7 +19183,7 @@ INSERT INTO smsSummury VALUES("TotalAmntRenewedPaid:",@totalRenewalsPaid);
 
 IF @numberOfDibusements>0 THEN
 -- SELECT @numberOfDibusements;
-INSERT INTO smsSummury VALUES("No.OfLoansDisbursed:",@numberOfDibusements);
+INSERT INTO smsSummury VALUES("No.OfLoansDisbursed:",FORMAT(@numberOfDibusements,0));
 
   END IF;
 
@@ -19145,7 +19194,7 @@ CALL sumDisbursements(@totalDisbursement);
 IF @totalDisbursement>0 THEN
   
     -- SELECT @totalDisbursement;
-INSERT INTO smsSummury VALUES("TotalAmntDisbursed:",@totalDisbursement);
+INSERT INTO smsSummury VALUES("TotalAmntDisbursed:",FORMAT(@totalDisbursement,0));
 
   END IF;
 
@@ -19154,27 +19203,53 @@ CALL countNumberOfRenewals(@numberOfRenewals);
 
 IF @numberOfRenewals>0 THEN
 -- SELECT @numberOfDibusements;
-INSERT INTO smsSummury VALUES("No.OfLoansRenewed:",@numberOfRenewals);
+INSERT INTO smsSummury VALUES("No.OfLoansRenewed:",FORMAT(@numberOfRenewals,0));
 
   END IF;
 
 
     -- SELECT @totalDisbursement;
-CALL sumRenewals(@totalRenewals);
+
 
 IF @totalRenewals>0 THEN
   
     -- SELECT @totalDisbursement;
-INSERT INTO smsSummury VALUES("TotalAmntRenewed:",@totalRenewals);
+INSERT INTO smsSummury VALUES("TotalAmntRenewed:",FORMAT(@totalRenewals,0));
 
   END IF;
   
+
+CALL totalPrincimpalBalance(@princimpalBalance);
+
+IF @princimpalBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("PrincipalBalance:",FORMAT(@princimpalBalance,0));
+
+  END IF;
+
+
+  CALL totalInterestBalance(@interestBalance);
+
+IF @interestBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("InterestBalance:",FORMAT(@interestBalance,0));
+
+  END IF;
+
+IF @interestBalance>0 OR @princimpalBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("TotalLoanPortfolio:",FORMAT(@interestBalance+@princimpalBalance,0));
+
+  END IF;
+
+
+
 
 CALL totalNumberOfSavingDeposited(@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
 -- SELECT @activeCustomersSave;
-INSERT INTO smsSummury VALUES("No.OfSavingAdded:",@activeCustomersSave);
+INSERT INTO smsSummury VALUES("No.OfSavingAdded:",FORMAT(@activeCustomersSave,0));
 
   END IF;
 
@@ -19182,7 +19257,7 @@ INSERT INTO smsSummury VALUES("No.OfSavingAdded:",@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
 -- SELECT @activeCustomersSave;
-INSERT INTO smsSummury VALUES("No.OfSavingRemoved:",@activeCustomersSave);
+INSERT INTO smsSummury VALUES("No.OfSavingRemoved:",FORMAT(@activeCustomersSave,0));
 
   END IF;
 
@@ -19198,7 +19273,7 @@ CALL OpeningCashBalance(DATE(NOW()),@OpeningCahdBala);
 
   
     -- SELECT @OpeningCahdBala;
-INSERT INTO smsSummury VALUES("OpeningCash:",@OpeningCahdBala);
+INSERT INTO smsSummury VALUES("OpeningCash:",FORMAT(@OpeningCahdBala,0));
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01128%') THEN
 
@@ -19213,8 +19288,10 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@princimpalRepaymentsMade;
 
 IF @princimpalRepaymentsMade>0 THEN 
-    -- SELECT @princimpalRepaymentsMade;
-INSERT INTO smsSummury VALUES("PrincipalCollected:",@princimpalRepaymentsMade);
+SET @PC=(@princimpalRepaymentsMade-(@totalRenewals-@InterestRenew));
+-- SELECT @PC,@princimpalRepaymentsMade,@totalRenewals,@InterestRenew;
+
+INSERT INTO smsSummury VALUES("PrincipalCollected:",FORMAT(@PC,0));
 END IF;
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03301%') THEN
 CALL InterestRecover(DATE(NOW()),@InterestR);
@@ -19226,7 +19303,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@InterestR;
 
 IF @InterestR>0 THEN 
-INSERT INTO smsSummury VALUES("InterestCollected:",@InterestR);
+INSERT INTO smsSummury VALUES("InterestCollected:",FORMAT((@InterestR-@InterestRenew),0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03315%') THEN
@@ -19240,7 +19317,7 @@ SET @OpeningCahdBala=@OpeningCahdBala+@processingFees;
 
 IF @processingFees>0 THEN 
 
-INSERT INTO smsSummury VALUES("ProcessingFees:",@processingFees);
+INSERT INTO smsSummury VALUES("ProcessingFees:",FORMAT(@processingFees,0));
 END IF;
  -- SELECT @ledgerFessCol;
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03304%') THEN
@@ -19255,7 +19332,7 @@ SET @OpeningCahdBala=@OpeningCahdBala+@ledgerFessCol;
 IF @ledgerFessCol>0 THEN 
 
  -- SELECT "LedgerFees:", @ledgerFessCol;
-INSERT INTO smsSummury VALUES("LedgerFees:",@ledgerFessCol);
+INSERT INTO smsSummury VALUES("LedgerFees:",FORMAT(@ledgerFessCol,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03309%') THEN
@@ -19268,7 +19345,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@memberShipFessCol;
 
 IF @memberShipFessCol>0 THEN 
-INSERT INTO smsSummury VALUES("MembershipFees:",@memberShipFessCol);
+INSERT INTO smsSummury VALUES("MembershipFees:",FORMAT(@memberShipFessCol,0));
 END IF;
 
 
@@ -19282,7 +19359,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@annualFeesRecovered;
 
 IF @annualFeesRecovered>0 THEN 
-INSERT INTO smsSummury VALUES("AnnualFees:",@annualFeesRecovered);
+INSERT INTO smsSummury VALUES("AnnualFees:",FORMAT(@annualFeesRecovered,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03318%') THEN
@@ -19295,7 +19372,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@badDebtsRecovered;
 
 IF @badDebtsRecovered>0 THEN 
-INSERT INTO smsSummury VALUES("BadDebts:",@badDebtsRecovered);
+INSERT INTO smsSummury VALUES("BadDebts:",FORMAT(@badDebtsRecovered,0));
 END IF;
 
 
@@ -19314,7 +19391,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@accumulatedInterestR;
 
 IF @accumulatedInterestR>0 THEN 
-INSERT INTO smsSummury VALUES("AccumulatedInterest:",@accumulatedInterestR);
+INSERT INTO smsSummury VALUES("AccumulatedInterest:",FORMAT(@accumulatedInterestR,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03312%') THEN
@@ -19328,7 +19405,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@loanPenaltyRecovered;
 
 IF @loanPenaltyRecovered>0 THEN 
-INSERT INTO smsSummury VALUES("LoanPenalty:",@loanPenaltyRecovered);
+INSERT INTO smsSummury VALUES("LoanPenalty:",FORMAT(@loanPenaltyRecovered,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no like '03305%' OR debit_account_no like  '03306%' OR debit_account_no like  '03307%' OR debit_account_no like '03308%'  OR debit_account_no like  '03310%'  OR debit_account_no like  '03313%' OR debit_account_no like '03314%'  OR debit_account_no like '03317%' OR debit_account_no like  '03319%' OR debit_account_no like '03320%' OR debit_account_no like  '03321%' OR debit_account_no like  '03322%' OR debit_account_no like '03323%' OR debit_account_no like  '03324%' OR debit_account_no like  '03325%')) THEN
@@ -19343,7 +19420,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@otherIncomesCollectedX;
 
 IF @otherIncomesCollectedX>0 THEN 
-INSERT INTO smsSummury VALUES("OtherIncomes:",@otherIncomesCollectedX);
+INSERT INTO smsSummury VALUES("UnrealisedInterestIncome:",FORMAT(@otherIncomesCollectedX,0));
 END IF;
  
 
@@ -19352,7 +19429,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@savingsC;
 
 IF @savingsC>0 THEN 
-INSERT INTO smsSummury VALUES("SavingsAndDeposits:",@savingsC);
+INSERT INTO smsSummury VALUES("SavingsAndDeposits:",FORMAT(@savingsC,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05500%') THEN
@@ -19367,7 +19444,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@payableCreated;
 
 IF @payableCreated>0 THEN 
-INSERT INTO smsSummury VALUES("Payables:",@payableCreated);
+INSERT INTO smsSummury VALUES("Payables:",FORMAT(@payableCreated,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05524%') THEN
@@ -19381,7 +19458,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@insurancePayMade;
 
 IF @insurancePayMade>0 THEN 
-INSERT INTO smsSummury VALUES("Insurance:",@insurancePayMade);
+INSERT INTO smsSummury VALUES("Insurance:",FORMAT(@insurancePayMade,0));
 END IF;
 
 
@@ -19401,7 +19478,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@OtherLiabilities;
 
 IF @OtherLiabilities>0 THEN 
-INSERT INTO smsSummury VALUES("UnknownMobileMoneyCreated:",@OtherLiabilities);
+INSERT INTO smsSummury VALUES("UnknownMobileMoneyCreated:",FORMAT(@OtherLiabilities,0));
 END IF;
 
 
@@ -19417,7 +19494,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@capitalPayments;
 
 IF @capitalPayments>0 THEN 
-INSERT INTO smsSummury VALUES("Capital:",@capitalPayments);
+INSERT INTO smsSummury VALUES("Capital:",FORMAT(@capitalPayments,0));
 END IF;
 
 
@@ -19433,7 +19510,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@otheCapsAndReserversMade;
 
 IF @otheCapsAndReserversMade>0 THEN 
-INSERT INTO smsSummury VALUES("OtherCapital:",@otheCapsAndReserversMade);
+INSERT INTO smsSummury VALUES("OtherCapital:",FORMAT(@otheCapsAndReserversMade,0));
 END IF;
 
 
@@ -19449,7 +19526,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@Refundreceiavale;
 
 IF @Refundreceiavale>0 THEN 
-INSERT INTO smsSummury VALUES("ReceivablesRefunded:",@Refundreceiavale);
+INSERT INTO smsSummury VALUES("ReceivablesRefunded:",FORMAT(@Refundreceiavale,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
@@ -19464,7 +19541,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@otherReceiAndPrepaymentRend;
 
 IF @otherReceiAndPrepaymentRend>0 THEN 
-INSERT INTO smsSummury VALUES("OtherReceivablesRefunded:",@otherReceiAndPrepaymentRend);
+INSERT INTO smsSummury VALUES("OtherReceivablesRefunded:",FORMAT(@otherReceiAndPrepaymentRend,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01122%') THEN
@@ -19478,7 +19555,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@bankDepositMade;
 
 IF @bankDepositMade>0 THEN 
-INSERT INTO smsSummury VALUES("BankDeposits:",@bankDepositMade);
+INSERT INTO smsSummury VALUES("BankDeposits:",FORMAT(@bankDepositMade,0));
 END IF;
 
 
@@ -19495,7 +19572,7 @@ SET @OpeningCahdBala=@OpeningCahdBala+@BankWithdrws;
 
 
 IF @BankWithdrws>0 THEN 
-INSERT INTO smsSummury VALUES("BankWithdraws:",@BankWithdrws);
+INSERT INTO smsSummury VALUES("BankWithdraws:",FORMAT(@BankWithdrws,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
@@ -19510,7 +19587,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@mobileMoneyRefund;
 
 IF @mobileMoneyRefund>0 THEN 
-INSERT INTO smsSummury VALUES("MomoWithdraws:",@mobileMoneyRefund);
+INSERT INTO smsSummury VALUES("MomoWithdraws:",FORMAT(@mobileMoneyRefund,0));
 END IF;
 
 
@@ -19525,7 +19602,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
 
 IF @mobileMoney>0 THEN 
-INSERT INTO smsSummury VALUES("MomoDeposits:",@mobileMoney);
+INSERT INTO smsSummury VALUES("MomoDeposits:",FORMAT(@mobileMoney,0));
 END IF;
 
 
@@ -19542,7 +19619,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@fixedAssetsAndInvestmentDisp;
 
 IF @fixedAssetsAndInvestmentDisp>0 THEN 
-INSERT INTO smsSummury VALUES("FixedAssets:",@fixedAssetsAndInvestmentDisp);
+INSERT INTO smsSummury VALUES("FixedAssets:",FORMAT(@fixedAssetsAndInvestmentDisp,0));
 END IF;
 
 
@@ -19557,7 +19634,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@ExpensesMa;
 
 IF @ExpensesMa>0 THEN 
-INSERT INTO smsSummury VALUES("TotalExpenses:",@ExpensesMa);
+INSERT INTO smsSummury VALUES("TotalExpenses:",FORMAT(@ExpensesMa,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01128%') THEN
@@ -19571,7 +19648,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@loansDisbursed;
 
 IF @loansDisbursed>0 THEN 
-INSERT INTO smsSummury VALUES("LoanDisbursements:",@loansDisbursed);
+INSERT INTO smsSummury VALUES("LoanDisbursements:",FORMAT(@loansDisbursed,0));
 END IF;
 
 
@@ -19586,7 +19663,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@interWriteOff;
 
 IF @interWriteOff>0 THEN 
-INSERT INTO smsSummury VALUES("InterestWrittenOff:",@interWriteOff);
+INSERT INTO smsSummury VALUES("InterestWrittenOff:",FORMAT(@interWriteOff,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03311%') THEN
@@ -19600,7 +19677,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@accumuIntereWrittenOff;
 
 IF @accumuIntereWrittenOff>0 THEN 
-INSERT INTO smsSummury VALUES("AccumulatedInterestWrittenOff:",@accumuIntereWrittenOff);
+INSERT INTO smsSummury VALUES("AccumulatedInterestWrittenOff:",FORMAT(@accumuIntereWrittenOff,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03315%') THEN
@@ -19614,7 +19691,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@processFeesWriteOff;
 
 IF @processFeesWriteOff>0 THEN 
-INSERT INTO smsSummury VALUES("ProcessingFeesWrittenOff:",@processFeesWriteOff);
+INSERT INTO smsSummury VALUES("ProcessingFeesWrittenOff:",FORMAT(@processFeesWriteOff,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '03312%' OR debit_account_no LIKE '03316%' OR debit_account_no LIKE '03309%' OR debit_account_no LIKE '03318%' OR debit_account_no LIKE '03304%' OR debit_account_no like '03305%' OR debit_account_no like  '03306%' OR debit_account_no like  '03307%' OR debit_account_no like '03308%'  OR debit_account_no like  '03310%'  OR debit_account_no like  '03313%' OR debit_account_no like '03314%'  OR debit_account_no like '03317%' OR debit_account_no like  '03319%' OR debit_account_no like '03320%' OR debit_account_no like  '03321%' OR debit_account_no like  '03322%' OR debit_account_no like '03323%' OR debit_account_no like  '03324%' OR debit_account_no like  '03325%')) THEN
@@ -19628,7 +19705,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@otherIncomesWrOff;
 
 IF @otherIncomesWrOff>0 THEN 
-INSERT INTO smsSummury VALUES("OtherIncomesWrittenOff:",@otherIncomesWrOff);
+INSERT INTO smsSummury VALUES("OtherIncomesWrittenOff:",FORMAT(@otherIncomesWrOff,0));
 END IF;
 
 
@@ -19643,7 +19720,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@receiavale;
 
 IF @receiavale>0 THEN 
-INSERT INTO smsSummury VALUES("ReceivablesCreated:",@receiavale);
+INSERT INTO smsSummury VALUES("ReceivablesCreated:",FORMAT(@receiavale,0));
 END IF;
 
 
@@ -19659,7 +19736,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@otherRecePreMade;
 
 IF @otherRecePreMade>0 THEN 
-INSERT INTO smsSummury VALUES("OtherReceivablesAndPrepaymentsMade:",@otherRecePreMade);
+INSERT INTO smsSummury VALUES("OtherReceivablesAndPrepaymentsMade:",FORMAT(@otherRecePreMade,0));
 END IF;
 
 
@@ -19676,7 +19753,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@fixedAssetsAndInvestmentAquired;
 
 IF @fixedAssetsAndInvestmentAquired>0 THEN 
-INSERT INTO smsSummury VALUES("FixedAssetsAndInvestments:",@fixedAssetsAndInvestmentAquired);
+INSERT INTO smsSummury VALUES("FixedAssetsAndInvestments:",FORMAT(@fixedAssetsAndInvestmentAquired,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05500%') THEN
@@ -19691,7 +19768,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@RefundPayable;
 
 IF @RefundPayable>0 THEN 
-INSERT INTO smsSummury VALUES("PayablesRefunded:",@RefundPayable);
+INSERT INTO smsSummury VALUES("PayablesRefunded:",FORMAT(@RefundPayable,0));
 END IF;
 
 
@@ -19711,7 +19788,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@RefundPayableOtherLiabilProvis;
 
 IF @RefundPayableOtherLiabilProvis>0 THEN 
-INSERT INTO smsSummury VALUES("UnknownMoMoCleared:",@RefundPayableOtherLiabilProvis);
+INSERT INTO smsSummury VALUES("UnknownMoMoCleared:",FORMAT(@RefundPayableOtherLiabilProvis,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05524%') THEN
@@ -19726,7 +19803,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@insurancePayableCleared;
 
 IF @insurancePayableCleared>0 THEN 
-INSERT INTO smsSummury VALUES("InsurancePayablesCleared:",@insurancePayableCleared);
+INSERT INTO smsSummury VALUES("InsurancePayablesCleared:",FORMAT(@insurancePayableCleared,0));
 END IF;
 
 
@@ -19742,7 +19819,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@DrawingM;
 
 IF @DrawingM>0 THEN 
-INSERT INTO smsSummury VALUES("DrawingsMade:",@DrawingM);
+INSERT INTO smsSummury VALUES("DrawingsMade:",FORMAT(@DrawingM,0));
 END IF;
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '04400%') THEN
 CALL DecapitalisationsMade(DATE(NOW()),@Decapitlise);
@@ -19757,7 +19834,7 @@ SET @OpeningCahdBala=@OpeningCahdBala-@Decapitlise;
 
 
 IF @Decapitlise>0 THEN 
-INSERT INTO smsSummury VALUES("CapitalRemoved:",@Decapitlise);
+INSERT INTO smsSummury VALUES("CapitalRemoved:",FORMAT(@Decapitlise,0));
 END IF;
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND (debit_account_no>='044010000110' AND debit_account_no<='04430999999') AND NOT debit_account_no='04408000110') THEN
 CALL OtherEquitiesAndReservesRemoved(DATE(NOW()),@equitiesReservesRemoved); 
@@ -19771,7 +19848,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@equitiesReservesRemoved;
 
 IF @equitiesReservesRemoved>0 THEN 
-INSERT INTO smsSummury VALUES("OtherEquitiesAndReservesRemoved:",@equitiesReservesRemoved);
+INSERT INTO smsSummury VALUES("OtherEquitiesAndReservesRemoved:",FORMAT(@equitiesReservesRemoved,0));
 END IF;
 
  CALL SavingsDepositsWithdrawn(DATE(NOW()),@savingDepositWith); 
@@ -19779,30 +19856,30 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@savingDepositWith;
 
 IF @savingDepositWith>0 THEN 
-INSERT INTO smsSummury VALUES("SavingsWithdraws:",@savingDepositWith);
+INSERT INTO smsSummury VALUES("SavingsWithdraws:",FORMAT(@savingDepositWith,0));
 END IF;
 
 
 CALL closingCash(@closingCashBal); 
 
-INSERT INTO smsSummury VALUES("ClosingCash:", @closingCashBal);
+INSERT INTO smsSummury VALUES("ClosingCash:",FORMAT( @closingCashBal,0) );
 
 
 
 CALL momoBalance(@TheMomoBalance);
 
  IF @TheMomoBalance>0 THEN 
-INSERT INTO smsSummury VALUES("MoMoBalance:",@TheMomoBalance);
+INSERT INTO smsSummury VALUES("MoMoBalance:",FORMAT(@TheMomoBalance,0) );
 END IF;
 
  IF @TheMomoBalance>0 THEN 
-INSERT INTO smsSummury VALUES("TotalCashAndMoMo:",@TheMomoBalance+@closingCashBal);
+INSERT INTO smsSummury VALUES("TotalCashAndMoMo:",FORMAT((@TheMomoBalance+@closingCashBal),0));
 END IF;
 
 
 
 
-SELECT itemName,FORMAT(itemValue,0)  AS itemValue FROM smsSummury;
+SELECT itemName,itemValue  AS itemValue FROM smsSummury;
 
 
 DROP TABLE smsSummury;
@@ -19812,7 +19889,9 @@ DELIMITER ;
 
 
 CALL  smsSummuryReport() ;
+
 update new_Loan_appstore SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
+
 update new_Loan_appstore1 SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
 
 
@@ -20455,7 +20534,7 @@ INSERT INTO loanPrintDetailsRenew VALUES (
   officeNumber,
     FORMAT(amountRenewed,0)
   );
-
+-- bc1q5qnzng4uk64gqcqvfsra9euf6z7t7dgzlcpfe2
 
    SELECT * FROM loanPrintDetailsRenew;
 
@@ -20706,14 +20785,14 @@ END//
 
 
 
-call createdRenewedLoan(
-  '05502030510',
-  136000,
-  240,
-  30,
-  '2022-09-25',
-  1,
-  'DAYS',10001,1,'2022-08-18',10001,0,1,'BTN34249',1,4,70795);
+-- call createdRenewedLoan(
+--   '05502030510',
+--   136000,
+--   240,
+--   30,
+--   '2022-09-25',
+--   1,
+--   'DAYS',10001,1,'2022-08-18',10001,0,1,'BTN34249',1,4,70795);
 -- Credits	TUMWINE POSIANO 2 0772898931	05502005710	Customer Deposits	0
 -- 6	70235	newloan05502000910	Disbursed
 -- CALL RepayTheLoanNow('05502005710',200000.0,'BTN34249',10001,'2022-09-24',10001);
