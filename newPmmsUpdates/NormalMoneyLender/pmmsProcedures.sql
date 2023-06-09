@@ -86,7 +86,7 @@ END//
 
  DELIMITER ;
 
-
+CALL creatingRunningBalancesOfShares();
 
 
 -- DROP TABLE IF EXISTS `interestComputed`;
@@ -292,7 +292,7 @@ CREATE TABLE `savingssharescomputationparameters` (
 -- Totaling to 29,684,656/=
 -- Leaves a balance of 315,344/= 
 -- I know when u run the reports it will have a plus or minus. The amount agreed is 30m
-
+-- 31/12/2021	02277000110	Return On Investment Expense	Return On Investment Expense	0.0	Active
 
 -- INSERT INTO  savingssharescomputationparameters VALUES(1,	'2019-02-23'	,'2019-03-23',	10.67,	5.33	,1	,1	,1	,1	,'NA',	'NA'	,'NA');
 
@@ -472,7 +472,7 @@ END//
 
 
 
-
+-- UPDATE savingssharescomputationparameters SET  SavingsStartDate= '2022-02-23',  ShareStartDate= '2022-03-23', SharesRateUsed=4.1,  SavingsRateUsed= 2.5;
 
 
 
@@ -653,10 +653,194 @@ END //
 
  DELIMITER ;
  
+
+UPDATE savingssharescomputationparameters set  SharesRateUsed=1.13,SavingsRateUsed= .61;
+UPDATE savingssharescomputationparameters set  SavingsStartDate= '2022-02-23',ShareStartDate= '2022-03-23';
 --  CALL devidendPaymentOnShares();
 
 
+DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnSharesAccount;
  
+ 	DELIMITER //
+
+
+ CREATE PROCEDURE devidendPaymentOnSharesAccount(IN accountNumberX VARCHAR(100)) READS SQL DATA BEGIN
+
+ DECLARE accountNumber VARCHAR(30); 
+
+ DECLARE theAccountDate1 DATE;
+  DECLARE anyDateInYear DATE;
+  DECLARE rateUsed DOUBLE;
+
+ DECLARE ledgerBalance1 INTEGER;
+ DECLARE amountComputed INTEGER;
+ DECLARE monthlySummations INTEGER;
+ DECLARE lastDate DATE;
+ DECLARE TerminatiOnDate DATE;
+ 
+ DECLARE monthlyTotals INTEGER DEFAULT 0;
+  DECLARE l_done INTEGER DEFAULT 0;
+  DECLARE finalTotals INTEGER DEFAULT 0;
+
+ DECLARE forSelectingAccountNumbers CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number =accountNumberX;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+SELECT ShareStartDate,SharesRateUsed INTO anyDateInYear,rateUsed from SavingsSharesComputationParameters;
+
+ OPEN forSelectingAccountNumbers;
+
+
+accounts_loop: LOOP 
+
+ FETCH forSelectingAccountNumbers into accountNumber;
+
+ IF l_done=1 THEN
+
+LEAVE accounts_loop;
+
+ END IF;
+
+SET @theAccountDate=MAKEDATE(year(anyDateInYear),1);
+
+
+Date_loop: LOOP 
+
+
+SET lastDate=LAST_DAY(DATE_ADD(@theAccountDate, INTERVAL 12-MONTH(@theAccountDate) MONTH));
+
+
+IF @theAccountDate=lastDate THEN
+-- SELECT @theAccountDate,lastDate,accountNumber;
+CALL accountNma(accountNumber,@accountName);
+
+
+SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
+
+ -- SELECT @sql_text1;
+
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+DROP PREPARE stmt1;
+
+
+IF (@ledgerBalance IS NULL) THEN
+
+SET @ledgerBalance=0;
+
+END IF;
+
+-- SELECT @ledgerBalance,@accountName;
+
+IF @ledgerBalance>0 THEN
+
+SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
+ 
+ SET monthlyTotals=monthlyTotals+amountComputed;
+
+ SET finalTotals=finalTotals+amountComputed;
+
+
+
+ INSERT INTO sharesinterestpaymentdaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
+
+ IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
+ 
+ INSERT INTO sharesinterestpaymentmonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
+
+
+SET monthlyTotals=0;
+
+ END IF;
+END IF;
+
+SET theAccountDate1=@theAccountDate;
+SET @ledgerBalance=NULL;
+LEAVE Date_loop;
+
+END IF;
+
+
+
+
+-- SELECT @theAccountDate,lastDate,accountNumber;
+CALL accountNma(accountNumber,@accountName);
+
+
+
+SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
+
+-- SELECT @sql_text1;
+
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+DROP PREPARE stmt1;
+
+
+IF (@ledgerBalance IS NULL) THEN
+
+SET @ledgerBalance=0;
+
+END IF;
+
+-- SELECT @ledgerBalance,@accountName;
+
+IF @ledgerBalance>0 THEN
+
+SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
+
+
+ SET monthlyTotals=monthlyTotals+amountComputed;
+
+ SET finalTotals=finalTotals+amountComputed;
+
+-- SELECT @theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals;
+
+ INSERT INTO sharesinterestpaymentdaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
+
+ IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
+ 
+ INSERT INTO sharesinterestpaymentmonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
+
+SET monthlyTotals=0;
+
+ END IF;
+END IF;
+
+
+
+SET theAccountDate1=@theAccountDate;
+SET ledgerBalance1=@ledgerBalance;
+SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
+
+ SET @ledgerBalance=NULL;
+
+ END LOOP Date_loop;
+
+  INSERT INTO sharesinterestpaymentannually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
+
+SET finalTotals=0;
+
+SET l_done=0;
+
+ END LOOP accounts_loop;
+
+
+
+ CLOSE forSelectingAccountNumbers;
+
+
+
+END //
+
+ DELIMITER ;
+ 
+ 
+--  114	05502047010	Muhereza Peace 0755014478	0	10,000,000	200	10,000,000
+-- 115	05502049610	Mugume James 0783671109	0	4,000,000	80	4,000,000
+-- 116	05502050110	Nyiringabo Dan 0779201221	0	2,800,000	56	2,800,000
+-- 117	05502056710	Ntambara Geoffrey 0787968873	0	500,000	10	500,000
  
  /*============================================================GENERAL SUMMURY REPORT====================================================================================*/
  
@@ -6150,12 +6334,574 @@ END OUTER_BLOCK//
 DELIMITER ;
 
 
+    
 
--- DELETE new_loan_appstore,new_loan_appstoreamort from new_loan_appstore INNER JOIN new_loan_appstoreamort ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.loan_cycle_status='Completed' AND new_loan_appstore.trn_date<='2022-07-30';
-
--- DELETE pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId WHERE new_loan_appstore1.loan_cycle_status='Completed' AND new_loan_appstore1.trn_date<='2022-07-30';
-
--- Debits	OFFICE FURNITURE & FITTINGS-HEF SACCO 018	01103001110	Furniture, Fixtures & Equipment	517966.0
+        DROP PROCEDURE IF EXISTS reverseTxnsX;
 
 
--- CALL postingTxnsX(NULL,'2022-09-30','Furniniture Processed on 30/09/2022\n  From Accounts Payable','2022-09-30','-','200','1358707.0','01103001110','SUSPENSE ACCOUNT FOR ADJUSTMENTS','0002','BTN44551','Gen','10001','10:25:35','2','05523000110','05523000010','Cr','Main','NA');
+        DELIMITER //
+
+-- 08/01/2023	08/01/2023	TURYAHIKAYO ARTHUR   0776088599s Account Deposit for Loan Payment
+--   Dated 08/01/2023	300000.0	-	3814801.0	BTN216497
+-- CALL reverseTxnsX('BTN216497');
+
+        CREATE PROCEDURE  reverseTxnsX(IN batchNumber VARCHAR(100) )  BEGIN
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,loanTrnIdL INT ;
+     DECLARE txnDate DATE;
+     DECLARE the_narration VARCHAR(500);
+     DECLARE the_debit,the_credit,the_account_no,the_contra_account_no,the_trn_type,DrCr,txnAmount  VARCHAR(100);
+
+ DECLARE fortheTxnId CURSOR FOR SELECT trn_id FROM general_ledger WHERE chq_number=batchNumber ORDER BY trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+ IF l_done=1 THEN
+
+LEAVE txnId_loop;
+
+ END IF;
+
+
+
+SELECT trn_date, narration,debit,credit,debit_account_no,credit_account_no,trn_type INTO txnDate, the_narration,the_debit,the_credit,the_account_no,the_contra_account_no,the_trn_type FROM general_ledger WHERE trn_id=txnId;
+
+IF txnDate=DATE(NOW()) THEN
+
+IF the_debit='-' THEN
+SET DrCr='Dr',txnAmount=the_credit;
+
+ELSE
+SET DrCr='Cr',txnAmount=the_debit;
+END IF;
+
+
+
+-- SELECT DrCr,txnAmount,the_debit,the_credit,the_account_no,the_trn_type;
+
+IF DrCr='Dr' THEN
+
+IF (SUBSTRING(the_account_no,2,2)='11' OR SUBSTRING(the_account_no,2,2)='22') THEN
+-- SELECT DrCr;
+-- SELECT SUBSTRING(the_account_no,2,2);
+
+SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow+txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),txnAmount,'-',@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+
+IF ((the_account_no LIKE '01128000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateThePrincipalComp(the_contra_account_no,txnAmount);
+
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+
+END IF;
+
+
+IF (SUBSTRING(the_account_no,2,2)='33' OR SUBSTRING(the_account_no,2,2)='44' OR SUBSTRING(the_account_no,2,2)='55') THEN
+
+SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow-txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),txnAmount,'-',@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+
+-- 05/01/2023	03301000110	Gross Interest Income1	Gross Interest Income	5.73585603E8	Active
+-- 10/03/2020	03312000110	Loan Surcharge1	Loan Surcharge	0.0	Active
+-- 23/08/2022	03311000110	Accumulated Interest Income1	Accumulated Interest Income	-678398.0	Active
+-- Credits	Murungi Merab	05502020510	Customer Deposits	776871.0
+IF ((the_account_no LIKE '03301000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateTheInterestComp(the_contra_account_no,txnAmount);
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+IF ((the_account_no LIKE '03312000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateThePenaltyComp(the_contra_account_no,txnAmount);
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+IF ((the_account_no LIKE '03311000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateTheAccumInterComp(the_contra_account_no,txnAmount);
+
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+
+        
+END IF;
+
+
+END IF;
+
+
+IF DrCr='Cr' THEN
+
+IF (SUBSTRING(the_account_no,2,2)='11' OR SUBSTRING(the_account_no,2,2)='22') THEN
+
+SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow-txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),'-',txnAmount,@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+
+IF ((the_account_no LIKE '01128000%') AND (the_trn_type='Gen')) THEN
+
+SELECT loanTrnId  INTO loanTrnIdL FROM   pmms.loandisburserepaystatement WHERE BatchCode=batchNumber;
+
+IF EXISTS(SELECT * FROM  pmms_loans.new_loan_appstore WHERE trn_id=loanTrnIdL) THEN
+DELETE FROM pmms_loans.new_loan_appstore WHERE trn_id=loanTrnIdL;
+DELETE FROM pmms_loans.new_loan_appstore1 WHERE trn_id=loanTrnIdL;
+DELETE FROM pmms_loans.new_loan_appstoreamort WHERE master1_id=loanTrnIdL;
+END IF;
+
+-- CALL reverseTxnsX('BTN15761');
+
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+END IF;
+
+
+IF (SUBSTRING(the_account_no,2,2)='33' OR SUBSTRING(the_account_no,2,2)='44' OR SUBSTRING(the_account_no,2,2)='55') THEN
+
+ SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow+txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),'-',txnAmount,@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+END IF;
+
+END IF;
+
+END IF;
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+
+        END //
+
+        DELIMITER ;
+-- 08/01/2023	08/01/2023	NAMULI ALLET  0705052803s Account Deposit for Loan Payment
+--   Dated 08/01/2023	400000.0	-	3914801.0	BTN216498
+
+-- CALL reverseTxnsX('BTN216498');
+
+         DROP PROCEDURE IF EXISTS updateTheInterestComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateTheInterestComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND(new_loan_appstore.loan_cycle_status='Disbursed' OR new_loan_appstore.loan_cycle_status='Renewed') AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+-- 06/01/2023	06/01/2023	Basheija Charles 0785109562s Account Deposit for Loan Payment
+--   Dated 06/01/2023	100000.0	-	5.143899953333333E7	BTN15756
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+-- SELECT txnId;
+
+ SELECT master1_id,instalment_paid,InterestPaid, InstalmentRemaining,InterestRemaing INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+-- SELECT theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing;
+SET theActualInstalmentsPaid=theInstalmentPaid;
+
+
+ SELECT balance_due,instalments_paid, TotalInterestPaid,TotalInterestRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 OR l_done=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+ IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+-- -- SELECT txnAmount,theInterestPaid;
+
+-- -- select txnAmount
+
+-- IF txnAmount<theInterestPaid THEN 
+-- SET theInterestPaid=txnAmount;
+-- END IF;
+
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid),InterestPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),InterestRemaing=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+
+-- SELECT "INTEREST RA" ,theActualInstalmentsPaid;
+
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;
+
+
+
+-- 08/01/2023	08/01/2023	AKAMPUMUZA GILLIAN 0758066555s Account Deposit for Loan Payment
+--   Dated 08/01/2023	500000.0	-	4014801.0	BTN216499
+
+-- CALL reverseTxnsX('BTN216499');
+
+         DROP PROCEDURE IF EXISTS updateTheAccumInterComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateTheAccumInterComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+
+ SELECT master1_id,instalment_paid,AccumulatedInterestPaid, InstalmentRemaining,AccumulatedInterestRemaining INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theInstalmentPaid;
+
+ SELECT balance_due,instalments_paid, TotalAccumulatedInterestPaid,TotalAccumulatedInterestRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+--  IF txnAmount<theInterestPaid THEN
+-- SET theInterestPaid=txnAmount;
+-- END IF;
+-- SELECT txnAmount,theInterestPaid;
+
+
+-- IF txnAmount<theInterestPaid THEN 
+-- SET theInterestPaid=txnAmount;
+-- END IF;
+
+
+IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+
+
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid),AccumulatedInterestPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),AccumulatedInterestRemaining=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+
+
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalAccumulatedInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalAccumulatedInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalAccumulatedInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalAccumulatedInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+-- SELECT "ACCUM INTEREST", theActualInstalmentsPaid;
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+         DROP PROCEDURE IF EXISTS updateThePenaltyComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateThePenaltyComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+
+ SELECT master1_id,instalment_paid,LoanPenaltyPaid, InstalmentRemaining,LoanPenaltyRemaining INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theInstalmentPaid;
+
+ SELECT balance_due,instalments_paid, TotalLoanPenaltyPaid, TotalLoanPenaltyRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+
+-- SELECT "pENALTY COMP",theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing;
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid), LoanPenaltyPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),LoanPenaltyRemaining=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+
+
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalLoanPenaltyPaid=(theTotalInterestPaid-theActualInterestPaid),TotalLoanPenaltyRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalLoanPenaltyPaid=(theTotalInterestPaid-theActualInterestPaid),TotalLoanPenaltyRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+
+
+
+         DROP PROCEDURE IF EXISTS updateThePrincipalComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateThePrincipalComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+
+ SELECT master1_id,instalment_paid,PrincipalPaid, InstalmentRemaining, PrincipalRemaining INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+ SET theActualInstalmentsPaid=theInstalmentPaid;
+
+
+ SELECT balance_due,instalments_paid, TotalPrincipalPaid,TotalPrincipalRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+ IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid),PrincipalPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),PrincipalRemaining=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+
+
+
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalPrincipalPaid=(theTotalInterestPaid-theActualInterestPaid),TotalPrincipalRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalPrincipalPaid=(theTotalInterestPaid-theActualInterestPaid),TotalPrincipalRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+-- SELECT "PRINCIPAL", theActualInstalmentsPaid;
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;

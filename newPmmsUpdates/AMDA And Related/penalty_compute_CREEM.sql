@@ -90,7 +90,7 @@ SELECT LoanPenalty, LoanPenaltyRemaining, InstalmentRemaining,instalment_amount 
 
 
 
-SET computedPenalty=(oldInstalmnetAmount*.0112);
+SET computedPenalty=(oldInstalmnetAmount*.01);
 
 
 
@@ -674,6 +674,7 @@ RETURN existsIn;
 END ##
 DELIMITER ;
 
+DELETE FROM loanArrearsSettings;
  INSERT INTO loanArrearsSettings VALUES (NULL,0,4,1,1,10.0,2,1,1);
 
  /* DROP TABLE IF EXISTS amdaPenaltyComputeNow;

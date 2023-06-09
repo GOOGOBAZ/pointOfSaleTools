@@ -2,7 +2,7 @@
 -- 05/06/2022	05/06/2022	LWANGA IBRAH 0759775579s Account Deposit for Loan Payment
   -- Dated 05/06/2022	159331.0	-	921531.0
 
-
+-- 70624	TUMWINE ROGDERS 0757537197	BODA BODA	240	200000	0	0	0	0	30 DAYS	25/09/2022	10006	Completed
 -- -----------------------------------------------------
 -- createdRenewedLoan
 
@@ -1875,7 +1875,7 @@ END IF;
 
 -- SELECT totalAccumulatedInterestX,totalPenaltyX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,theLoanId;
 
-SELECT totalPrincipalX,totalInsterestX,totalAccumulatedInterestX,totalPenaltyX,completionStatus,loanCycleStatus;
+SELECT totalPrincipalX,totalInsterestX,totalAccumulatedInterestX,totalPenaltyX,completionStatus,loanCycleStatus,theLoanId;
 
 -- COMMIT;
 
@@ -2324,7 +2324,7 @@ END//
 
 -- SELECT SloanTrnId;
 
-DROP TABLE IF EXISTS autoRenewalSettings;
+-- DROP TABLE IF EXISTS autoRenewalSettings;
 
 CREATE  TABLE autoRenewalSettings(
 id INTEGER NOT NULL, -- 0
@@ -5273,8 +5273,11 @@ accounts_loop: LOOP
 
 
  FETCH forSelectingLoanIds into loanId;
- 
+
+--  IF loanId="newloan05502002010" THEN
 --  SELECT loanId;
+-- END IF;
+
 
  IF l_done=1 THEN
 
@@ -5368,6 +5371,10 @@ SET @INST=DATE_FORMAT(NOW(),'%d/%m/%Y');
  END IF;
 
 IF theLoanStatus='Disbursed' THEN
+
+--  IF customerName="MUTEBI BASHIRU 0773591734" THEN
+--  SELECT ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'),loanId;
+-- END IF;
 
 INSERT INTO aging_loan_analysis1 VALUES (ID,customerName,customerContactNumber,gaurantorName1,gaurantorContact1,DATE_FORMAT(TrnDate,'%d/%m/%Y'),@INST,remainport,p_remain,i_remain,arrears,DATE_FORMAT(DATE_ADD(TrnDate,INTERVAL 30 DAY),'%d/%m/%Y'));
 
@@ -6476,7 +6483,7 @@ END
 ##
 DELIMITER ;
 
--- CALL agingAnalysis();
+-- CALL agingAnalysis()\G
 
 
 
@@ -6714,7 +6721,7 @@ INSERT INTO aging_loan_analysis1x VALUES (ID,customerName,customerContactNumber,
 
 END IF;
 
-
+SET customerName=NULL, customerContactNumber=NULL,TrnId=NULL,TrnDate=NULL,remainport=NULL,princeremain=NULL,interestRem=NULL,p_remain=NULL,theLoanStatus=NULL;
 
     SET l_done=0;
  END LOOP accounts_loop;
@@ -12010,6 +12017,15 @@ DELIMITER ;
 
 
 
+DROP PROCEDURE IF EXISTS totalNumberOfActiveNewCustomers;
+DELIMITER $$
+CREATE  PROCEDURE totalNumberOfActiveNewCustomers(OUT activeCustomers INT)
+BEGIN
+SELECT DISTINCT COUNT(new_loan_appstore.trn_id) INTO activeCustomers FROM pmms_loans.new_loan_appstore INNER JOIN pmms.account_created_store ON new_loan_appstore.applicant_account_number=account_created_store.account_number WHERE (new_loan_appstore.loan_cycle_status='Disbursed') AND account_created_store.creation_date=DATE(NOW());
+
+END $$
+DELIMITER ;
+
 
 DROP PROCEDURE IF EXISTS totalNumberOfCustomersPaid;
 DELIMITER $$
@@ -12104,6 +12120,10 @@ CREATE  PROCEDURE sumRenewals(OUT totalRenewals INT)
 BEGIN
 SELECT SUM(princimpal_amount) INTO totalRenewals  FROM new_loan_appstore WHERE trn_date=DATE(NOW()) AND loan_cycle_status='Renewed';
 
+IF ISNULL(totalRenewals) THEN
+SET totalRenewals=0.0;
+END IF;
+
 END $$
 DELIMITER ;
 
@@ -12129,8 +12149,9 @@ BEGIN
 -- SELECT COUNT(trn_id) INTO @numberRenewed FROM new_loan_appstore WHERE loan_cycle_status='Renewed' AND trn_date=DATE(NOW());
 
 
-SELECT  COUNT( DISTINCT master1_id) INTO renewedCustomersPaid from new_loan_appstoreamort INNER JOIN new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE instalment_status='P' AND instalment_paid_date=DATE(NOW()) and loan_cycle_status='Renewed';
+-- SELECT  COUNT( DISTINCT master1_id) INTO renewedCustomersPaid from new_loan_appstoreamort INNER JOIN new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE instalment_status='P' AND instalment_paid_date=DATE(NOW()) and loan_cycle_status='Renewed';
 
+SELECT COUNT(trnId) INTO renewedCustomersPaid FROM pmms.loandisburserepaystatement  WHERE TrnDate=CURDATE() AND LoanStatusReport='Renewed' AND ExpectedTotalAmount<=0.0;
 
 -- SELECT (@totalPaidRenewed-@numberRenewed) INTO activeCustomersPaid;
 
@@ -12149,8 +12170,9 @@ BEGIN
 -- SELECT COUNT(trn_id) INTO @numberRenewed FROM new_loan_appstore WHERE loan_cycle_status='Renewed' AND trn_date=DATE(NOW());
 
 
-SELECT  SUM(instalment_paid) INTO sumRenewalsPaid from new_loan_appstoreamort INNER JOIN new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE instalment_status='P' AND instalment_paid_date=DATE(NOW()) and loan_cycle_status='Renewed';
+-- SELECT  SUM(instalment_paid) INTO sumRenewalsPaid from new_loan_appstoreamort INNER JOIN new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE instalment_status='P' AND instalment_paid_date=DATE(NOW()) and loan_cycle_status='Renewed';
 
+SELECT SUM(AmountPaid) INTO sumRenewalsPaid FROM pmms.loandisburserepaystatement  WHERE TrnDate=CURDATE() AND LoanStatusReport='Renewed' AND ExpectedTotalAmount<=0.0;
 
 -- SELECT (@totalPaidRenewed-@numberRenewed) INTO activeCustomersPaid;
 
@@ -12179,30 +12201,6 @@ END $$
 DELIMITER ;
 
 
--- DROP PROCEDURE IF EXISTS ProcessingFeesCollected;
--- DELIMITER //
--- CREATE PROCEDURE ProcessingFeesCollected(IN theDate DATE,OUT processingFees VARCHAR(100)) READS SQL DATA 
--- BEGIN
--- SELECT  SUM(credit) INTO processingFees FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '03315%';
--- IF ISNULL(processingFees) THEN
--- SET processingFees=0.0;
--- END IF;
---  END //
---  DELIMITER ;
-
-
--- DROP PROCEDURE IF EXISTS LedgerFees;
--- DELIMITER //
--- CREATE PROCEDURE LedgerFees(IN theDate DATE,OUT ledgerFessCol VARCHAR(100)) READS SQL DATA 
--- BEGIN
--- SELECT  SUM(credit) INTO processingFees FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '03304%';
--- IF ISNULL(processingFees) THEN
--- SET processingFees=0.0;
--- END IF;
--- END //
--- DELIMITER ;
-
-
 DROP PROCEDURE IF EXISTS ProcessingFeesCollected;
 DELIMITER //
 CREATE PROCEDURE ProcessingFeesCollected(IN theDate DATE,OUT processingFees VARCHAR(100)) READS SQL DATA 
@@ -12211,87 +12209,6 @@ SELECT  SUM(credit) INTO processingFees FROM pmms.general_ledger WHERE  trn_date
 IF ISNULL(processingFees) THEN
 SET processingFees=0.0;
 END IF;
-
--- OUTER_BLOCK: BEGIN
-
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03315%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
---  SET @cash=0;
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
-
--- ACCOUNTS_LOOP: LOOP 
-
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DEALLOCATE PREPARE stmt;
-
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- /* SELECT batchNumbersReps; */
-
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
-
--- CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
-
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
--- SET inner_done=0;
--- END LOOP BATCH_LOOP; 
--- CLOSE cursor_forSelectingBatchNumbers; 
--- END INNER_BLOCK;
-
--- DROP TABLE account_view;
-
-
--- SET outer_done=0;
---  END LOOP ACCOUNTS_LOOP;
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cash; */
--- SET processingFees=@cash;
--- END OUTER_BLOCK//
 
 
         END //
@@ -12315,94 +12232,7 @@ SELECT  SUM(credit) INTO ledgerFessCol FROM pmms.general_ledger WHERE  trn_date=
 IF ISNULL(ledgerFessCol) THEN
 SET ledgerFessCol=0.0;
 END IF;
--- OUTER_BLOCK: BEGIN
 
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03304%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
-
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
-
--- /* SELECT processindFeesAccountRep; */
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- SET ledgerFessCol=@cash;
--- END OUTER_BLOCK//
 
 END //
 
@@ -12430,117 +12260,6 @@ IF ISNULL(badDebtsRecover) THEN
 SET badDebtsRecover=0.0;
 END IF;
 
--- OUTER_BLOCK: BEGIN
-
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03318%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET badDebtsRecover='0';
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep;
--- SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET badDebtsRecover='0';
--- ELSE
--- SET badDebtsRecover=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -12562,117 +12281,6 @@ IF ISNULL(memberShipFessCol) THEN
 SET memberShipFessCol=0.0;
 END IF;
 
--- OUTER_BLOCK: BEGIN
-
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03309%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
-
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep;
--- SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET memberShipFessCol='0';
--- ELSE
--- SET memberShipFessCol=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -12695,115 +12303,6 @@ IF ISNULL(annualFeesRecovered) THEN
 SET annualFeesRecovered=0.0;
 END IF;
 
--- OUTER_BLOCK: BEGIN
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03316%'; 
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep;
--- SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET annualFeesRecovered='0';
--- ELSE
--- SET annualFeesRecovered=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -12812,6 +12311,20 @@ DELIMITER ;
 
 SELECT @annualFeesRecovered; */
 
+
+
+
+DROP PROCEDURE IF EXISTS InterestRenewed;
+DELIMITER //
+CREATE PROCEDURE InterestRenewed(IN theDate DATE,OUT InterestR VARCHAR(100)) READS SQL DATA 
+BEGIN
+SELECT  SUM(credit) INTO InterestR FROM pmms.general_ledger WHERE  trn_date=theDate AND  debit_account_no LIKE '03322%';
+IF ISNULL(InterestR) THEN
+SET InterestR=0.0;
+END IF;
+
+END //
+DELIMITER ;
 
 
 
@@ -12827,117 +12340,6 @@ IF ISNULL(InterestR) THEN
 SET InterestR=0.0;
 END IF;
 
--- OUTER_BLOCK: BEGIN
-
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03301%'; 
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
--- -- select processindFeesAccountRep;
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
--- -- SELECT batchNumbersReps;
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep;
--- SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET InterestR='0';
--- ELSE
--- SET InterestR=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -12959,115 +12361,6 @@ IF ISNULL(accumulatedInterestR) THEN
 SET accumulatedInterestR=0.0;
 END IF;
 
--- OUTER_BLOCK: BEGIN
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03311%'; 
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep;
--- SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET accumulatedInterestR='0';
--- ELSE
--- SET accumulatedInterestR=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -13093,117 +12386,6 @@ SET loanPenaltyRecovered=0.0;
 END IF;
 
 
--- OUTER_BLOCK: BEGIN
-
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '03312%'; 
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep;
--- SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET loanPenaltyRecovered='0';
--- ELSE
--- SET loanPenaltyRecovered=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -13227,121 +12409,6 @@ CREATE PROCEDURE otherIncomesCollected(IN theDate DATE,OUT otherIncomesCollected
 BEGIN
 SELECT  SUM(credit) INTO otherIncomesCollectedX FROM pmms.general_ledger WHERE  trn_date=theDate AND (debit_account_no like '03305%' OR debit_account_no like  '03306%' OR debit_account_no like  '03307%' OR debit_account_no like '03308%'  OR debit_account_no like  '03310%'  OR debit_account_no like  '03313%' OR debit_account_no like '03314%'  OR debit_account_no like '03317%' OR debit_account_no like  '03319%' OR debit_account_no like '03320%' OR debit_account_no like  '03321%' OR debit_account_no like  '03322%' OR debit_account_no like '03323%' OR debit_account_no like  '03324%' OR debit_account_no like  '03325%');
 
--- IF ISNULL(processingFees) THEN
--- SET processingFees=0.0;
--- END IF;
-
-
-
--- OUTER_BLOCK: BEGIN
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE (account_number like '03305%' OR account_number like  '03306%' OR account_number like  '03307%' OR account_number like '03308%'  OR account_number like  '03310%'  OR account_number like  '03313%' OR account_number like '03314%'  OR account_number like '03317%' OR account_number like  '03319%' OR account_number like '03320%' OR account_number like  '03321%' OR account_number like  '03322%' OR account_number like '03323%' OR account_number like  '03324%' OR account_number like  '03325%');
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
-
-
-
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT chq_number FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  AND other_one='Cr'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
--- /* SELECT processindFeesAccountRep; */
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
---  CALL cashAccountWasDebited(batchNumbersReps,@cashDebited);
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amount FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE chq_number='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amount<>'-' OR @amount<>0 THEN
--- SET @cash=@cash+@amount;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amount IS NULL THEN
--- SET @amount=0;
--- END IF;
--- SET @amount=0;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /*  SELECT @cash; */
---  IF @cash IS NULL THEN
--- SET otherIncomesCollectedX='0';
--- ELSE
--- SET otherIncomesCollectedX=@cash;
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -13374,166 +12441,6 @@ IF ISNULL(payableCreatedFinal) THEN
 SET payableCreatedFinal=0.0;
 END IF;
 
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number like '05500%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /*END IF; */
-
--- /* IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /*END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET payableCreatedFinal='0';
--- ELSE
-
--- SET payableCreatedFinal=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -13565,97 +12472,6 @@ SET insurancePayableMadev=0.0;
 END IF;
 
 
---  DECLARE insurancePayableAccountRep VARCHAR(30); 
-
-
---  DECLARE l_done INTEGER DEFAULT 0; 
-
---  DECLARE lastDate,originalDueDate DATE; 
-
-
-
---  DECLARE forSelectingInsurancePayableCreatedAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE  account_number like '05524%' ;
- 
-
-
---  DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
-
-
---  OPEN forSelectingInsurancePayableCreatedAccounts; 
-
--- SET @cashBal=0;
--- accounts_loop: LOOP 
-
---  FETCH forSelectingInsurancePayableCreatedAccounts into insurancePayableAccountRep;
-
-
---  IF l_done=1 THEN
-
--- LEAVE accounts_loop;
-
---  END IF;
-
---    SET @sql_text = concat(CAST(" SELECT  ledger_balance INTO @openBalance FROM    pmms.bsanca" AS CHAR CHARACTER SET utf8),insurancePayableAccountRep,CAST(" WHERE  trn_date<'" AS CHAR CHARACTER SET utf8),theDate,CAST("'  ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
--- PREPARE stmt FROM @sql_text;
--- /* SELECT @sql_text; */
---   EXECUTE stmt;
--- DROP PREPARE stmt;
-
---  SET @sql_text = concat(CAST(" SELECT  ledger_balance INTO @closingBalance FROM    pmms.bsanca" AS CHAR CHARACTER SET utf8),insurancePayableAccountRep,CAST(" WHERE  trn_date<='" AS CHAR CHARACTER SET utf8),theDate,CAST("'  ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
--- PREPARE stmt FROM @sql_text;
--- /* SELECT @sql_text; */
---   EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- /* SELECT @openBalance;
--- SELECT @closingBalance; */
-
--- IF ISNULL(@openBalance) THEN
-
--- SET @openBalance=0;
-
--- END IF;
-
--- IF ISNULL(@closingBalance) THEN
-
--- SET @closingBalance=0;
-
--- END IF;
-
-
--- SET @actualBalance=@closingBalance-@openBalance;
-
--- IF @actualBalance>0 THEN 
-
--- SET @cashBal=@cashBal+@actualBalance;
-
--- END IF;
--- /* 
--- SELECT @cashBal;
---  */
-
--- IF ISNULL(@cashBal) THEN
-
--- SET @cashBal=0;
-
--- END IF;
-
--- SET l_done=0;
-
-
--- SET @openBalance=0;
--- SET @closingBalance=0;
---  END LOOP accounts_loop;
- 
---  IF ISNULL(@cashBal) THEN
-
--- SET @cashBal=0;
-
--- END IF;
- 
---  SET insurancePayableMadev=@cashBal;
-
---  CLOSE forSelectingInsurancePayableCreatedAccounts;
 
 END //
 
@@ -13688,171 +12504,6 @@ SET liabilityProvi=0.0;
 END IF;
 
 
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE (account_number like '05504%' 
---  OR account_number like '05501%' OR account_number like '05503%' OR account_number like '05505%'  OR account_number like '05509%' OR account_number like '05506%' OR account_number like '05507%'
---  OR account_number like '05522%' OR account_number like '05525%' OR account_number like '05527%' OR account_number like '05526%' OR account_number like '05528%'
---  OR account_number like '05523%' OR account_number like '05523%' OR account_number like '05508%' OR account_number like '05510%' 
---  OR account_number like '05511%' OR account_number like '05512%' OR account_number like '05513%' OR account_number like '05514%' OR account_number like '05515%'  
---  OR account_number like '05516%'  OR account_number like '05517%'  OR account_number like '05518%'  OR account_number like '05519%'  OR account_number like '05520%'  OR account_number like '05521%');
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /*/*END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /*END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET liabilityProvi='0';
--- ELSE
-
--- SET liabilityProvi=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 
 DELIMITER ;
@@ -13883,166 +12534,6 @@ END IF;
 
 
 
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number like '04400%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET someEquity='0';
--- ELSE
-
--- SET someEquity=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
-
 END //
 
 DELIMITER ;
@@ -14071,166 +12562,6 @@ END IF;
 
 
 
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number>='044010000110' AND account_number<='04430999999';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET otheCapsAndReserversMade='0';
--- ELSE
-
--- SET otheCapsAndReserversMade=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -14259,165 +12590,6 @@ END IF;
 
 
 
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '01131%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
--- /* 
--- SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET Refundreceiavale='0';
--- ELSE
-
--- SET Refundreceiavale=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END   //
 DELIMITER ;
 /* 
@@ -14443,168 +12615,6 @@ SET otherReceiAndPrepaymentRend=0.0;
 END IF;
 
 
-
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE (account_number LIKE '01117%' OR account_number LIKE '01118%' OR account_number LIKE '01119%'
---  OR account_number LIKE '01132%'  OR account_number LIKE '01133%'  OR account_number LIKE '01134%'  OR account_number LIKE '01135%'  OR account_number LIKE '01120%');
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
--- /* 
--- IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET otherReceiAndPrepaymentRend='0';
--- ELSE
-
--- SET otherReceiAndPrepaymentRend=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -14632,353 +12642,11 @@ END IF;
 
 
 
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '01122%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET BankWithdrws='0';
--- ELSE
-
--- SET BankWithdrws=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
 
 CALL BankWithdrawsMade('2019-06-23',@BankWithdrws);
-
-/* SELECT @BankWithdrws; */
-
-
-
-
-
-
-
-
--- DROP PROCEDURE IF EXISTS BankWithdrawsMade;
-
--- DELIMITER //
-
--- CREATE PROCEDURE BankWithdrawsMade(IN theDate DATE,OUT BankWithdrws VARCHAR(100)) READS SQL DATA 
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '01122%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET BankWithdrws='0';
--- ELSE
-
--- SET BankWithdrws=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
-
--- DELIMITER ;
-
-
--- /* CALL BankWithdrawsMade('2019-06-23',@BankWithdrws);
-
--- SELECT @BankWithdrws; */
 
 
 
@@ -14996,165 +12664,6 @@ SET princimpalRepaymentsMade=0.0;
 END IF;
 
 
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '01128%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET princimpalRepaymentsMade='0';
--- ELSE
-
--- SET princimpalRepaymentsMade=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -15182,166 +12691,6 @@ END IF;
 
 
 
-
--- OUTER_BLOCK: BEGIN
-
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '01121%';
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET mobileMoneyRefund='0';
--- ELSE
-
--- SET mobileMoneyRefund=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -19061,10 +16410,9 @@ SELECT @savingDepositWith; */
 
 
 
-
-DROP PROCEDURE `smsSummuryReport`;
+DROP PROCEDURE smsSummuryReport;
 DELIMITER $$
-CREATE  PROCEDURE `smsSummuryReport`()
+CREATE  PROCEDURE smsSummuryReport()
     READS SQL DATA
 BEGIN
  
@@ -19077,68 +16425,66 @@ CREATE  TEMPORARY TABLE smsSummury(itemName VARCHAR(200),itemValue VARCHAR(200))
 
 
 
-CALL totalPrincimpalBalance(@princimpalBalance);
-
-IF @princimpalBalance>0 THEN
-
-INSERT INTO smsSummury VALUES("Princ.Stck:",@princimpalBalance);
-
-  END IF;
-
-
-  CALL totalInterestBalance(@interestBalance);
-
-IF @interestBalance>0 THEN
-
-INSERT INTO smsSummury VALUES("Interes.Stck:",@interestBalance);
-
-  END IF;
-
-IF @interestBalance>0 OR @princimpalBalance>0 THEN
-
-INSERT INTO smsSummury VALUES("Total.Stck:",@interestBalance+@princimpalBalance);
-
-  END IF;
-
-
 
 
 
 
 CALL totalNumberOfActiveCustomers(@activeCustomers);
-
+-- SELECT @activeCustomers;
 IF @activeCustomers>0 THEN
-
-INSERT INTO smsSummury VALUES("No.Custom:",@activeCustomers);
+-- SELECT @activeCustomers;
+INSERT INTO smsSummury VALUES("No.Custom:",FORMAT(@activeCustomers,0));
 
   END IF;
 
 
 CALL totalNumberOfCustomersPaid(@activeCustomersPaid);
 
-IF @activeCustomersPaid>0 THEN
+-- SELECT @activeCustomersPaid;
 
-INSERT INTO smsSummury VALUES("No.CustomP:",@activeCustomersPaid);
+IF @activeCustomersPaid>0 THEN
+-- SELECT @activeCustomersPaid;
+INSERT INTO smsSummury VALUES("No.CustomP:",FORMAT(@activeCustomersPaid,0));
+SET @rate=ROUND(((@activeCustomersPaid/@activeCustomers)*100),0);
+SELECT CONCAT(@rate,'%') INTO @rate;
+INSERT INTO smsSummury VALUES("ColRate:",@rate);
+  END IF;
+
+
+CALL totalNumberOfActiveNewCustomers(@activeNewCustomers);
+-- SELECT @activeCustomers;
+IF @activeNewCustomers>0 THEN
+-- SELECT @activeCustomers;
+INSERT INTO smsSummury VALUES("NewCust:",FORMAT(@activeNewCustomers,0));
 
   END IF;
 
 
-
+-- SELECT @princimpalRepaymentsMade;
+  -- SELECT @princimpalRepaymentsMade;
+  CALL sumRenewals(@totalRenewals);
+  -- select @totalRenewals;
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 CALL InterestRecover(DATE(NOW()),@InterestR);
-SET @ActualTotalAmountCollectedToday=@princimpalRepaymentsMade+@InterestR;
-IF @ActualTotalAmountCollectedToday>0 THEN
 
-INSERT INTO smsSummury VALUES("TC:",@ActualTotalAmountCollectedToday);
+CALL InterestRenewed(DATE(NOW()),@InterestRenew);
+-- SELECT @princimpalRepaymentsMade,@InterestR;
+SET @ActualTotalAmountCollectedToday=(@princimpalRepaymentsMade+@InterestR)-@totalRenewals;
+
+-- select @ActualTotalAmountCollectedToday;
+IF @ActualTotalAmountCollectedToday>0 THEN
+  -- SELECT @ActualTotalAmountCollectedToday;
+INSERT INTO smsSummury VALUES("TC:",FORMAT(@ActualTotalAmountCollectedToday,0));
 
   END IF;
+
 
 
 CALL countNumberOfRenewedPaid(@numberOfRenewalsPaid);
 
 IF @numberOfRenewalsPaid>0 THEN
 -- SELECT @numberOfDibusements;
-INSERT INTO smsSummury VALUES("No.RenewedPaid:",@numberOfRenewalsPaid);
+INSERT INTO smsSummury VALUES("No.OfRenewedPaid:",FORMAT(@numberOfRenewalsPaid,0));
 
   END IF;
 
@@ -19149,410 +16495,682 @@ CALL sumRenewalsPaid(@totalRenewalsPaid);
 IF @totalRenewalsPaid>0 THEN
   
     -- SELECT @totalDisbursement;
-INSERT INTO smsSummury VALUES("AmtRenewedPaid:",@totalRenewalsPaid);
+INSERT INTO smsSummury VALUES("TAmntRenewedPaid:",FORMAT(@totalRenewalsPaid,0));
 
   END IF;
+
 
 
   CALL countNumberOfDisbursements(@numberOfDibusements);
 
 IF @numberOfDibusements>0 THEN
-
-INSERT INTO smsSummury VALUES("No.LoanOut:",@numberOfDibusements);
+-- SELECT @numberOfDibusements;
+INSERT INTO smsSummury VALUES("No.LoanOut:",FORMAT(@numberOfDibusements,0));
 
   END IF;
+
   
-  
-  
+    -- SELECT @totalDisbursement;
 CALL sumDisbursements(@totalDisbursement);
 
 IF @totalDisbursement>0 THEN
-
-INSERT INTO smsSummury VALUES("TLoanOut:",@totalDisbursement);
+  
+    -- SELECT @totalDisbursement;
+INSERT INTO smsSummury VALUES("TLoanOut:",FORMAT(@totalDisbursement,0));
 
   END IF;
-  
+
 
 CALL countNumberOfRenewals(@numberOfRenewals);
 
 IF @numberOfRenewals>0 THEN
 -- SELECT @numberOfDibusements;
-INSERT INTO smsSummury VALUES("No.Renewed:",@numberOfRenewals);
+INSERT INTO smsSummury VALUES("No.Renewed:",FORMAT(@numberOfRenewals,0));
 
   END IF;
 
 
     -- SELECT @totalDisbursement;
-CALL sumRenewals(@totalRenewals);
+
 
 IF @totalRenewals>0 THEN
   
     -- SELECT @totalDisbursement;
-INSERT INTO smsSummury VALUES("AmntRenewed:",@totalRenewals);
+INSERT INTO smsSummury VALUES("AmntRenewed:",FORMAT(@totalRenewals,0));
 
   END IF;
   
+
+CALL totalPrincimpalBalance(@princimpalBalance);
+
+IF @princimpalBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("Princ.Stck:",FORMAT(@princimpalBalance,0));
+
+  END IF;
+
+
+  CALL totalInterestBalance(@interestBalance);
+
+IF @interestBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("Interes.Stck:",FORMAT(@interestBalance,0));
+
+  END IF;
+
+IF @interestBalance>0 OR @princimpalBalance>0 THEN
+
+INSERT INTO smsSummury VALUES("Total.Stck:",FORMAT(@interestBalance+@princimpalBalance,0));
+
+  END IF;
+
+
+
 
 CALL totalNumberOfSavingDeposited(@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
 -- SELECT @activeCustomersSave;
-INSERT INTO smsSummury VALUES("No.FuelDeposit:",@activeCustomersSave);
+INSERT INTO smsSummury VALUES("No.FuelDeposit:",FORMAT(@activeCustomersSave,0));
 
   END IF;
-
 
  CALL totalNumberOfSavingWithdraw(@activeCustomersSave);
 
 IF @activeCustomersSave>0 THEN
 -- SELECT @activeCustomersSave;
-INSERT INTO smsSummury VALUES("No.FuelWithdrawn:",@activeCustomersSave);
+INSERT INTO smsSummury VALUES("No.FuelWithdrawn:",FORMAT(@activeCustomersSave,0));
 
   END IF;
+
+
+
+
+  
 
 
 
 CALL OpeningCashBalance(DATE(NOW()),@OpeningCahdBala);
 
 
+  
+    -- SELECT @OpeningCahdBala;
+INSERT INTO smsSummury VALUES("OP:",FORMAT(@OpeningCahdBala,0));
 
-INSERT INTO smsSummury VALUES("OP:",@OpeningCahdBala);
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01128%') THEN
 
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
- 
 
+  END IF;
 
+IF ISNULL(@princimpalRepaymentsMade) THEN
+SET @princimpalRepaymentsMade=0;
+END IF;
+-- SELECT CONCAT("PrincipalCollected:=",@princimpalRepaymentsMade);
 SET @OpeningCahdBala=@OpeningCahdBala+@princimpalRepaymentsMade;
 
 IF @princimpalRepaymentsMade>0 THEN 
-INSERT INTO smsSummury VALUES("PCollect:",@princimpalRepaymentsMade);
+SET @PC=(@princimpalRepaymentsMade-(@totalRenewals-@InterestRenew));
+-- SELECT @PC,@princimpalRepaymentsMade,@totalRenewals,@InterestRenew;
+
+INSERT INTO smsSummury VALUES("PCollect:",FORMAT(@PC,0));
 END IF;
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03301%') THEN
 CALL InterestRecover(DATE(NOW()),@InterestR);
-
-
-
+END IF;
+IF ISNULL(@InterestR) THEN
+SET @InterestR=0;
+END IF;
+-- SELECT CONCAT("InterestCollected:=",@InterestR);
 SET @OpeningCahdBala=@OpeningCahdBala+@InterestR;
 
 IF @InterestR>0 THEN 
-INSERT INTO smsSummury VALUES("ICollect:",@InterestR);
+INSERT INTO smsSummury VALUES("ICollect:",FORMAT((@InterestR-@InterestRenew),0));
 END IF;
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03315%') THEN
 CALL ProcessingFeesCollected(DATE(NOW()),@processingFees);
-
-
-
+END IF;
+IF ISNULL(@processingFees) THEN
+SET @processingFees=0;
+END IF;
+-- SELECT CONCAT("ProcessingFees:=",@processingFees);
 SET @OpeningCahdBala=@OpeningCahdBala+@processingFees;
 
 IF @processingFees>0 THEN 
 
-INSERT INTO smsSummury VALUES("ProFees:",@processingFees);
+INSERT INTO smsSummury VALUES("ProFees:",FORMAT(@processingFees,0));
 END IF;
-
-
+ -- SELECT @ledgerFessCol;
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03304%') THEN
 CALL LedgerFees(DATE(NOW()),@ledgerFessCol);
-
-
+END IF;
+IF ISNULL(@ledgerFessCol) THEN
+SET @ledgerFessCol=0;
+END IF;
+-- SELECT CONCAT("LedgerFees:=",@ledgerFessCol);
 SET @OpeningCahdBala=@OpeningCahdBala+@ledgerFessCol;
 
 IF @ledgerFessCol>0 THEN 
-INSERT INTO smsSummury VALUES("LedgerFees:",@ledgerFessCol);
+
+ -- SELECT "LedgerFees:", @ledgerFessCol;
+INSERT INTO smsSummury VALUES("LedgerFees:",FORMAT(@ledgerFessCol,0));
 END IF;
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03309%') THEN
 CALL MembershipFees(DATE(NOW()),@memberShipFessCol);
-
+END IF;
+IF ISNULL(@memberShipFessCol) THEN
+SET @memberShipFessCol=0;
+END IF;
+-- SELECT CONCAT("MembershipFees:=",@memberShipFessCol);
 SET @OpeningCahdBala=@OpeningCahdBala+@memberShipFessCol;
 
 IF @memberShipFessCol>0 THEN 
-INSERT INTO smsSummury VALUES("MembershipFees:",@memberShipFessCol);
+INSERT INTO smsSummury VALUES("MembershipFees:",FORMAT(@memberShipFessCol,0));
 END IF;
 
-CALL annualSubFees(DATE(NOW()),@annualFeesRecovered);
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03316%') THEN
+CALL annualSubFees(DATE(NOW()),@annualFeesRecovered);
+END IF;
+IF ISNULL(@annualFeesRecovered) THEN
+SET @annualFeesRecovered=0;
+END IF;
+-- SELECT CONCAT("AnnualFees:=",@annualFeesRecovered);
 SET @OpeningCahdBala=@OpeningCahdBala+@annualFeesRecovered;
 
 IF @annualFeesRecovered>0 THEN 
-INSERT INTO smsSummury VALUES("AnnualFees:",@annualFeesRecovered);
+INSERT INTO smsSummury VALUES("AnnualFees:",FORMAT(@annualFeesRecovered,0));
 END IF;
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03318%') THEN
 CALL BadDebtsRecovered(DATE(NOW()),@badDebtsRecovered);
-
+END IF;
+IF ISNULL(@badDebtsRecovered) THEN
+SET @badDebtsRecovered=0;
+END IF;
+-- SELECT CONCAT("BadDebts:=",@badDebtsRecovered);
 SET @OpeningCahdBala=@OpeningCahdBala+@badDebtsRecovered;
 
 IF @badDebtsRecovered>0 THEN 
-INSERT INTO smsSummury VALUES("BadDebts:",@badDebtsRecovered);
+INSERT INTO smsSummury VALUES("BadDebts:",FORMAT(@badDebtsRecovered,0));
 END IF;
 
 
 
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03311%') THEN
 CALL accumulatedInterestR(DATE(NOW()),@accumulatedInterestR);
+END IF;
+
+IF ISNULL(@accumulatedInterestR) THEN
+SET @accumulatedInterestR=0;
+END IF;
+
+-- SELECT CONCAT("AccumulatedInterest:=",@accumulatedInterestR);
 
 SET @OpeningCahdBala=@OpeningCahdBala+@accumulatedInterestR;
 
 IF @accumulatedInterestR>0 THEN 
-INSERT INTO smsSummury VALUES("AccumInte:",@accumulatedInterestR);
+INSERT INTO smsSummury VALUES("AccumInte:",FORMAT(@accumulatedInterestR,0));
 END IF;
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03312%') THEN
 CALL loanPenaltyRecov(DATE(NOW()),@loanPenaltyRecovered);
+END IF;
+IF ISNULL(@loanPenaltyRecovered) THEN
+SET @loanPenaltyRecovered=0;
+END IF;
+-- SELECT CONCAT("LoanPenalty:=",@loanPenaltyRecovered);
 
 SET @OpeningCahdBala=@OpeningCahdBala+@loanPenaltyRecovered;
 
 IF @loanPenaltyRecovered>0 THEN 
-INSERT INTO smsSummury VALUES("LoanPenalty:",@loanPenaltyRecovered);
+INSERT INTO smsSummury VALUES("LoanPenalty:",FORMAT(@loanPenaltyRecovered,0));
 END IF;
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no like '03305%' OR debit_account_no like  '03306%' OR debit_account_no like  '03307%' OR debit_account_no like '03308%'  OR debit_account_no like  '03310%'  OR debit_account_no like  '03313%' OR debit_account_no like '03314%'  OR debit_account_no like '03317%' OR debit_account_no like  '03319%' OR debit_account_no like '03320%' OR debit_account_no like  '03321%' OR debit_account_no like  '03322%' OR debit_account_no like '03323%' OR debit_account_no like  '03324%' OR debit_account_no like  '03325%')) THEN
 CALL otherIncomesCollected(DATE(NOW()),@otherIncomesCollectedX);
+END IF;
 
+
+IF ISNULL(@otherIncomesCollectedX) THEN
+SET @otherIncomesCollectedX=0;
+END IF;
+-- SELECT CONCAT("OtherIncomes:=",@otherIncomesCollectedX);
 SET @OpeningCahdBala=@OpeningCahdBala+@otherIncomesCollectedX;
 
 IF @otherIncomesCollectedX>0 THEN 
-INSERT INTO smsSummury VALUES("OtherIncomes:",@otherIncomesCollectedX);
+INSERT INTO smsSummury VALUES("RenewedInter:",FORMAT(@otherIncomesCollectedX,0));
 END IF;
  
 
  CALL SavingsDepositsMade(DATE(NOW()),@savingsC); 
-
+-- SELECT CONCAT("SavingsAndDeposits:=",@savingsC);
 SET @OpeningCahdBala=@OpeningCahdBala+@savingsC;
 
 IF @savingsC>0 THEN 
-INSERT INTO smsSummury VALUES("FuelDeposit:",@savingsC);
+INSERT INTO smsSummury VALUES("FuelDeposit:",FORMAT(@savingsC,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05500%') THEN
+CALL PayablesCreated(DATE(NOW()),@payableCreated);
 END IF;
 
 
-CALL PayablesCreated(DATE(NOW()),@payableCreated);
-
-
+IF ISNULL(@payableCreated) THEN
+SET @payableCreated=0;
+END IF;
+-- SELECT CONCAT("Payables:=",@payableCreated);
 SET @OpeningCahdBala=@OpeningCahdBala+@payableCreated;
 
 IF @payableCreated>0 THEN 
-INSERT INTO smsSummury VALUES("Payables:",@payableCreated);
+INSERT INTO smsSummury VALUES("Payables:",FORMAT(@payableCreated,0));
 END IF;
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05524%') THEN
 CALL InsurancePayableMade(DATE(NOW()),@insurancePayMade);
+END IF;
 
+IF ISNULL(@insurancePayMade) THEN
+SET @insurancePayMade=0;
+END IF;
+-- SELECT CONCAT("Insurance:=",@insurancePayMade);
 SET @OpeningCahdBala=@OpeningCahdBala+@insurancePayMade;
 
 IF @insurancePayMade>0 THEN 
-INSERT INTO smsSummury VALUES("Insurance:",@insurancePayMade);
+INSERT INTO smsSummury VALUES("Insurance:",FORMAT(@insurancePayMade,0));
 END IF;
 
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no like '05504%' 
+ OR debit_account_no like '05501%' OR debit_account_no like '05503%' OR debit_account_no like '05505%'  OR debit_account_no like '05509%' OR debit_account_no like '05506%' OR debit_account_no like '05507%'
+ OR debit_account_no like '05522%' OR debit_account_no like '05525%' OR debit_account_no like '05527%' OR debit_account_no like '05526%' OR debit_account_no like '05528%'
+ OR debit_account_no like '05523%' OR debit_account_no like '05523%' OR debit_account_no like '05508%' OR debit_account_no like '05510%' 
+ OR debit_account_no like '05511%' OR debit_account_no like '05512%' OR debit_account_no like '05513%' OR debit_account_no like '05514%' OR debit_account_no like '05515%'  
+ OR debit_account_no like '05516%'  OR debit_account_no like '05517%'  OR debit_account_no like '05518%'  OR debit_account_no like '05519%'  OR debit_account_no like '05520%'  OR debit_account_no like '05521%')) THEN
 CALL otherLiabilitiesAndProvisionsMade(DATE(NOW()),@OtherLiabilities);
+END IF;
 
+IF ISNULL(@OtherLiabilities) THEN
+SET @OtherLiabilities=0;
+END IF;
+-- SELECT CONCAT("UnknownMobileMoneyCreated:=",@OtherLiabilities);
 SET @OpeningCahdBala=@OpeningCahdBala+@OtherLiabilities;
 
 IF @OtherLiabilities>0 THEN 
-INSERT INTO smsSummury VALUES("UnknownMomoMade:",@OtherLiabilities);
+INSERT INTO smsSummury VALUES("UnknownMomoMade:",FORMAT(@OtherLiabilities,0));
 END IF;
 
 
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '04400%') THEN
 CALL capitalisationMade(DATE(NOW()),@capitalPayments);
+END IF;
 
+
+IF ISNULL(@capitalPayments) THEN
+SET @capitalPayments=0;
+END IF;
+-- SELECT CONCAT("Capital:=",@capitalPayments);
 SET @OpeningCahdBala=@OpeningCahdBala+@capitalPayments;
 
 IF @capitalPayments>0 THEN 
-INSERT INTO smsSummury VALUES("Capital:",@capitalPayments);
+INSERT INTO smsSummury VALUES("Capital:",FORMAT(@capitalPayments,0));
 END IF;
 
-CALL OtherCapitalisationsAndReservesMade(DATE(NOW()),@otheCapsAndReserversMade);
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no>='044010000110' AND debit_account_no<='04430999999') THEN
+CALL OtherCapitalisationsAndReservesMade(DATE(NOW()),@otheCapsAndReserversMade);
+END IF;
+
+
+IF ISNULL(@otheCapsAndReserversMade) THEN
+SET @otheCapsAndReserversMade=0;
+END IF;
+-- SELECT CONCAT("OtherCapital:=",@otheCapsAndReserversMade);
 SET @OpeningCahdBala=@OpeningCahdBala+@otheCapsAndReserversMade;
 
 IF @otheCapsAndReserversMade>0 THEN 
-INSERT INTO smsSummury VALUES("OtherCapital:",@otheCapsAndReserversMade);
+INSERT INTO smsSummury VALUES("OtherCapital:",FORMAT(@otheCapsAndReserversMade,0));
 END IF;
 
-CALL RecevablesRefunded(DATE(NOW()),@Refundreceiavale);
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01131%') THEN
+CALL RecevablesRefunded(DATE(NOW()),@Refundreceiavale);
+END IF;
+
+
+IF ISNULL(@Refundreceiavale) THEN
+SET @Refundreceiavale=0;
+END IF;
+-- SELECT CONCAT("ReceivablesRefunded:=",@Refundreceiavale);
 SET @OpeningCahdBala=@OpeningCahdBala+@Refundreceiavale;
 
 IF @Refundreceiavale>0 THEN 
-INSERT INTO smsSummury VALUES("ReceivablesRefunded:",@Refundreceiavale);
+INSERT INTO smsSummury VALUES("ReceivablesRefunded:",FORMAT(@Refundreceiavale,0));
 END IF;
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+ OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%')) THEN
 CALL OtherReceivablesAndPrepaymentsRefunded(DATE(NOW()),@otherReceiAndPrepaymentRend);
+END IF;
 
+IF ISNULL(@otherReceiAndPrepaymentRend) THEN
+SET @otherReceiAndPrepaymentRend=0;
+END IF;
+-- SELECT CONCAT("OtherReceivablesRefunded:=",@otherReceiAndPrepaymentRend);
 SET @OpeningCahdBala=@OpeningCahdBala+@otherReceiAndPrepaymentRend;
 
 IF @otherReceiAndPrepaymentRend>0 THEN 
-INSERT INTO smsSummury VALUES("OtherReceivablesRefunded:",@otherReceiAndPrepaymentRend);
+INSERT INTO smsSummury VALUES("OtherReceivablesRefunded:",FORMAT(@otherReceiAndPrepaymentRend,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01122%') THEN
+CALL BankDepositsMade(DATE(NOW()),@bankDepositMade);
+END IF;
+
+IF ISNULL(@bankDepositMade) THEN
+SET @bankDepositMade=0;
+END IF;
+-- SELECT CONCAT("BankDeposits:=",@bankDepositMade);
+SET @OpeningCahdBala=@OpeningCahdBala-@bankDepositMade;
+
+IF @bankDepositMade>0 THEN 
+INSERT INTO smsSummury VALUES("BankD:",FORMAT(@bankDepositMade,0));
 END IF;
 
 
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01122%') THEN
 CALL BankWithdrawsMade(DATE(NOW()),@BankWithdrws);
+END IF;
 
-
+IF ISNULL(@BankWithdrws) THEN
+SET @BankWithdrws=0;
+END IF;
+-- SELECT CONCAT("BankWithdraws:=",@BankWithdrws);
 SET @OpeningCahdBala=@OpeningCahdBala+@BankWithdrws;
 
+
 IF @BankWithdrws>0 THEN 
-INSERT INTO smsSummury VALUES("BankW:",@BankWithdrws);
+INSERT INTO smsSummury VALUES("BankW:",FORMAT(@BankWithdrws,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
+CALL refundFromMobileMoneyPayableMade(DATE(NOW()),@mobileMoneyRefund);
 END IF;
 
 
-CALL refundFromMobileMoneyPayableMade(DATE(NOW()),@mobileMoneyRefund);
-
+IF ISNULL(@mobileMoneyRefund) THEN
+SET @mobileMoneyRefund=0;
+END IF;
+-- SELECT CONCAT("MomoWithdraws:=",@mobileMoneyRefund);
 SET @OpeningCahdBala=@OpeningCahdBala+@mobileMoneyRefund;
 
 IF @mobileMoneyRefund>0 THEN 
-INSERT INTO smsSummury VALUES("MomoW:",@mobileMoneyRefund);
-END IF;
-
-CALL fixedAssetsAndInvestmentsDisposedOff(DATE(NOW()),@fixedAssetsAndInvestmentDisp);
-
-SET @OpeningCahdBala=@OpeningCahdBala+@fixedAssetsAndInvestmentDisp;
-
-IF @fixedAssetsAndInvestmentDisp>0 THEN 
-INSERT INTO smsSummury VALUES("FixedAssets:",@fixedAssetsAndInvestmentDisp);
-END IF;
-
-CALL ExpensesMade(DATE(NOW()),@ExpensesMa);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@ExpensesMa;
-
-IF @ExpensesMa>0 THEN 
-INSERT INTO smsSummury VALUES("TotalExpenses:",@ExpensesMa);
+INSERT INTO smsSummury VALUES("MomoW:",FORMAT(@mobileMoneyRefund,0));
 END IF;
 
 
-CALL LoanDisbursementsMade(DATE(NOW()),@loansDisbursed);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@loansDisbursed;
-
-IF @loansDisbursed>0 THEN 
-INSERT INTO smsSummury VALUES("LoanOut:",@loansDisbursed);
-END IF;
-
-
-CALL InterestWrittenOff(DATE(NOW()),@interWriteOff);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@interWriteOff;
-
-IF @interWriteOff>0 THEN 
-INSERT INTO smsSummury VALUES("InterestWrittenOff:",@interWriteOff);
-END IF;
-
-CALL accumuInteresWrittenOff(DATE(NOW()),@accumuIntereWrittenOff);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@accumuIntereWrittenOff;
-
-IF @accumuIntereWrittenOff>0 THEN 
-INSERT INTO smsSummury VALUES("AccumulatedInterestWrittenOff:",@accumuIntereWrittenOff);
-END IF;
-
-
-CALL processingFeesWrittenOff(DATE(NOW()),@processFeesWriteOff);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@processFeesWriteOff;
-
-IF @processFeesWriteOff>0 THEN 
-INSERT INTO smsSummury VALUES("ProcessingFeesWrittenOff:",@processFeesWriteOff);
-END IF;
-
-CALL OtherIncomesWrittenOff(DATE(NOW()),@otherIncomesWrOff);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@otherIncomesWrOff;
-
-IF @otherIncomesWrOff>0 THEN 
-INSERT INTO smsSummury VALUES("OtherIncomesWrittenOff:",@otherIncomesWrOff);
-END IF;
-
-CALL ReceivablesCreated(DATE(NOW()),@receiavale);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@receiavale;
-
-IF @receiavale>0 THEN 
-INSERT INTO smsSummury VALUES("ReceivablesCreated:",@receiavale);
-END IF;
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
 CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
+END IF;
+
+IF ISNULL(@mobileMoney) THEN
+SET @mobileMoney=0;
+END IF;
 
 SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
 
 IF @mobileMoney>0 THEN 
-INSERT INTO smsSummury VALUES("MomoD:",@mobileMoney);
+INSERT INTO smsSummury VALUES("MomoD:",FORMAT(@mobileMoney,0));
 END IF;
 
-CALL OtherReceivablesAndPrepaymentsCreated(DATE(NOW()),@otherRecePreMade);
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01100%' OR debit_account_no LIKE '01101%'
+OR debit_account_no LIKE '01102%' OR debit_account_no LIKE '01103%' OR debit_account_no LIKE '01104%' OR debit_account_no LIKE '01105%' OR debit_account_no LIKE '01106%'  OR debit_account_no LIKE '01108%' OR debit_account_no LIKE '01109%'
+OR debit_account_no LIKE '01110%' OR debit_account_no LIKE '01111%'  OR debit_account_no LIKE '01112%'  OR debit_account_no LIKE '01136%')) THEN
+CALL fixedAssetsAndInvestmentsDisposedOff(DATE(NOW()),@fixedAssetsAndInvestmentDisp);
+END IF;
+
+IF ISNULL(@fixedAssetsAndInvestmentDisp) THEN
+SET @fixedAssetsAndInvestmentDisp=0;
+END IF;
+-- SELECT CONCAT("FixedAssets:=",@fixedAssetsAndInvestmentDisp);
+SET @OpeningCahdBala=@OpeningCahdBala+@fixedAssetsAndInvestmentDisp;
+
+IF @fixedAssetsAndInvestmentDisp>0 THEN 
+INSERT INTO smsSummury VALUES("FixedAssets:",FORMAT(@fixedAssetsAndInvestmentDisp,0));
+END IF;
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '022%') THEN
+CALL ExpensesMade(DATE(NOW()),@ExpensesMa);
+END IF;
+
+IF ISNULL(@ExpensesMa) THEN
+SET @ExpensesMa=0;
+END IF;
+-- SELECT CONCAT("TotalExpenses:=",@ExpensesMa);
+SET @OpeningCahdBala=@OpeningCahdBala-@ExpensesMa;
+
+IF @ExpensesMa>0 THEN 
+INSERT INTO smsSummury VALUES("TotalExpenses:",FORMAT(@ExpensesMa,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01128%') THEN
+CALL LoanDisbursementsMade(DATE(NOW()),@loansDisbursed);
+END IF;
+
+IF ISNULL(@loansDisbursed) THEN
+SET @loansDisbursed=0;
+END IF;
+-- SELECT CONCAT("LoanDisbursements:=",@loansDisbursed);
+SET @OpeningCahdBala=@OpeningCahdBala-@loansDisbursed;
+
+IF @loansDisbursed>0 THEN 
+INSERT INTO smsSummury VALUES("LoanOut:",FORMAT(@loansDisbursed,0));
+END IF;
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03301%') THEN
+CALL InterestWrittenOff(DATE(NOW()),@interWriteOff);
+END IF;
+
+IF ISNULL(@interWriteOff) THEN
+SET @interWriteOff=0;
+END IF;
+-- SELECT CONCAT("InterestWrittenOff:=",@interWriteOff);
+SET @OpeningCahdBala=@OpeningCahdBala-@interWriteOff;
+
+IF @interWriteOff>0 THEN 
+INSERT INTO smsSummury VALUES("InterestWrittenOff:",FORMAT(@interWriteOff,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03311%') THEN
+CALL accumuInteresWrittenOff(DATE(NOW()),@accumuIntereWrittenOff);
+END IF;
+
+IF ISNULL(@accumuIntereWrittenOff) THEN
+SET @accumuIntereWrittenOff=0;
+END IF;
+-- SELECT CONCAT("AccumulatedInterestWrittenOff:=",@accumuIntereWrittenOff);
+SET @OpeningCahdBala=@OpeningCahdBala-@accumuIntereWrittenOff;
+
+IF @accumuIntereWrittenOff>0 THEN 
+INSERT INTO smsSummury VALUES("AccumulatedInterestWrittenOff:",FORMAT(@accumuIntereWrittenOff,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03315%') THEN
+CALL processingFeesWrittenOff(DATE(NOW()),@processFeesWriteOff);
+END IF;
+
+IF ISNULL(@processFeesWriteOff) THEN
+SET @processFeesWriteOff=0;
+END IF;
+-- SELECT CONCAT("ProcessingFeesWrittenOff:=",@processFeesWriteOff);
+SET @OpeningCahdBala=@OpeningCahdBala-@processFeesWriteOff;
+
+IF @processFeesWriteOff>0 THEN 
+INSERT INTO smsSummury VALUES("ProcessingFeesWrittenOff:",FORMAT(@processFeesWriteOff,0));
+END IF;
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '03312%' OR debit_account_no LIKE '03316%' OR debit_account_no LIKE '03309%' OR debit_account_no LIKE '03318%' OR debit_account_no LIKE '03304%' OR debit_account_no like '03305%' OR debit_account_no like  '03306%' OR debit_account_no like  '03307%' OR debit_account_no like '03308%'  OR debit_account_no like  '03310%'  OR debit_account_no like  '03313%' OR debit_account_no like '03314%'  OR debit_account_no like '03317%' OR debit_account_no like  '03319%' OR debit_account_no like '03320%' OR debit_account_no like  '03321%' OR debit_account_no like  '03322%' OR debit_account_no like '03323%' OR debit_account_no like  '03324%' OR debit_account_no like  '03325%')) THEN
+CALL OtherIncomesWrittenOff(DATE(NOW()),@otherIncomesWrOff);
+END IF;
+
+IF ISNULL(@otherIncomesWrOff) THEN
+SET @otherIncomesWrOff=0;
+END IF;
+-- SELECT CONCAT("OtherIncomesWrittenOff:=",@otherIncomesWrOff);
+SET @OpeningCahdBala=@OpeningCahdBala-@otherIncomesWrOff;
+
+IF @otherIncomesWrOff>0 THEN 
+INSERT INTO smsSummury VALUES("OtherIncomesWrittenOff:",FORMAT(@otherIncomesWrOff,0));
+END IF;
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01131%') THEN
+CALL ReceivablesCreated(DATE(NOW()),@receiavale);
+END IF;
+
+IF ISNULL(@receiavale) THEN
+SET @receiavale=0;
+END IF;
+-- SELECT CONCAT("ReceivablesCreated:=",@receiavale);
+SET @OpeningCahdBala=@OpeningCahdBala-@receiavale;
+
+IF @receiavale>0 THEN 
+INSERT INTO smsSummury VALUES("ReceivablesCreated:",FORMAT(@receiavale,0));
+END IF;
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+ OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%')) THEN
+CALL OtherReceivablesAndPrepaymentsCreated(DATE(NOW()),@otherRecePreMade);
+END IF;
+
+IF ISNULL(@otherRecePreMade) THEN
+SET @otherRecePreMade=0;
+END IF;
+-- SELECT CONCAT("OtherReceivablesAndPrepaymentsMade:=",@otherRecePreMade);
 SET @OpeningCahdBala=@OpeningCahdBala-@otherRecePreMade;
 
 IF @otherRecePreMade>0 THEN 
-INSERT INTO smsSummury VALUES("OtherReceivablesAndPrepaymentsMade:",@otherRecePreMade);
+INSERT INTO smsSummury VALUES("OtherReceivablesAndPrepaymentsMade:",FORMAT(@otherRecePreMade,0));
 END IF;
 
 
-CALL BankDepositsMade(DATE(NOW()),@bankDepositMade);
-
-SET @OpeningCahdBala=@OpeningCahdBala-@bankDepositMade;
-
-IF @bankDepositMade>0 THEN 
-INSERT INTO smsSummury VALUES("BankD:",@bankDepositMade);
-END IF;
-
-
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01100%' OR debit_account_no LIKE '01101%'
+OR debit_account_no LIKE '01102%' OR debit_account_no LIKE '01103%' OR debit_account_no LIKE '01104%' OR debit_account_no LIKE '01105%' OR debit_account_no LIKE '01106%'  OR debit_account_no LIKE '01108%' OR debit_account_no LIKE '01109%'
+OR debit_account_no LIKE '01110%' OR debit_account_no LIKE '01111%'  OR debit_account_no LIKE '01112%'  OR debit_account_no LIKE '01136%')) THEN
 CALL fixedAssetsAndInvestmentsAquired(DATE(NOW()),@fixedAssetsAndInvestmentAquired);
+END IF;
 
+IF ISNULL(@fixedAssetsAndInvestmentAquired) THEN
+SET @fixedAssetsAndInvestmentAquired=0;
+END IF;
+-- SELECT CONCAT("FixedAssetsAndInvestments:=",@fixedAssetsAndInvestmentAquired);
 SET @OpeningCahdBala=@OpeningCahdBala-@fixedAssetsAndInvestmentAquired;
 
 IF @fixedAssetsAndInvestmentAquired>0 THEN 
-INSERT INTO smsSummury VALUES("FixedAssetsAndInvestments:",@fixedAssetsAndInvestmentAquired);
+INSERT INTO smsSummury VALUES("FixedAssetsAndInvestments:",FORMAT(@fixedAssetsAndInvestmentAquired,0));
 END IF;
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05500%') THEN
 CALL PayablesRefunded(DATE(NOW()),@RefundPayable);
+END IF;
 
+
+IF ISNULL(@RefundPayable) THEN
+SET @RefundPayable=0;
+END IF;
+-- SELECT CONCAT("PayablesRefunded:=",@RefundPayable);
 SET @OpeningCahdBala=@OpeningCahdBala-@RefundPayable;
 
 IF @RefundPayable>0 THEN 
-INSERT INTO smsSummury VALUES("PayablesRefunded:",@RefundPayable);
+INSERT INTO smsSummury VALUES("PayablesRefunded:",FORMAT(@RefundPayable,0));
 END IF;
 
-CALL PayablesOtherLiabilitiesAndProvisionsRefunded(DATE(NOW()),@RefundPayableOtherLiabilProvis);
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no like '05504%' 
+ OR debit_account_no like '05501%' OR debit_account_no like '05503%' OR debit_account_no like '05505%' OR debit_account_no like '05506%' OR debit_account_no like '05507%'
+ OR debit_account_no like '05522%' OR debit_account_no like '05525%' OR debit_account_no like '05527%' OR debit_account_no like '05526%' OR debit_account_no like '05528%'
+ OR debit_account_no like '05523%' OR debit_account_no like '05523%' OR debit_account_no like '05508%' OR debit_account_no like '05510%' 
+ OR debit_account_no like '05511%' OR debit_account_no like '05512%' OR debit_account_no like '05513%' OR debit_account_no like '05514%' OR debit_account_no like '05515%'  
+ OR debit_account_no like '05516%'  OR debit_account_no like '05517%'  OR debit_account_no like '05518%'  OR debit_account_no like '05519%'  OR debit_account_no like '05520%'  OR debit_account_no like '05521%')) THEN
+CALL PayablesOtherLiabilitiesAndProvisionsRefunded(DATE(NOW()),@RefundPayableOtherLiabilProvis);
+END IF;
+
+IF ISNULL(@RefundPayableOtherLiabilProvis) THEN
+SET @RefundPayableOtherLiabilProvis=0;
+END IF;
+-- SELECT CONCAT("UnknownMoMoCleared:=",@RefundPayableOtherLiabilProvis);
 SET @OpeningCahdBala=@OpeningCahdBala-@RefundPayableOtherLiabilProvis;
 
 IF @RefundPayableOtherLiabilProvis>0 THEN 
-INSERT INTO smsSummury VALUES("UnkownMomoCleared:",@RefundPayableOtherLiabilProvis);
+INSERT INTO smsSummury VALUES("UnknownMoMoCleared:",FORMAT(@RefundPayableOtherLiabilProvis,0));
 END IF;
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '05524%') THEN
 CALL InsurancePayableCleared(DATE(NOW()),@insurancePayableCleared);
+END IF;
 
+IF ISNULL(@insurancePayableCleared) THEN
+SET @insurancePayableCleared=0;
+END IF;
+
+-- SELECT CONCAT("InsurancePayablesCleared:=",@insurancePayableCleared);
 SET @OpeningCahdBala=@OpeningCahdBala-@insurancePayableCleared;
 
 IF @insurancePayableCleared>0 THEN 
-INSERT INTO smsSummury VALUES("InsurancePayablesCleared:",@insurancePayableCleared);
+INSERT INTO smsSummury VALUES("InsurancePayablesCleared:",FORMAT(@insurancePayableCleared,0));
 END IF;
 
-CALL DrawingsMade(DATE(NOW()),@DrawingM);
 
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '04408%') THEN
+CALL DrawingsMade(DATE(NOW()),@DrawingM);
+END IF;
+
+IF ISNULL(@DrawingM) THEN
+SET @DrawingM=0;
+END IF;
+
+-- SELECT CONCAT("DrawingsMade:=",@DrawingM);
 SET @OpeningCahdBala=@OpeningCahdBala-@DrawingM;
 
 IF @DrawingM>0 THEN 
-INSERT INTO smsSummury VALUES("DrawingsMade:",@DrawingM);
+INSERT INTO smsSummury VALUES("DrawingsMade:",FORMAT(@DrawingM,0));
+END IF;
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '04400%') THEN
+CALL DecapitalisationsMade(DATE(NOW()),@Decapitlise);
 END IF;
 
-CALL DecapitalisationsMade(DATE(NOW()),@Decapitlise);
-
+IF ISNULL(@Decapitlise) THEN
+SET @Decapitlise=0;
+END IF;
+-- SELECT CONCAT("CapitalRemoved:=",@Decapitlise);
 SET @OpeningCahdBala=@OpeningCahdBala-@Decapitlise;
 
 
 
 IF @Decapitlise>0 THEN 
-INSERT INTO smsSummury VALUES("CapitalRemoved:",@Decapitlise);
+INSERT INTO smsSummury VALUES("CapitalRemoved:",FORMAT(@Decapitlise,0));
+END IF;
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND (debit_account_no>='044010000110' AND debit_account_no<='04430999999') AND NOT debit_account_no='04408000110') THEN
+CALL OtherEquitiesAndReservesRemoved(DATE(NOW()),@equitiesReservesRemoved); 
+END IF;
+IF ISNULL(@equitiesReservesRemoved) THEN
+SET @equitiesReservesRemoved=0;
 END IF;
 
-CALL OtherEquitiesAndReservesRemoved(DATE(NOW()),@equitiesReservesRemoved); 
+-- SELECT CONCAT("OtherEquitiesAndReservesRemoved:=",@equitiesReservesRemoved);
 
 SET @OpeningCahdBala=@OpeningCahdBala-@equitiesReservesRemoved;
 
 IF @equitiesReservesRemoved>0 THEN 
-INSERT INTO smsSummury VALUES("OtherEquitiesAndReservesRemoved:",@equitiesReservesRemoved);
+INSERT INTO smsSummury VALUES("OtherEquitiesAndReservesRemoved:",FORMAT(@equitiesReservesRemoved,0));
 END IF;
 
  CALL SavingsDepositsWithdrawn(DATE(NOW()),@savingDepositWith); 
@@ -19560,28 +17178,51 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@savingDepositWith;
 
 IF @savingDepositWith>0 THEN 
-INSERT INTO smsSummury VALUES("FuelWithdraw:",@savingDepositWith);
+INSERT INTO smsSummury VALUES("FuelWithdraw:",FORMAT(@savingDepositWith,0));
 END IF;
 
--- INSERT INTO smsSummury VALUES("CC:",@OpeningCahdBala);
 
 CALL closingCash(@closingCashBal); 
 
-INSERT INTO smsSummury VALUES("CC:", @closingCashBal);
+INSERT INTO smsSummury VALUES("CC:",FORMAT( @closingCashBal,0) );
+
 
 
 CALL momoBalance(@TheMomoBalance);
 
  IF @TheMomoBalance>0 THEN 
-INSERT INTO smsSummury VALUES("MO BAL:",@TheMomoBalance);
+INSERT INTO smsSummury VALUES("MO BAL:",FORMAT(@TheMomoBalance,0) );
 END IF;
 
  IF @TheMomoBalance>0 THEN 
-INSERT INTO smsSummury VALUES("MO+CC:",@TheMomoBalance+@closingCashBal);
+INSERT INTO smsSummury VALUES("MO+CC:",FORMAT((@TheMomoBalance+@closingCashBal),0));
 END IF;
 
+--   INSERT INTO  aging_loan_analysis2x( 
+--   id_2x,
+--   customer_name ,
+--   customer_contact ,
+--   date_taken,
+--   due_date,
+--   loans_remaining ,
+--   principal_remaining ,
+-- interest_remaining,
+--   principal_inarrears ,
+--   interest_inarrears ,
+--   number_of_days_in_arrears ,loan_deadline
+--   ) SELECT 
+START TRANSACTION;
 
-SELECT itemName,FORMAT(itemValue,0)  AS itemValue FROM smsSummury;
+DELETE FROM theSmsSummuryReport WHERE reportDate=DATE(NOW());
+
+INSERT INTO theSmsSummuryReport (reportId, reportDate,reprtItemName,reportItemValue)
+SELECT  NULL,DATE(NOW()),itemName,itemValue  FROM smsSummury;
+
+COMMIT;
+
+
+
+SELECT itemName,itemValue  AS itemValue FROM smsSummury;
 
 
 DROP TABLE smsSummury;
@@ -19590,12 +17231,79 @@ END $$
 DELIMITER ;
 
 
-CALL  smsSummuryReport() ;
+
+
+
+-- CALL  smsSummuryReport() ;
+
 update new_Loan_appstore SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
+
 update new_Loan_appstore1 SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
 
 
+DROP PROCEDURE IF EXISTS runSMSReportFirst;
+DELIMITER //
+CREATE PROCEDURE runSMSReportFirst(IN dQn DATE) READS SQL DATA 
+BEGIN
+    DECLARE recordCount INT DEFAULT 0;
+    -- If the input date is the current date
+    IF dQn = CURDATE() THEN 
+ 
+           CALL smsSummuryReport();
 
+    END IF;
+END//
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS smsSummuryReportResend;
+DELIMITER //
+CREATE PROCEDURE smsSummuryReportResend(IN dQn DATE) READS SQL DATA 
+BEGIN
+   SELECT reprtItemName,reportItemValue FROM theSmsSummuryReport WHERE reportDate=dQn;
+END//
+DELIMITER ;
+
+
+
+
+
+                DROP PROCEDURE IF EXISTS collectionStatement;
+DELIMITER //
+CREATE PROCEDURE collectionStatement(IN dQn DATE) READS SQL DATA 
+BEGIN
+
+SET @counter = 0;
+SELECT * FROM (
+    SELECT (@counter:=@counter + 1) as counter, new_loan_appstore.applicant_account_name, new_loan_appstore.trn_id, SUM(loandisburserepaystatement.AmountPaid) AS collections
+               FROM pmms.loandisburserepaystatement INNER JOIN pmms_loans.new_loan_appstore ON loandisburserepaystatement.loanTrnId = new_loan_appstore.trn_id WHERE loandisburserepaystatement.trnDate=dQn AND loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed'
+                GROUP BY new_loan_appstore.trn_id
+                 UNION ALL
+                SELECT "-", 'OVERALL TOTAL', '-', SUM(loandisburserepaystatement.AmountPaid) AS collections
+               FROM pmms.loandisburserepaystatement INNER JOIN pmms_loans.new_loan_appstore ON loandisburserepaystatement.loanTrnId = new_loan_appstore.trn_id
+                WHERE  loandisburserepaystatement.TrnDate = dQn AND loandisburserepaystatement.AmountPaid > 0.0 AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed'
+) as result
+ORDER BY counter ASC;
+END//
+DELIMITER ;
+
+
+-- DROP TABLE theSmsSummuryReport;
+-- -----------------------------------------------------
+-- Table theSmsSummuryReport
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS theSmsSummuryReport (
+ reportId INT NOT NULL AUTO_INCREMENT,
+ 
+  reportDate  DATE NOT NULL,
+  
+   reprtItemName varchar(200) NOT NULL,
+
+      reportItemValue varchar(200) NOT NULL,
+
+  PRIMARY KEY (reportId)
+  
+) ENGINE = InnoDB AUTO_INCREMENT = 1200 DEFAULT CHARACTER SET = utf8;
 
 
 
@@ -19860,9 +17568,9 @@ END //
 -- 1	71137	newloan05502062210	Disbursed
 
 
-DROP PROCEDURE IF EXISTS loanStatementDetails;
+DROP PROCEDURE IF EXISTS loanStatementDetailsExpected;
 DELIMITER //
-CREATE PROCEDURE loanStatementDetails(IN accountNumber VARCHAR(60)) READS SQL DATA 
+CREATE PROCEDURE loanStatementDetailsExpected(IN accountNumber VARCHAR(60)) READS SQL DATA 
 BEGIN
 
 DECLARE StateExpectedInterest,StateExpectedTotalAmount,StateTotalamountPaid,StateTotalamountRemaining,StateTotalInterestPaid,StateTotalInterestRemaining,theATrnId DOUBLE;
@@ -19882,7 +17590,7 @@ END//
 
  DELIMITER ;
 
-CALL loanStatementDetails('05502062210')\G
+CALL loanStatementDetailsExpected('05502062210')\G
 
 
 
@@ -19982,11 +17690,24 @@ CREATE TABLE IF NOT EXISTS processingFeesRanges (
 
   processingFees  DOUBLE NOT NULL DEFAULT 20000.0,
 
-    computeType  DOUBLE NOT NULL DEFAULT 2,
+    computeType  VARCHAR(50) NOT NULL,
 
   PRIMARY KEY (id)
   
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET = utf8;
+
+alter table processingFeesRanges modify column  computeType VARCHAR(50);
+UPDATE processingFeesRanges SET computeType= 'FIXED FEES';
+
+-- DROP TABLE allowCompOfProFees;
+-- -----------------------------------------------------
+-- Table allowCompOfProFees
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS allowCompOfProFees (
+
+ id INT NOT NULL 
+) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8;
+
 
 
 -- ("+"'"+processRangeDetails.get(0).toString()+"'"+","+processRangeDetails.get(1).toString()+"'"+","+"'"+processRangeDetails.get(2).toString()+"'"+","+processRangeDetails.get(3).toString()+")";
@@ -20006,7 +17727,7 @@ CREATE PROCEDURE createLoanFeesRanges(
   IN lowerPrincipalRange DOUBLE,
    IN upperPrincipalRange DOUBLE,
   IN feesValue DOUBLE,
-  IN computeType INT
+  IN computeType VARCHAR(50)
  ) BEGIN
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -20044,6 +17765,84 @@ DELIMITER ;
 
 -- delete from loanArrearsSettings;
 --   INSERT INTO loanArrearsSettings VALUES (NULL,0,4,1,1,10.0,2,1,1);
+SELECT (CASE WHEN NOT EXISTS (SELECT processingFees FROM processingFeesRanges WHERE lowerRange <= 1000000 AND upperRange >= 1000000) THEN 100 ELSE (SELECT processingFees FROM processingFeesRanges WHERE lowerRange <=1000000 AND upperRange >= 1000000) END) as processingFees;
+
+
+
+
+-- -----------------------------------------------------
+-- updateLoanFeesRanges
+
+-- -----------------------------------------------------
+
+DROP PROCEDURE IF EXISTS updateLoanFeesRanges;
+
+DELIMITER $$
+
+CREATE PROCEDURE updateLoanFeesRanges(
+  IN theLowerPrincipalRange DOUBLE,
+   IN theUpperPrincipalRange DOUBLE,
+  IN theFeesValue DOUBLE,
+  IN theComputeType VARCHAR(50),
+   IN theId INT
+ ) BEGIN
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+  SELECT 0 AS theMessage;
+  ROLLBACK;
+END;
+ 
+-- DECLARE EXIT HANDLER FOR SQLEXCEPTION
+--   BEGIN
+--   GET DIAGNOSTICS CONDITION 1
+--   -- @ERRNO=MYSQL_ERRNO,@MESSAGE_TEXT=MESSAGE_TEXT,@STATE=RETURNED_SQLSTATE;
+--   SELECT 'DATABASE ERROR' AS theMessage,@MESSAGE_TEXT AS MESSAGE;
+--   ROLLBACK;
+  
+-- END;
+ 
+START TRANSACTION;
+
+-- SELECT theLowerPrincipalRange,theUpperPrincipalRange,theFeesValue,theComputeType,theId;
+
+UPDATE    processingFeesRanges SET 
+   lowerRange=theLowerPrincipalRange,
+  upperRange=theUpperPrincipalRange,
+  processingFees=theFeesValue,
+  computeType=theComputeType WHERE id=theId
+  ;
+
+COMMIT;
+
+SELECT 1  AS theMessage;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+-- -----------------------------------------------------
+-- theClosedRenewedLoan
+
+-- -----------------------------------------------------
+
+DROP PROCEDURE IF EXISTS theClosedRenewedLoan;
+
+DELIMITER $$
+
+CREATE PROCEDURE theClosedRenewedLoan( IN theLoanId INT) BEGIN
+
+  
+UPDATE pmms_loans.new_loan_appstore SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
+UPDATE pmms_loans.new_loan_appstore1 SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
+UPDATE pmms.loandisburserepaystatement SET LoanStatusReport='RenewedClosed' WHERE loanTrnId=theLoanId;
+END $$
+
+DELIMITER ;
+
 
 
 -- PMMS
@@ -20234,7 +18033,7 @@ INSERT INTO loanPrintDetailsRenew VALUES (
   officeNumber,
     FORMAT(amountRenewed,0)
   );
-
+-- bc1q5qnzng4uk64gqcqvfsra9euf6z7t7dgzlcpfe2
 
    SELECT * FROM loanPrintDetailsRenew;
 
@@ -20310,17 +18109,55 @@ INSERT INTO loanPrintDetails VALUES (l_done,companyName,companyBranch,companyBox
 
    SELECT * FROM loanPrintDetails;
 
-END
-
-##
+END ##
 DELIMITER ;
 
 
 
+/* LOAN RECEIPT PRINTING */
+
+DROP PROCEDURE IF EXISTS loanStatementDetails;
+
+DELIMITER ##
+
+CREATE PROCEDURE   loanStatementDetails(IN SloanTrnId VARCHAR(45))
+BEGIN
+
+DROP TABLE IF EXISTS loanStatementtDetailsTable;
+
+CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
+`id` INTEGER NOT NULL AUTO_INCREMENT, 
+`trn_date` DATE,
+`amount_paid` VARCHAR(60),
+`princimpal_paid` VARCHAR(60),
+`interest_paid` VARCHAR(60),
+`amount_remaining` VARCHAR(60),
+`princimpal_remaining`  VARCHAR(60),
+`interest_remaining`  VARCHAR(60),
+ PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT =0
+DEFAULT CHARACTER SET = utf8;
+
+  
+
+INSERT INTO  loanStatementtDetailsTable( 
+  `id` ,
+  `trn_date` ,
+      `amount_paid`,
+     `princimpal_paid`,
+  `interest_paid`,
+        `amount_remaining`,
+          `princimpal_remaining`,
+          `interest_remaining`
+  ) SELECT  null,`TrnDate` ,FORMAT(`AmountPaid`,0) ,  FORMAT(`PrincipalPaid`,0) ,  FORMAT(`InterestPaid`,0) ,  FORMAT(`LoanBalance`,0) ,  FORMAT(`PrincipalBalance`,0) ,  FORMAT(`InterestBalance`,0)  FROM loandisburserepaystatement WHERE loanTrnId=SloanTrnId LIMIT 1,20000;
 
 
+   SELECT * FROM loanStatementtDetailsTable;
 
+END  ##
 
+ DELIMITER ;
 
  
 DROP PROCEDURE IF EXISTS updatingBalances;
@@ -20485,27 +18322,776 @@ END//
 
 
 
-call createdRenewedLoan(
-  '05502030510',
-  136000,
-  240,
-  30,
-  '2022-09-25',
-  1,
-  'DAYS',10001,1,'2022-08-18',10001,0,1,'BTN34249',1,4,70795);
--- Credits	TUMWINE POSIANO 2 0772898931	05502005710	Customer Deposits	0
--- 6	70235	newloan05502000910	Disbursed
--- CALL RepayTheLoanNow('05502005710',200000.0,'BTN34249',10001,'2022-09-24',10001);
+DROP PROCEDURE IF EXISTS normaliseBalance;
+DELIMITER //
+CREATE PROCEDURE normaliseBalance() READS SQL DATA 
+OUTER_BLOCK: BEGIN
+DECLARE theLoanTxnId VARCHAR(20);
+DECLARE outerNotFound, c INTEGER DEFAULT 0; 
+DECLARE forLoanTxnId CURSOR FOR SELECT DISTINCT(loanTrnId) from loandisburserepaystatement WHERE  LoanStatusReport='Disbursed' OR LoanStatusReport='Renewed';
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
 
--- CALL createNewLoan('05502000910',1500000,240,30,'2022-09-17',1,'DAYS',10001,1.0,'2022-09-17',10004,0,1,'BTN34249',1) ;
--- 70247	Twesigye Androse 0778602214	BODA BODA	240	15000	15000	3000	0	18000	30 DAYS	27/09/2022	10003	Disbursed
+OPEN forLoanTxnId; 
 
--- DELETE new_loan_appstore,new_loan_appstoreamort from new_loan_appstore INNER JOIN new_loan_appstoreamort ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.trn_id=72232;
+LOANTXN_LOOP: LOOP 
 
--- DELETE pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId WHERE new_loan_appstore1.trn_id=72232;
+FETCH forLoanTxnId into theLoanTxnId;
 
--- 30	BYAMUKAMA SULAIMAN 0789775437	05502001810
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
+ 
 
--- 13	72232	newloan05502043510	Disbursed
 
--- Credits	Tusaasirwe Jonard	05502029910	Customer Deposits	31500.0
+
+
+
+INNER_BLOCK: BEGIN
+
+DECLARE theBatchNoS VARCHAR(60);
+DECLARE theOpeningBal,theBal,thePaid,InterestPaid,principalPaid,AccumInterestPaid,PenaltyPaid,priBal,intBal,accumIntBal,loanPenBal,loanBal DOUBLE; 
+DECLARE innerNotFound INTEGER DEFAULT 0; 
+DECLARE forBatchNos CURSOR FOR SELECT BatchCode FROM loandisburserepaystatement WHERE loanTrnId=theLoanTxnId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
+
+
+
+
+OPEN forBatchNos; 
+
+SELECT COUNT(ExpectedTotalAmount) INTO @No FROM loandisburserepaystatement WHERE ExpectedTotalAmount>0 AND loanTrnId=theLoanTxnId ;
+
+IF @No=1 THEN
+
+SELECT ExpectedTotalAmount INTO theOpeningBal FROM loandisburserepaystatement WHERE ExpectedTotalAmount>0 AND loanTrnId=theLoanTxnId ;
+
+ 
+TXNIDS_LOOP:LOOP
+
+FETCH forBatchNos INTO theBatchNoS;
+SET thePaid=NULL,InterestPaid=NULL,principalPaid=NULL;
+
+
+ IF innerNotFound=1 THEN
+LEAVE TXNIDS_LOOP;
+ END IF;
+
+
+SELECT  debit INTO thePaid FROM bsanca01123000110  WHERE chq_number=theBatchNoS;
+
+SELECT  credit INTO InterestPaid FROM bsanca03301000110 WHERE chq_number=theBatchNoS;
+
+SELECT  credit INTO principalPaid FROM bsanca01128000110 WHERE chq_number=theBatchNoS;
+
+SELECT theBatchNoS, theOpeningBal,thePaid,InterestPaid,principalPaid;
+
+IF thePaid='-' Then
+SET thePaid=0.0;
+END IF;
+
+
+IF InterestPaid='-' Then
+SET InterestPaid=0.0;
+END IF;
+
+IF principalPaid='-' Then
+SET principalPaid=0.0;
+END IF;
+
+IF ISNULL(thePaid) Then
+SET thePaid=0.0;
+END IF;
+
+IF ISNULL(InterestPaid) Then
+SET InterestPaid=0.0;
+END IF;
+
+IF ISNULL(principalPaid) Then
+SET principalPaid=0.0;
+END IF;
+SELECT theBatchNoS, theOpeningBal,thePaid,InterestPaid,principalPaid;
+UPDATE loandisburserepaystatement SET AmountPaid=thePaid, PrincipalPaid=principalPaid, InterestPaid=InterestPaid, LoanBalance=theOpeningBal-thePaid WHERE BatchCode=theBatchNoS;
+
+SET theOpeningBal=theOpeningBal-thePaid;
+
+SET innerNotFound=0;
+END LOOP TXNIDS_LOOP; 
+END IF;
+CLOSE forBatchNos; 
+END INNER_BLOCK;
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK //
+
+
+ DELIMITER ;
+
+
+
+
+
+
+
+        DROP PROCEDURE IF EXISTS reverseTxnsX;
+
+
+        DELIMITER //
+
+-- 08/01/2023	08/01/2023	TURYAHIKAYO ARTHUR   0776088599s Account Deposit for Loan Payment
+--   Dated 08/01/2023	300000.0	-	3814801.0	BTN216497
+-- CALL reverseTxnsX('BTN216497');
+
+        CREATE PROCEDURE  reverseTxnsX(IN batchNumber VARCHAR(100) )  BEGIN
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,loanTrnIdL INT ;
+     DECLARE txnDate DATE;
+     DECLARE the_narration VARCHAR(500);
+     DECLARE the_debit,the_credit,the_account_no,the_contra_account_no,the_trn_type,DrCr,txnAmount  VARCHAR(100);
+
+ DECLARE fortheTxnId CURSOR FOR SELECT trn_id FROM general_ledger WHERE chq_number=batchNumber ORDER BY trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+ IF l_done=1 THEN
+
+LEAVE txnId_loop;
+
+ END IF;
+
+
+
+SELECT trn_date, narration,debit,credit,debit_account_no,credit_account_no,trn_type INTO txnDate, the_narration,the_debit,the_credit,the_account_no,the_contra_account_no,the_trn_type FROM general_ledger WHERE trn_id=txnId;
+
+IF txnDate=DATE(NOW()) THEN
+
+IF the_debit='-' THEN
+SET DrCr='Dr',txnAmount=the_credit;
+
+ELSE
+SET DrCr='Cr',txnAmount=the_debit;
+END IF;
+
+
+
+-- SELECT DrCr,txnAmount,the_debit,the_credit,the_account_no,the_trn_type;
+
+IF DrCr='Dr' THEN
+
+IF (SUBSTRING(the_account_no,2,2)='11' OR SUBSTRING(the_account_no,2,2)='22') THEN
+-- SELECT DrCr;
+-- SELECT SUBSTRING(the_account_no,2,2);
+
+SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow+txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),txnAmount,'-',@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+
+IF ((the_account_no LIKE '01128000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateThePrincipalComp(the_contra_account_no,txnAmount);
+
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+
+END IF;
+
+
+IF (SUBSTRING(the_account_no,2,2)='33' OR SUBSTRING(the_account_no,2,2)='44' OR SUBSTRING(the_account_no,2,2)='55') THEN
+
+SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow-txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),txnAmount,'-',@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+
+-- 05/01/2023	03301000110	Gross Interest Income1	Gross Interest Income	5.73585603E8	Active
+-- 10/03/2020	03312000110	Loan Surcharge1	Loan Surcharge	0.0	Active
+-- 23/08/2022	03311000110	Accumulated Interest Income1	Accumulated Interest Income	-678398.0	Active
+-- Credits	Murungi Merab	05502020510	Customer Deposits	776871.0
+IF ((the_account_no LIKE '03301000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateTheInterestComp(the_contra_account_no,txnAmount);
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+IF ((the_account_no LIKE '03312000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateThePenaltyComp(the_contra_account_no,txnAmount);
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+IF ((the_account_no LIKE '03311000%') AND (the_trn_type='LoanR')) THEN
+
+CALL updateTheAccumInterComp(the_contra_account_no,txnAmount);
+
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+
+        
+END IF;
+
+
+END IF;
+
+
+IF DrCr='Cr' THEN
+
+IF (SUBSTRING(the_account_no,2,2)='11' OR SUBSTRING(the_account_no,2,2)='22') THEN
+
+SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow-txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),'-',txnAmount,@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+
+IF ((the_account_no LIKE '01128000%') AND (the_trn_type='Gen')) THEN
+
+SELECT loanTrnId  INTO loanTrnIdL FROM   pmms.loandisburserepaystatement WHERE BatchCode=batchNumber;
+
+IF EXISTS(SELECT * FROM  pmms_loans.new_loan_appstore WHERE trn_id=loanTrnIdL) THEN
+DELETE FROM pmms_loans.new_loan_appstore WHERE trn_id=loanTrnIdL;
+DELETE FROM pmms_loans.new_loan_appstore1 WHERE trn_id=loanTrnIdL;
+DELETE FROM pmms_loans.new_loan_appstoreamort WHERE master1_id=loanTrnIdL;
+SET @trn_id = (SELECT trn_id FROM pmms_loans.loanprocessingstore WHERE account_number=the_contra_account_no ORDER BY trn_id DESC LIMIT 1);
+DELETE FROM pmms_loans.loanprocessingstore WHERE trn_id = @trn_id;
+
+
+END IF;
+
+-- CALL reverseTxnsX('BTN15761');
+
+IF EXISTS(SELECT * FROM  loandisburserepaystatement WHERE BatchCode=batchNumber) THEN
+DELETE FROM loandisburserepaystatement WHERE  BatchCode=batchNumber;
+END IF;
+
+END IF;
+
+
+END IF;
+
+
+IF (SUBSTRING(the_account_no,2,2)='33' OR SUBSTRING(the_account_no,2,2)='44' OR SUBSTRING(the_account_no,2,2)='55') THEN
+
+ SET @masterAccount=CONCAT(CAST(SUBSTRING(the_account_no,1,5) AS CHAR CHARACTER SET utf8),"0000",SUBSTRING(the_account_no,-2,2));
+
+-- SELECT @masterAccount;
+
+  SET @sql_text1=  CONCAT(CAST("SELECT ledger_balance INTO @ledgerBalNow FROM bsanca" AS CHAR CHARACTER SET utf8),the_account_no,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+  PREPARE stmt1 FROM @sql_text1;
+  EXECUTE stmt1;
+  DROP PREPARE stmt1;
+--  SELECT  @ledgerBalNow;
+SET  @ledgerBalNow=@ledgerBalNow+txnAmount;
+SET the_narration=CONCAT(CAST("REVERSAL OF " AS CHAR CHARACTER SET utf8),the_narration);
+CALL accountNma(the_contra_account_no,@accountName);
+
+CALL postingTxnsX(NULL,DATE(NOW()),the_narration,DATE(NOW()),'-',txnAmount,@ledgerBalNow,the_contra_account_no,@accountName,'0002',batchNumber,"Reversal",'10001',TIME(NOW()),'2',the_account_no,@masterAccount,DrCr,'Main','NA');
+END IF;
+
+END IF;
+
+END IF;
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+
+        END //
+
+        DELIMITER ;
+-- 08/01/2023	08/01/2023	NAMULI ALLET  0705052803s Account Deposit for Loan Payment
+--   Dated 08/01/2023	400000.0	-	3914801.0	BTN216498
+
+-- CALL reverseTxnsX('BTN216498');
+
+
+
+
+
+         DROP PROCEDURE IF EXISTS updateTheInterestComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateTheInterestComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND(new_loan_appstore.loan_cycle_status='Disbursed' OR new_loan_appstore.loan_cycle_status='Renewed') AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+-- 06/01/2023	06/01/2023	Basheija Charles 0785109562s Account Deposit for Loan Payment
+--   Dated 06/01/2023	100000.0	-	5.143899953333333E7	BTN15756
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+-- SELECT txnId;
+
+ SELECT master1_id,instalment_paid,InterestPaid, InstalmentRemaining,InterestRemaing INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+-- SELECT theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing;
+SET theActualInstalmentsPaid=theInstalmentPaid;
+
+
+ SELECT balance_due,instalments_paid, TotalInterestPaid,TotalInterestRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 OR l_done=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+ IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+-- -- SELECT txnAmount,theInterestPaid;
+
+-- -- select txnAmount
+
+-- IF txnAmount<theInterestPaid THEN 
+-- SET theInterestPaid=txnAmount;
+-- END IF;
+
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid),InterestPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),InterestRemaing=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+
+-- SELECT "INTEREST RA" ,theActualInstalmentsPaid;
+
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;
+
+
+
+-- 08/01/2023	08/01/2023	AKAMPUMUZA GILLIAN 0758066555s Account Deposit for Loan Payment
+--   Dated 08/01/2023	500000.0	-	4014801.0	BTN216499
+
+-- CALL reverseTxnsX('BTN216499');
+
+         DROP PROCEDURE IF EXISTS updateTheAccumInterComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateTheAccumInterComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+
+ SELECT master1_id,instalment_paid,AccumulatedInterestPaid, InstalmentRemaining,AccumulatedInterestRemaining INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theInstalmentPaid;
+
+ SELECT balance_due,instalments_paid, TotalAccumulatedInterestPaid,TotalAccumulatedInterestRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+--  IF txnAmount<theInterestPaid THEN
+-- SET theInterestPaid=txnAmount;
+-- END IF;
+-- SELECT txnAmount,theInterestPaid;
+
+
+-- IF txnAmount<theInterestPaid THEN 
+-- SET theInterestPaid=txnAmount;
+-- END IF;
+
+
+IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+
+
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid),AccumulatedInterestPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),AccumulatedInterestRemaining=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+
+
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalAccumulatedInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalAccumulatedInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalAccumulatedInterestPaid=(theTotalInterestPaid-theActualInterestPaid),TotalAccumulatedInterestRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+-- SELECT "ACCUM INTEREST", theActualInstalmentsPaid;
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;
+
+
+
+
+
+         DROP PROCEDURE IF EXISTS updateThePenaltyComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateThePenaltyComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+
+ SELECT master1_id,instalment_paid,LoanPenaltyPaid, InstalmentRemaining,LoanPenaltyRemaining INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theInstalmentPaid;
+
+ SELECT balance_due,instalments_paid, TotalLoanPenaltyPaid, TotalLoanPenaltyRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+
+-- SELECT "pENALTY COMP",theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing;
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid), LoanPenaltyPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),LoanPenaltyRemaining=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+
+
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalLoanPenaltyPaid=(theTotalInterestPaid-theActualInterestPaid),TotalLoanPenaltyRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalLoanPenaltyPaid=(theTotalInterestPaid-theActualInterestPaid),TotalLoanPenaltyRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+-- 110657	SSEKIZIYIVU  JULIUS 0755271248	05502186210
+        END //
+
+        DELIMITER ;
+
+  DROP PROCEDURE IF EXISTS updateAccountMaster; 
+
+        DELIMITER //
+
+-- SABIITI GEORGE 0706398854
+-- SSENGOZI FRED 0757807020
+-- OYUGI  IVAN 0703110169
+-- SSENYONJO FRANK 0759542512
+-- KIGOZI HENRY 070423174
+
+
+CREATE PROCEDURE updateAccountMaster()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE space_pos INT;
+    DECLARE accountnumber VARCHAR(255);
+    DECLARE cur CURSOR FOR SELECT applicant_account_number FROM pmms_loans.new_Loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO accountnumber;
+ 
+
+-- IF accountnumber='05502185010' THEN
+--  SELECT accountnumber;
+-- END IF;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        IF NOT EXISTS (SELECT account_number FROM pmms.master WHERE account_number = accountnumber) THEN
+SELECT DISTINCT applicant_account_name INTO @accountName  FROM pmms_loans.new_Loan_appstore WHERE applicant_account_number=accountnumber LIMIT 1;
+SET space_pos = LOCATE(' ', @accountName);
+SELECT SUBSTR(@accountName, 1, space_pos-1) , SUBSTR(@accountName, space_pos+1) INTO @lastName, @firstName;
+            INSERT INTO pmms.master  VALUES (NULL,DATE(NOW()),SUBSTR(accountnumber, 3, 7),'Mr',@firstName,@lastName,'',DATE(NOW()),'','','','','','','','','','','','','','','','','','','','','','','','','','','','',DATE(NOW()),'',accountnumber,@accountName,TIME(NOW()),DATE(NOW()),TIME(NOW()),'','');
+        END IF;
+
+      SET accountnumber=NULL;  
+    END LOOP;
+    CLOSE cur;
+  END //
+
+        DELIMITER ;
+
+CALL updateAccountMaster();
+
+ALTER TABLE master MODIFY COLUMN UserPhoto VARCHAR(300);
+UPDATE master SET UserPhoto='./avaImage.jpg';
+
+
+
+         DROP PROCEDURE IF EXISTS updateThePrincipalComp; 
+
+        DELIMITER //
+ 
+        CREATE PROCEDURE  updateThePrincipalComp(IN accountNumber VARCHAR(100),IN txnAmount VARCHAR(100))  BEGIN
+
+
+
+     DECLARE l_done INT DEFAULT 0;
+     DECLARE txnId,theLoanId INT ;
+ DECLARE theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing,theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining,theActualInterestPaid,theActualInstalmentsPaid DOUBLE;
+ DECLARE theTrnId INT;
+
+ DECLARE fortheTxnId CURSOR FOR SELECT new_loan_appstoreamort.trn_id FROM pmms_loans.new_loan_appstoreamort INNER JOIN pmms_loans.new_loan_appstore ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.applicant_account_number= accountNumber AND new_loan_appstoreamort.instalment_paid_date=DATE(NOW())  ORDER BY new_loan_appstoreamort.trn_id DESC;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+
+
+
+ OPEN fortheTxnId;
+
+txnId_loop: LOOP 
+
+ FETCH fortheTxnId into txnId;
+
+
+ SELECT master1_id,instalment_paid,PrincipalPaid, InstalmentRemaining, PrincipalRemaining INTO theLoanId,theInstalmentPaid,theInterestPaid, theInstalmentRemaining,theInterestRemaing FROM pmms_loans.new_loan_appstoreamort  WHERE trn_id=txnId;
+
+ SET theActualInstalmentsPaid=theInstalmentPaid;
+
+
+ SELECT balance_due,instalments_paid, TotalPrincipalPaid,TotalPrincipalRemaining INTO theBalanceDue,theInstalmentsPaid,theTotalInterestPaid,theTotalInterestRemaining FROM pmms_loans.new_loan_appstore WHERE trn_id=theLoanId;
+
+
+
+ IF ISNULL(theInterestPaid) THEN
+SET theInterestPaid=0.0;
+ END IF;
+
+ IF txnAmount<=1 THEN
+LEAVE txnId_loop;
+ END IF;
+
+ IF txnAmount<theInterestPaid THEN
+SET theActualInterestPaid=txnAmount;
+ELSE
+SET theActualInterestPaid=theInterestPaid;
+
+END IF;
+
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid=(theInstalmentPaid-theActualInterestPaid),PrincipalPaid=(theInterestPaid-theActualInterestPaid), InstalmentRemaining=(theInstalmentRemaining+theActualInterestPaid),PrincipalRemaining=(theInterestRemaing+theActualInterestPaid),instalment_status='NY' WHERE trn_id=txnId;
+
+SET theActualInstalmentsPaid=theActualInstalmentsPaid-theActualInterestPaid;
+
+
+
+UPDATE pmms_loans.new_loan_appstore SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalPrincipalPaid=(theTotalInterestPaid-theActualInterestPaid),TotalPrincipalRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+UPDATE pmms_loans.new_loan_appstore1 SET balance_due=(theBalanceDue+theActualInterestPaid),instalments_paid=(theInstalmentsPaid-theActualInterestPaid), TotalPrincipalPaid=(theTotalInterestPaid-theActualInterestPaid),TotalPrincipalRemaining=(theTotalInterestRemaining+theActualInterestPaid) WHERE trn_id=theLoanId;
+
+IF theActualInstalmentsPaid=0 THEN
+UPDATE pmms_loans.new_loan_appstoreamort SET instalment_paid_date=instalment_due_date WHERE trn_id=txnId;
+END IF;
+SET txnAmount=txnAmount-theActualInterestPaid;
+
+-- SELECT "PRINCIPAL", theActualInstalmentsPaid;
+
+ END LOOP txnId_loop;
+SET l_done=0;
+ CLOSE fortheTxnId;
+
+
+        END //
+
+        DELIMITER ;
+
+-- 21/01/2023	21/01/2023	Loan processing fees from BYAMUGISHA BRIGHT 0702337171 Processed on 21/01/2023
+--   Dated 21/01/2023	20000.0	-	545200.0
+
+       -- DROP TABLE backupPath;
+-- -----------------------------------------------------
+-- Table backupPath
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS backupPath (
+
+ id INT NOT NULL AUTO_INCREMENT,
+ 
+  
+   mysqlBinPath varchar(300) NOT NULL DEFAULT '0.0',
+   theBackupPath varchar(300) NOT NULL DEFAULT '0.0',
+
+  PRIMARY KEY (id)
+  
+) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET = utf8;
+
+
+--  3361	ATUHAIRE BRENDA 0702048043	05502011110
+
+-- call createdRenewedLoan(
+--   '05502011110',
+--   3500000,
+--   240,
+--   60,
+--   '2023-01-21',
+--   1,
+--   'DAYS',10001,1,'2023-01-21',10001,0,1,'BTN34249',1,4,70795);
+
+
+-- -- CALL RepayTheLoanNow('05502011110',3500000.0,'BTN34249',10001,'2023-01-21',10001);
+
+-- -- CALL createNewLoan('05502011110',3500000,180,60,'2023-01-21',1,'DAYS',10001,1.0,'2023-01-21',10004,0,1,'BTN34249',1) ;
+-- fios.createFileName("persistence", "useCRB", "useAccumulatedInterest.txt")

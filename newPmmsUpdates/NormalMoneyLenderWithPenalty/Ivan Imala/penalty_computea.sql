@@ -1,15 +1,15 @@
 
-update new_loan_appstore SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
+-- update new_loan_appstore SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
 
-update new_loan_appstore1 SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
+-- update new_loan_appstore1 SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
 
 
-update new_loan_appstoreamort SET  instalment_amount=( princimpal_amount+interest_amount),
- InstalmentRemaining=(PrincipalRemaining+InterestRemaing),
-  LoanPenalty=0.0,
-LoanPenaltyRemaining= 0.0;
+-- update new_loan_appstoreamort SET  instalment_amount=( princimpal_amount+interest_amount),
+--  InstalmentRemaining=(PrincipalRemaining+InterestRemaing),
+--   LoanPenalty=0.0,
+-- LoanPenaltyRemaining= 0.0;
 
-UPDATE pmms.loandisburserepaystatement  SET LoanPenaltyBalance=0.0,ExpectedTotalAmount=(AmountDisbursed+ExpectedInterest),LoanBalance=(PrincipalBalance+InterestBalance);
+-- UPDATE pmms.loandisburserepaystatement  SET LoanPenaltyBalance=0.0,ExpectedTotalAmount=(AmountDisbursed+ExpectedInterest),LoanBalance=(PrincipalBalance+InterestBalance);
 
 
 
@@ -398,7 +398,7 @@ BEGIN
 
 DECLARE thePenalty,theBalance,thePenaltyActual  DOUBLE;
 
-SET thePenaltyActual=10000;
+SET thePenaltyActual=2000;
 SET @totalLoanAmount=NULL,@balanceCdue=NULL,@totalLoanPenalty=NULL,@instalmentAmount=NULL,@instalmentRemaining=NULL,@loanPenalty=NULL,@loanPenaltyRemaining=NULL,@totalLoanAmount=NULL,@NewExpectedTotalAmount=NULL,@penaltyBal=NULL,@lBalance=NULL;
 SET @theTotalLoan = CONCAT(CAST("SELECT total_loanAmount, balance_due,TotalLoanPenaltyRemaining INTO @totalLoanAmount, @balanceCdue,@totalLoanPenalty FROM new_loan_appstore  WHERE trn_id=" AS CHAR CHARACTER SET utf8),trnId);
 --  select  @theTotalLoan;
