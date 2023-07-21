@@ -1,5 +1,77 @@
 
 
+DROP PROCEDURE IF EXISTS InterestRecover;
+DELIMITER //
+CREATE PROCEDURE InterestRecover(IN theDate DATE,OUT InterestR VARCHAR(100)) READS SQL DATA 
+
+BEGIN
+-- SELECT  SUM(credit) INTO InterestR FROM pmms.general_ledger WHERE  trn_date=theDate AND (debit_account_no LIKE '03301%' OR debit_account_no LIKE '03322%');
+
+SELECT  SUM(InterestPaid) INTO InterestR FROM pmms.loandisburserepaystatement WHERE  TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+
+
+IF ISNULL(InterestR) THEN
+SET InterestR=0.0;
+END IF;
+
+END //
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS princimpalLoanRepaymentsMade;
+
+DELIMITER //
+
+CREATE PROCEDURE princimpalLoanRepaymentsMade(IN theDate DATE,OUT princimpalRepaymentsMade VARCHAR(100)) READS SQL DATA 
+
+
+BEGIN
+-- SELECT  SUM(credit) INTO princimpalRepaymentsMade FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01128%';
+SELECT  SUM(PrincipalPaid) INTO princimpalRepaymentsMade FROM pmms.loandisburserepaystatement WHERE  TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+IF ISNULL(princimpalRepaymentsMade) THEN
+SET princimpalRepaymentsMade=0.0;
+END IF;
+
+
+END //
+DELIMITER ;
+
+
+
+
+DROP PROCEDURE IF EXISTS collectionsMade;
+
+DELIMITER //
+
+CREATE PROCEDURE collectionsMade(IN theDate DATE,OUT theCollectionsMade VARCHAR(100)) READS SQL DATA 
+
+
+BEGIN
+-- SELECT  SUM(credit) INTO princimpalRepaymentsMade FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01128%';
+SELECT  SUM(AmountPaid) INTO theCollectionsMade FROM pmms.loandisburserepaystatement WHERE  TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+IF ISNULL(theCollectionsMade) THEN
+SET theCollectionsMade=0.0;
+END IF;
+
+
+END //
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS totalPrincimpalBalance;
+DELIMITER $$
+CREATE  PROCEDURE totalPrincimpalBalance(OUT princimpalBalance INT)
+BEGIN
+
+SELECT SUM(TotalPrincipalRemaining) INTO princimpalBalance FROM new_loan_appstore WHERE loan_cycle_status='Renewed' OR loan_cycle_status='Disbursed' ;
+
+END $$
+DELIMITER ;
+
+
+
+
 DROP PROCEDURE `smsSummuryReport`;
 DELIMITER $$
 CREATE  PROCEDURE `smsSummuryReport`()
@@ -64,7 +136,11 @@ INSERT INTO smsSummury VALUES("No.CustomP:",@activeCustomersPaid);
 
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 CALL InterestRecover(DATE(NOW()),@InterestR);
-SET @ActualTotalAmountCollectedToday=@princimpalRepaymentsMade+@InterestR;
+CALL collectionsMade(DATE(NOW()),@theCollectionsMade);
+SET @ActualTotalAmountCollectedToday=@theCollectionsMade;
+
+
+
 IF @ActualTotalAmountCollectedToday>0 THEN
 
 INSERT INTO smsSummury VALUES("TC:",@ActualTotalAmountCollectedToday);
@@ -518,6 +594,15 @@ END IF;
 INSERT INTO smsSummury VALUES("MO+CC:",@TheMomoBalance+@closingCashBal);
 END IF;
 
+
+START TRANSACTION;
+
+DELETE FROM theSmsSummuryReport WHERE reportDate=DATE(NOW());
+
+INSERT INTO theSmsSummuryReport (reportId, reportDate,reprtItemName,reportItemValue)
+SELECT  NULL,DATE(NOW()),itemName,FORMAT(itemValue,0)  AS itemValue  FROM smsSummury;
+
+COMMIT;
 
 SELECT itemName,FORMAT(itemValue,0)  AS itemValue FROM smsSummury;
 

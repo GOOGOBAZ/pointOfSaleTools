@@ -1,15 +1,15 @@
 
-update new_loan_appstore SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
+-- update new_loan_appstore SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
 
-update new_loan_appstore1 SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
+-- update new_loan_appstore1 SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
 
 
-update new_loan_appstoreamort SET  instalment_amount=( princimpal_amount+interest_amount),
- InstalmentRemaining=(PrincipalRemaining+InterestRemaing),
-  LoanPenalty=0.0,
-LoanPenaltyRemaining= 0.0;
+-- update new_loan_appstoreamort SET  instalment_amount=( princimpal_amount+interest_amount),
+--  InstalmentRemaining=(PrincipalRemaining+InterestRemaing),
+--   LoanPenalty=0.0,
+-- LoanPenaltyRemaining= 0.0;
 
-UPDATE pmms.loandisburserepaystatement  SET LoanPenaltyBalance=0.0,ExpectedTotalAmount=(AmountDisbursed+ExpectedInterest),LoanBalance=(PrincipalBalance+InterestBalance);
+-- UPDATE pmms.loandisburserepaystatement  SET LoanPenaltyBalance=0.0,ExpectedTotalAmount=(AmountDisbursed+ExpectedInterest),LoanBalance=(PrincipalBalance+InterestBalance);
 
 
 

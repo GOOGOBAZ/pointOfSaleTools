@@ -11033,7 +11033,6 @@ DELIMITER ;
 
 
 
-
 /* CALL accumulatedInterestR('2019-06-21',@accumulatedInterestR);
 
 SELECT @accumulatedInterestR; */
@@ -11358,18 +11357,19 @@ DELIMITER ;
 
 
 
+
 DROP PROCEDURE IF EXISTS collectionsMade;
 
 DELIMITER //
 
-CREATE PROCEDURE collectionsMade(IN theDate DATE,OUT princimpalRepaymentsMade VARCHAR(100)) READS SQL DATA 
+CREATE PROCEDURE collectionsMade(IN theDate DATE,OUT theCollectionsMade VARCHAR(100)) READS SQL DATA 
 
 
 BEGIN
 -- SELECT  SUM(credit) INTO princimpalRepaymentsMade FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01128%';
-SELECT  SUM(AmountPaid) INTO princimpalRepaymentsMade FROM pmms.loandisburserepaystatement WHERE  TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
-IF ISNULL(princimpalRepaymentsMade) THEN
-SET princimpalRepaymentsMade=0.0;
+SELECT  SUM(AmountPaid) INTO theCollectionsMade FROM pmms.loandisburserepaystatement WHERE  TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+IF ISNULL(theCollectionsMade) THEN
+SET theCollectionsMade=0.0;
 END IF;
 
 
@@ -13017,23 +13017,39 @@ INSERT INTO smsSummury VALUES("NewCustomers:",FORMAT(@activeNewCustomers,0));
   END IF;
 
 
+
+
+CALL collectionsMade(DATE(NOW()),@theCollectionsMade);
+SET @ActualTotalAmountCollectedToday=@theCollectionsMade;
+
+
+
+IF @ActualTotalAmountCollectedToday>0 THEN
+
+INSERT INTO smsSummury VALUES("TotalCollections:",@ActualTotalAmountCollectedToday);
+
+  END IF;
+
+
+
+
 -- SELECT @princimpalRepaymentsMade;
   -- SELECT @princimpalRepaymentsMade;
   CALL sumRenewals(@totalRenewals);
   -- select @totalRenewals;
-CALL collectionsMade(DATE(NOW()),@princimpalRepaymentsMade);
+-- CALL collectionsMade(DATE(NOW()),@princimpalRepaymentsMade);
 -- CALL InterestRecover(DATE(NOW()),@InterestR);
 
--- CALL InterestRenewed(DATE(NOW()),@InterestRenew);
+CALL InterestRenewed(DATE(NOW()),@InterestRenew);
 -- SELECT @princimpalRepaymentsMade,@InterestR;
-SET @ActualTotalAmountCollectedToday=(@princimpalRepaymentsMade);
+-- SET @ActualTotalAmountCollectedToday=(@princimpalRepaymentsMade);
 
 -- select @ActualTotalAmountCollectedToday;
-IF @ActualTotalAmountCollectedToday>0 THEN
-  -- SELECT @ActualTotalAmountCollectedToday;
-INSERT INTO smsSummury VALUES("TotalCollections:",FORMAT(@ActualTotalAmountCollectedToday,0));
+-- IF @ActualTotalAmountCollectedToday>0 THEN
+--   -- SELECT @ActualTotalAmountCollectedToday;
+-- INSERT INTO smsSummury VALUES("TotalCollections:",FORMAT(@ActualTotalAmountCollectedToday,0));
 
-  END IF;
+--   END IF;
 
 
 
@@ -13154,11 +13170,11 @@ CALL OpeningCashBalance(DATE(NOW()),@OpeningCahdBala);
     -- SELECT @OpeningCahdBala;
 INSERT INTO smsSummury VALUES("OpeningCash:",FORMAT(@OpeningCahdBala,0));
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01128%') THEN
+-- IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01128%') THEN
 
 CALL princimpalLoanRepaymentsMade(DATE(NOW()),@princimpalRepaymentsMade);
 
-  END IF;
+  -- END IF;
 
 IF ISNULL(@princimpalRepaymentsMade) THEN
 SET @princimpalRepaymentsMade=0;
@@ -13167,22 +13183,22 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala+@princimpalRepaymentsMade;
 
 IF @princimpalRepaymentsMade>0 THEN 
-SET @PC=(@princimpalRepaymentsMade-(@totalRenewals-@InterestRenew));
+-- SET @PC=(@princimpalRepaymentsMade-(@totalRenewals-@InterestRenew));
 -- SELECT @PC,@princimpalRepaymentsMade,@totalRenewals,@InterestRenew;
 
-INSERT INTO smsSummury VALUES("PrincipalCollected:",FORMAT(@PC,0));
+INSERT INTO smsSummury VALUES("PrincipalCollected:",FORMAT(@princimpalRepaymentsMade,0));
 END IF;
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03301%') THEN
+-- IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03301%') THEN
 CALL InterestRecover(DATE(NOW()),@InterestR);
-END IF;
-IF ISNULL(@InterestR) THEN
-SET @InterestR=0;
-END IF;
+-- END IF;
+-- IF ISNULL(@InterestR) THEN
+-- SET @InterestR=0;
+-- END IF;
 -- SELECT CONCAT("InterestCollected:=",@InterestR);
 SET @OpeningCahdBala=@OpeningCahdBala+@InterestR;
 
 IF @InterestR>0 THEN 
-INSERT INTO smsSummury VALUES("InterestCollected:",FORMAT((@InterestR-@InterestRenew),0));
+INSERT INTO smsSummury VALUES("InterestCollected:",FORMAT(@InterestR,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '03315%') THEN
@@ -15699,9 +15715,6 @@ ALTER TABLE pmms.smsTable modify column  id enum('1') NOT NULL;
 insert into smsTable VALUES(1,20,'Feel@H0me');
 
 
--- 06/03/2023	3	2023	0.0	0.0	0.0	0	300000	260000	40000	0	0	8900000
--- 19020	KOBUSINGYE RUTH 0771621127	05502044710
--- 71480	KOBUSINGYE RUTH 0771621127	Business	6	8000000	7740000	1160000	0	8900000	30 DAYS	31/01/2023	10006	Disbursed
 call createdRenewedLoan(
   '05502009410',
   109200,
@@ -15711,17 +15724,28 @@ call createdRenewedLoan(
   1,
   'DAYS',10001,1,'2023-01-20',10001,0,1,'BTN95817',1,4,72788);
 
-4	72788	closedloan5105502009410	Completed
-20/01/2023	1	2023	109200	21840	131040	240	0.0	0.0	0.0	0.0	0.0	131040
-23/05/2023	5	2023	0.0	0.0	0.0	0	10000	7816	2184	0	0	121040
-05/06/2023	6	2023	0.0	0.0	0.0	0	121040	101384	19656	0	0	0
-	Total		0.0	0.0	0.0	0.0	131,040	109,200	21,840	0	0	0.0
+-- 1	73934	closedloan205502147210	Completed
 
--- CALL createNewLoan('05502028810',800000,240,4,'2023-05-27',2,'WEEKS',10001,1.0,'2023-05-27',10004,0,1,'BTN34249',1) ;
 
--- CALL RepayTheLoanNow('05502009410',10000.0,'BTN34249',10001,'2023-05-23',10001);
+-- CALL createNewLoan('05502007710',200000,240,30,'2023-07-01',1,'DAYS',10001,1.0,'2023-07-01',10004,0,1,'BTN34249',1) ;
 
+--  CALL RepayTheLoanNow('05502147210',12000.0,'BTN34249',10001,'2023-03-29',10001);
+-- CALL RepayTheLoanNow('05502147210',11500.0,'BTN34249',10001,'2023-03-31',10001);
+-- CALL RepayTheLoanNow('05502147210',12000.0,'BTN34249',10001,'2023-04-05',10001);
+
+
+-- CALL RepayTheLoanNow('05502147210',6000.0,'BTN34249',10001,'2023-04-19',10001);
+-- CALL RepayTheLoanNow('05502147210',5000.0,'BTN34249',10001,'2023-04-27',10001);
+-- CALL RepayTheLoanNow('05502147210',5000.0,'BTN34249',10001,'2023-04-29',10001);
+
+-- CALL RepayTheLoanNow('05502147210',5000.0,'BTN34249',10001,'2023-04-30',10001);
+
+-- CALL RepayTheLoanNow('05502147210',5000.0,'BTN34249',10001,'2023-05-02',10001);
+
+-- CALL RepayTheLoanNow('05502007710',200000.0,'BTN34249',10001,'2023-06-02',10001);
 
 -- CALL createNewLoan('05502040910',300000,24,12,'2023-03-09',4,'MONTHS',10001,1.0,'2023-03-09',10001,0,1,'BTN34249',1) ;
+
+1250	TUMUKUNDE GLADYS 0753074849	05502007710
 
 
