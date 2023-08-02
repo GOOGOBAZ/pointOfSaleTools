@@ -3371,32 +3371,32 @@ IF  ISNULL (@principalAmount) THEN
 
 SET @principalAmount=0; 
 
-END IF;/*/ */
+END IF;
 
-IF   ISNULL(@interestAmount) THEN SET  @interestAmount=0; END IF;/* /*/
+IF   ISNULL(@interestAmount) THEN SET  @interestAmount=0; END IF;
 
-IF   ISNULL(@instalmentAmount) THEN SET   @instalmentAmount=0; END IF;/*/ */
+IF   ISNULL(@instalmentAmount) THEN SET   @instalmentAmount=0; END IF;
 
-IF   ISNULL(@interestRemaining) THEN SET  @interestRemaining=0; END IF;/* /*/
+IF   ISNULL(@interestRemaining) THEN SET  @interestRemaining=0; END IF;
 
-IF ISNULL(@principalRemaining) THEN SET @principalRemaining0; END IF;/* /*/
+IF ISNULL(@principalRemaining) THEN SET @principalRemaining0; END IF;
 
-IF  ISNULL(@instalmentRemaining) THEN SET @instalmentRemaining=0; END IF;/*/ */
+IF  ISNULL(@instalmentRemaining) THEN SET @instalmentRemaining=0; END IF;
 
-IF  ISNULL(@TotalprincipalAmount) THEN SET @TotalprincipalAmount=0; END IF;/* /*/
+IF  ISNULL(@TotalprincipalAmount) THEN SET @TotalprincipalAmount=0; END IF;
 
-IF  ISNULL(@totalInterestAmount) THEN SET @totalInterestAmount=0; END IF;/* /*/
+IF  ISNULL(@totalInterestAmount) THEN SET @totalInterestAmount=0; END IF;
 
-IF  ISNULL(@totalLoanAmount) THEN SET  @totalLoanAmount=0; END IF;/* /*/
+IF  ISNULL(@totalLoanAmount) THEN SET  @totalLoanAmount=0; END IF;
 
-IF  ISNULL(@balanceDue) THEN SET  @balanceDue=0; END IF;/*/ */
+IF  ISNULL(@balanceDue) THEN SET  @balanceDue=0; END IF;
 
-IF   ISNULL(@instalmentAmount) THEN SET  @instalmentAmount=0; END IF;/*/ */
+IF   ISNULL(@instalmentAmount) THEN SET  @instalmentAmount=0; END IF;
 
 
-IF   ISNULL(@totalInterestRemaining) THEN SET  @totalInterestRemaining=0; END IF;/* */
+IF   ISNULL(@totalInterestRemaining) THEN SET  @totalInterestRemaining=0; END IF;
 
-IF   ISNULL(@totalInterestRemaining) THEN SET  @totalPrincipalRemaining=0; END IF;/* */
+IF   ISNULL(@totalInterestRemaining) THEN SET  @totalPrincipalRemaining=0; END IF;
 
 IF ISNULL(@intBal) THEN SET @intBal=0; END IF;
 
@@ -15498,57 +15498,49 @@ SET txnAmount=txnAmount-theActualInterestPaid;
 SET l_done=0;
  CLOSE fortheTxnId;
 
--- 110657	SSEKIZIYIVU  JULIUS 0755271248	05502186210
         END //
 
         DELIMITER ;
 
-  DROP PROCEDURE IF EXISTS updateAccountMaster; 
+  -- DROP PROCEDURE IF EXISTS updateAccountMaster; 
 
-        DELIMITER //
+  --       DELIMITER //
 
--- SABIITI GEORGE 0706398854
--- SSENGOZI FRED 0757807020
--- OYUGI  IVAN 0703110169
--- SSENYONJO FRANK 0759542512
--- KIGOZI HENRY 070423174
-
-
-CREATE PROCEDURE updateAccountMaster()
-BEGIN
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE space_pos INT;
-    DECLARE accountnumber VARCHAR(255);
-    DECLARE cur CURSOR FOR SELECT applicant_account_number FROM pmms_loans.new_Loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed';
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+-- CREATE PROCEDURE updateAccountMaster()
+-- BEGIN
+--     DECLARE done INT DEFAULT FALSE;
+--     DECLARE space_pos INT;
+--     DECLARE accountnumber VARCHAR(255);
+--     DECLARE cur CURSOR FOR SELECT applicant_account_number FROM pmms_loans.new_Loan_appstore WHERE loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed';
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     
-    OPEN cur;
-    read_loop: LOOP
-        FETCH cur INTO accountnumber;
+--     OPEN cur;
+--     read_loop: LOOP
+--         FETCH cur INTO accountnumber;
  
 
--- IF accountnumber='05502185010' THEN
---  SELECT accountnumber;
--- END IF;
+-- -- IF accountnumber='05502185010' THEN
+-- --  SELECT accountnumber;
+-- -- END IF;
 
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-        IF NOT EXISTS (SELECT account_number FROM pmms.master WHERE account_number = accountnumber) THEN
-SELECT DISTINCT applicant_account_name INTO @accountName  FROM pmms_loans.new_Loan_appstore WHERE applicant_account_number=accountnumber LIMIT 1;
-SET space_pos = LOCATE(' ', @accountName);
-SELECT SUBSTR(@accountName, 1, space_pos-1) , SUBSTR(@accountName, space_pos+1) INTO @lastName, @firstName;
-            INSERT INTO pmms.master  VALUES (NULL,DATE(NOW()),SUBSTR(accountnumber, 3, 7),'Mr',@firstName,@lastName,'',DATE(NOW()),'','','','','','','','','','','','','','','','','','','','','','','','','','','','',DATE(NOW()),'',accountnumber,@accountName,TIME(NOW()),DATE(NOW()),TIME(NOW()),'','');
-        END IF;
+--         IF done THEN
+--             LEAVE read_loop;
+--         END IF;
+--         IF NOT EXISTS (SELECT account_number FROM pmms.master WHERE account_number = accountnumber) THEN
+-- SELECT DISTINCT applicant_account_name INTO @accountName  FROM pmms_loans.new_Loan_appstore WHERE applicant_account_number=accountnumber LIMIT 1;
+-- SET space_pos = LOCATE(' ', @accountName);
+-- SELECT SUBSTR(@accountName, 1, space_pos-1) , SUBSTR(@accountName, space_pos+1) INTO @lastName, @firstName;
+--             INSERT INTO pmms.master  VALUES (NULL,DATE(NOW()),SUBSTR(accountnumber, 3, 7),'Mr',@firstName,@lastName,'',DATE(NOW()),'','','','','','','','','','','','','','','','','','','','','','','','','','','','',DATE(NOW()),'',accountnumber,@accountName,TIME(NOW()),DATE(NOW()),TIME(NOW()),'','');
+--         END IF;
 
-      SET accountnumber=NULL;  
-    END LOOP;
-    CLOSE cur;
-  END //
+--       SET accountnumber=NULL;  
+--     END LOOP;
+--     CLOSE cur;
+--   END //
 
-        DELIMITER ;
+--         DELIMITER ;
 
-CALL updateAccountMaster();
+-- CALL updateAccountMaster();
 
 ALTER TABLE master MODIFY COLUMN UserPhoto VARCHAR(300);
 UPDATE master SET UserPhoto='./avaImage.jpg';
@@ -15671,9 +15663,12 @@ CREATE TABLE IF NOT EXISTS smsTable (
 ALTER TABLE pmms.smsTable modify column  id enum('1') NOT NULL;
 
 insert into smsTable VALUES(1,20,'Feel@H0me');
-06/03/2023	3	2023	0.0	0.0	0.0	0	300000	260000	40000	0	0	8900000
--- 19020	KOBUSINGYE RUTH 0771621127	05502044710
--- 71480	KOBUSINGYE RUTH 0771621127	Business	6	8000000	7740000	1160000	0	8900000	30 DAYS	31/01/2023	10006	Disbursed
+
+
+
+
+
+
 -- call createdRenewedLoan(
 --   '05502011110',
 --   3500000,
@@ -15682,13 +15677,13 @@ insert into smsTable VALUES(1,20,'Feel@H0me');
 --   '2023-01-21',
 --   1,
 --   'DAYS',10001,1,'2023-01-21',10001,0,1,'BTN34249',1,4,70795);
--- Credits	Annet Nakiyaga 0703356146	05502076510	Customer Deposits	0
--- Credits	Nakiyaga  Annet 0709805958	05502051610	Customer Deposits	0
+
+
 -- CALL RepayTheLoanNow('05502051610',600000.0,'BTN34249',10001,'2023-03-24',10001);
 
 -- CALL createNewLoan('05502044710',8000000,180,30,'2023-01-31',1,'DAYS',10001,1.0,'2023-01-31',10001,0,1,'BTN34249',1) ;
 
--- CALL RepayTheLoanNow('05502017310',373000.0,'BTN34249',10001,'2023-03-05',10001);
 
--- Credits	ssekamanya abdu 0755167470	05502017310	Customer Deposits	0
--- 70606	ssekamanya abdu 0755167470	DRIVER	240	500000	190327	36673	0	227000	30 DAYS	01/02/2023	10004	Disbursed
+-- SELECT  routine_schema,routine_name,routine_type FROM information_schema.routines WHERE routine_schema = 'pmms' AND routine_type='PROCEDURE' ORDER BY routine_name;
+
+-- SELECT  routine_name FROM information_schema.routines WHERE routine_schema = 'pmms' AND routine_type='PROCEDURE' ORDER BY routine_name;

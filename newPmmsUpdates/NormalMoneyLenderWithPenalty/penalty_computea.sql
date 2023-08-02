@@ -1,199 +1,263 @@
 
--- update new_loan_appstore SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
+update new_loan_appstore SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
 
--- update new_loan_appstore1 SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
-
-
--- update new_loan_appstoreamort SET  instalment_amount=( princimpal_amount+interest_amount),
---  InstalmentRemaining=(PrincipalRemaining+InterestRemaing),
---   LoanPenalty=0.0,
--- LoanPenaltyRemaining= 0.0;
-
--- UPDATE pmms.loandisburserepaystatement  SET LoanPenaltyBalance=0.0,ExpectedTotalAmount=(AmountDisbursed+ExpectedInterest),LoanBalance=(PrincipalBalance+InterestBalance);
+update new_loan_appstore1 SET balance_due=(TotalPrincipalRemaining+TotalInterestRemaining),total_loanAmount=(princimpal_amount+total_interest),TotalLoanPenaltyRemaining=0;
 
 
+update new_loan_appstoreamort SET  instalment_amount=( princimpal_amount+interest_amount),
+ InstalmentRemaining=(PrincipalRemaining+InterestRemaing),
+  LoanPenalty=0.0,
+LoanPenaltyRemaining= 0.0;
+
+UPDATE pmms.loandisburserepaystatement  SET LoanPenaltyBalance=0.0,ExpectedTotalAmount=(AmountDisbursed+ExpectedInterest),LoanBalance=(PrincipalBalance+InterestBalance);
 
 
--- DROP PROCEDURE IF EXISTS sortTheInstalment;
--- DELIMITER //
--- CREATE PROCEDURE sortTheInstalment() READS SQL DATA 
-
--- BEGIN
-
--- DECLARE lDone1 INTEGER DEFAULT 0;
-
--- DECLARE loanIdZ,numberOfDays,numberOfDays1,numberOfDays2,n,n1,n2,n3,runningInstalmentId,theIdNow INT; 
--- DECLARE originalDueDate,lastDate,nextDate,endDate DATE;
-
--- DECLARE forSelectingLoanIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore  WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed')  AND  NOT (loan_tenure='1.0 MONTHS' OR  loan_tenure='1 MONTHS') ;
 
 
---  DECLARE CONTINUE HANDLER FOR NOT FOUND SET lDone1=1;
+DROP PROCEDURE IF EXISTS sortTheInstalment;
+DELIMITER //
+CREATE PROCEDURE sortTheInstalment() READS SQL DATA 
+
+BEGIN
+
+DECLARE lDone1 INTEGER DEFAULT 0;
+
+DECLARE loanIdZ,numberOfDays,numberOfDays1,numberOfDays2,n,n1,n2,n3,runningInstalmentId,theIdNow INT; 
+DECLARE originalDueDate,lastDate,nextDate,endDate DATE;
+
+DECLARE forSelectingLoanIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore  WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed')  AND  NOT (loan_tenure='1.0 MONTHS' OR  loan_tenure='1 MONTHS') ;
+
+
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET lDone1=1;
  
 
--- OPEN forSelectingLoanIds; 
+OPEN forSelectingLoanIds; 
 
--- LoanIdLoop: LOOP /* Loop through the due dates since the last duedate*/
+LoanIdLoop: LOOP /* Loop through the due dates since the last duedate*/
 
--- FETCH forSelectingLoanIds into loanIdZ; /* Pick the loan id into the variable loanIdz */
+FETCH forSelectingLoanIds into loanIdZ; /* Pick the loan id into the variable loanIdz */
 
--- IF lDone1=1 THEN /* check whether the cusor sitll holds more values and if not terminate loop */
--- SELECT loanIdZ;
--- LEAVE LoanIdLoop; /* */
---  END IF;  /* */
-
-
--- SELECT currentInstalmentNow(loanIdZ) INTO runningInstalmentId;
-
--- SELECT runningInstalmentId;
--- SELECT trn_id INTO theIdNow FROM new_loan_appstoreamort WHERE master1_id=loanIdZ AND instalment_no=runningInstalmentId;
--- SELECT InstalmentRemaining INTO @theRemainAmount FROM new_loan_appstoreamort WHERE trn_id = theIdNow;
-
--- IF @theRemainAmount<10 THEN
--- SELECT loanIdZ;
--- UPDATE new_loan_appstoreamort SET instalment_status = 'P',instalment_paid_date=DATE(NOW()),InstalmentRemaining=0.0 WHERE trn_id = theIdNow;
--- END IF;
-
--- SET lDone1=0;
--- END LOOP LoanIdLoop;
-
--- CLOSE forSelectingLoanIds;
--- END //
--- DELIMITER ;
+IF lDone1=1 THEN /* check whether the cusor sitll holds more values and if not terminate loop */
+SELECT loanIdZ;
+LEAVE LoanIdLoop; /* */
+ END IF;  /* */
 
 
+SELECT currentInstalmentNow(loanIdZ) INTO runningInstalmentId;
+
+SELECT runningInstalmentId;
+SELECT trn_id INTO theIdNow FROM new_loan_appstoreamort WHERE master1_id=loanIdZ AND instalment_no=runningInstalmentId;
+SELECT InstalmentRemaining INTO @theRemainAmount FROM new_loan_appstoreamort WHERE trn_id = theIdNow;
+
+IF @theRemainAmount<10 THEN
+SELECT loanIdZ;
+UPDATE new_loan_appstoreamort SET instalment_status = 'P',instalment_paid_date=DATE(NOW()),InstalmentRemaining=0.0 WHERE trn_id = theIdNow;
+END IF;
+
+SET lDone1=0;
+END LOOP LoanIdLoop;
+
+CLOSE forSelectingLoanIds;
+END //
+DELIMITER ;
 
 
 
 
 
 
--- DROP PROCEDURE IF EXISTS reculculateBalances;
-
--- DELIMITER ##
-
--- CREATE PROCEDURE reculculateBalances()     READS SQL DATA
-
--- OUTER_BLOCK: BEGIN
--- DECLARE theId,counter INTEGER;
--- DECLARE theLoanTxnId VARCHAR(20);
--- DECLARE outerNotFound, c INTEGER DEFAULT 0;
--- DECLARE totalPenaltyX,totalAccumlatedInterestX,AccumInterestPaid,PenaltyPaid,priBal,intBal,accumIntBal,loanPenBal,loanBal DOUBLE;
--- DECLARE forLoanTxnId CURSOR FOR SELECT trn_id from pmms_loans.new_loan_appstore;
-
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
-
--- -- Balance on christmas party Processed
-
--- OPEN forLoanTxnId; 
-
--- LOANTXN_LOOP: LOOP 
-
--- FETCH forLoanTxnId into theLoanTxnId;
 
 
---  IF outerNotFound=1 THEN
--- LEAVE LOANTXN_LOOP;
---  END IF;
+DROP PROCEDURE IF EXISTS reculculateBalances;
+
+DELIMITER ##
+
+CREATE PROCEDURE reculculateBalances()     READS SQL DATA
+
+OUTER_BLOCK: BEGIN
+DECLARE theId,counter INTEGER;
+DECLARE theLoanTxnId VARCHAR(20);
+DECLARE outerNotFound, c INTEGER DEFAULT 0;
+DECLARE totalPenaltyX,totalAccumlatedInterestX,AccumInterestPaid,PenaltyPaid,priBal,intBal,accumIntBal,loanPenBal,loanBal DOUBLE;
+DECLARE forLoanTxnId CURSOR FOR SELECT trn_id from pmms_loans.new_loan_appstore;
+
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
+
+-- Balance on christmas party Processed
+
+OPEN forLoanTxnId; 
+
+LOANTXN_LOOP: LOOP 
+
+FETCH forLoanTxnId into theLoanTxnId;
+
+
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
  
--- INNER_BLOCK: BEGIN
--- DECLARE AmountPaidX,PrincipalPaidX,InterestPaidX,AccumulatedInterestPaidX,LoanPenaltyPaidX,PrincipalBalanceX,InterestBalanceX,AccumulatedInterestBalanceX,LoanPenaltyBalanceX,LoanBalanceX,
--- AmountPaidXX,PrincipalPaidXX,InterestPaidXX,AccumulatedInterestPaidXX,LoanPenaltyPaidXX,PrincipalBalanceXX,InterestBalanceXX,AccumulatedInterestBalanceXX,LoanPenaltyBalanceXX,LoanBalanceXX
---  DOUBLE; 
--- DECLARE innerNotFound,theBatchNoS,TrnIdX INTEGER DEFAULT 0; 
+INNER_BLOCK: BEGIN
+DECLARE AmountPaidX,PrincipalPaidX,InterestPaidX,AccumulatedInterestPaidX,LoanPenaltyPaidX,PrincipalBalanceX,InterestBalanceX,AccumulatedInterestBalanceX,LoanPenaltyBalanceX,LoanBalanceX,
+AmountPaidXX,PrincipalPaidXX,InterestPaidXX,AccumulatedInterestPaidXX,LoanPenaltyPaidXX,PrincipalBalanceXX,InterestBalanceXX,AccumulatedInterestBalanceXX,LoanPenaltyBalanceXX,LoanBalanceXX
+ DOUBLE; 
+DECLARE innerNotFound,theBatchNoS,TrnIdX INTEGER DEFAULT 0; 
 
--- DECLARE forBatchNos CURSOR FOR SELECT  TrnId FROM pmms.loandisburserepaystatement WHERE loanTrnId= theLoanTxnId;
+DECLARE forBatchNos CURSOR FOR SELECT  TrnId FROM pmms.loandisburserepaystatement WHERE loanTrnId= theLoanTxnId;
 
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
-
-
--- SET counter=0;
---  SET  @PrincipalBalanceX=NULL,@InterestBalanceX=NULL,@AccumulatedInterestBalanceX=NULL,@LoanPenaltyBalanceX=NULL,@LoanBalanceX=NULL;
-
--- OPEN forBatchNos; 
-
--- TXNIDS_LOOP:LOOP
-
--- FETCH forBatchNos INTO theBatchNoS;
-
--- IF counter=0 THEN
-
--- SET @dueDateX1 = concat(CAST("SELECT AmountDisbursed,ExpectedInterest,AccumulatedInterestBalance,LoanPenaltyBalance,ExpectedTotalAmount INTO @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX FROM pmms.loandisburserepaystatement WHERE TrnId=" AS CHAR CHARACTER SET utf8),theBatchNoS,CAST(" AND ExpectedTotalAmount>0" AS CHAR CHARACTER SET utf8));
-
---   PREPARE stmt21 FROM @dueDateX1;
---   EXECUTE stmt21;
--- DROP PREPARE stmt21;
-
--- END IF;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
 
 
---  IF innerNotFound=1 THEN
--- LEAVE TXNIDS_LOOP;
---  END IF;
+SET counter=0;
+ SET  @PrincipalBalanceX=NULL,@InterestBalanceX=NULL,@AccumulatedInterestBalanceX=NULL,@LoanPenaltyBalanceX=NULL,@LoanBalanceX=NULL;
+
+OPEN forBatchNos; 
+
+TXNIDS_LOOP:LOOP
+
+FETCH forBatchNos INTO theBatchNoS;
+
+IF counter=0 THEN
+
+SET @dueDateX1 = concat(CAST("SELECT AmountDisbursed,ExpectedInterest,AccumulatedInterestBalance,LoanPenaltyBalance,ExpectedTotalAmount INTO @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX FROM pmms.loandisburserepaystatement WHERE TrnId=" AS CHAR CHARACTER SET utf8),theBatchNoS,CAST(" AND ExpectedTotalAmount>0" AS CHAR CHARACTER SET utf8));
+
+  PREPARE stmt21 FROM @dueDateX1;
+  EXECUTE stmt21;
+DROP PREPARE stmt21;
+
+END IF;
 
 
-
--- SET @dueDateX = concat(CAST("SELECT AmountPaid,PrincipalPaid,InterestPaid,AccumulatedInterestPaid,LoanPenaltyPaid INTO @AmountPaidX,@PrincipalPaidX,@InterestPaidX,@AccumulatedInterestPaidX,@LoanPenaltyPaidX FROM pmms.loandisburserepaystatement WHERE TrnId=" AS CHAR CHARACTER SET utf8),theBatchNoS);
-
---   PREPARE stmt2 FROM @dueDateX;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
+ IF innerNotFound=1 THEN
+LEAVE TXNIDS_LOOP;
+ END IF;
 
 
 
---  SELECT @AmountPaidX,@PrincipalPaidX,@InterestPaidX,@AccumulatedInterestPaidX,@LoanPenaltyPaidX ,theBatchNoS;
+SET @dueDateX = concat(CAST("SELECT AmountPaid,PrincipalPaid,InterestPaid,AccumulatedInterestPaid,LoanPenaltyPaid INTO @AmountPaidX,@PrincipalPaidX,@InterestPaidX,@AccumulatedInterestPaidX,@LoanPenaltyPaidX FROM pmms.loandisburserepaystatement WHERE TrnId=" AS CHAR CHARACTER SET utf8),theBatchNoS);
+
+  PREPARE stmt2 FROM @dueDateX;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
 
 
 
--- SELECT @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX;
-
--- SET @PrincipalBalanceX=@PrincipalBalanceX-@PrincipalPaidX,@InterestBalanceX=@InterestBalanceX-@InterestPaidX,@AccumulatedInterestBalanceX=@AccumulatedInterestBalanceX-@AccumulatedInterestPaidX,@LoanPenaltyBalanceX=@LoanPenaltyBalanceX-@LoanPenaltyPaidX,@LoanBalanceX=@LoanBalanceX-@AmountPaidX;
-
-
--- IF ISNULL(@PrincipalBalanceX) THEN
--- SET @PrincipalBalanceX=0.0;
--- END IF;
-
--- IF ISNULL(@InterestBalanceX) THEN
--- SET @InterestBalanceX=0.0;
--- END IF;
-
--- IF ISNULL(@AccumulatedInterestBalanceX) THEN
--- SET @AccumulatedInterestBalanceX=0.0;
--- END IF;
-
--- IF ISNULL(@LoanPenaltyBalanceX) THEN
--- SET @LoanPenaltyBalanceX=0.0;
--- END IF;
-
--- IF ISNULL(@LoanBalanceX) THEN
--- SET @LoanBalanceX=0.0;
--- END IF;
-
--- SELECT @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX,theBatchNoS;
-
--- UPDATE pmms.loandisburserepaystatement SET PrincipalBalance=@PrincipalBalanceX,InterestBalance=@InterestBalanceX,AccumulatedInterestBalance=@AccumulatedInterestBalanceX,LoanPenaltyBalance=@LoanPenaltyBalanceX,LoanBalance=@LoanBalanceX WHERE  TrnId=theBatchNoS;
+ SELECT @AmountPaidX,@PrincipalPaidX,@InterestPaidX,@AccumulatedInterestPaidX,@LoanPenaltyPaidX ,theBatchNoS;
 
 
 
--- SET @AmountPaidX=NULL,@PrincipalPaidX=NULL,@InterestPaidX=NULL,@AccumulatedInterestPaidX=NULL,@LoanPenaltyPaidX=NULL;
--- SET counter=counter+1;
--- SET innerNotFound=0;
+SELECT @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX;
 
--- END LOOP TXNIDS_LOOP;
---  CLOSE forBatchNos; 
--- END INNER_BLOCK;
+SET @PrincipalBalanceX=@PrincipalBalanceX-@PrincipalPaidX,@InterestBalanceX=@InterestBalanceX-@InterestPaidX,@AccumulatedInterestBalanceX=@AccumulatedInterestBalanceX-@AccumulatedInterestPaidX,@LoanPenaltyBalanceX=@LoanPenaltyBalanceX-@LoanPenaltyPaidX,@LoanBalanceX=@LoanBalanceX-@AmountPaidX;
 
 
+IF ISNULL(@PrincipalBalanceX) THEN
+SET @PrincipalBalanceX=0.0;
+END IF;
+
+IF ISNULL(@InterestBalanceX) THEN
+SET @InterestBalanceX=0.0;
+END IF;
+
+IF ISNULL(@AccumulatedInterestBalanceX) THEN
+SET @AccumulatedInterestBalanceX=0.0;
+END IF;
+
+IF ISNULL(@LoanPenaltyBalanceX) THEN
+SET @LoanPenaltyBalanceX=0.0;
+END IF;
+
+IF ISNULL(@LoanBalanceX) THEN
+SET @LoanBalanceX=0.0;
+END IF;
+
+SELECT @PrincipalBalanceX,@InterestBalanceX,@AccumulatedInterestBalanceX,@LoanPenaltyBalanceX,@LoanBalanceX,theBatchNoS;
+
+UPDATE pmms.loandisburserepaystatement SET PrincipalBalance=@PrincipalBalanceX,InterestBalance=@InterestBalanceX,AccumulatedInterestBalance=@AccumulatedInterestBalanceX,LoanPenaltyBalance=@LoanPenaltyBalanceX,LoanBalance=@LoanBalanceX WHERE  TrnId=theBatchNoS;
 
 
--- SET outerNotFound=0;
---  END LOOP LOANTXN_LOOP;
--- CLOSE forLoanTxnId;
--- END OUTER_BLOCK ##
--- DELIMITER ;
 
---  CALL reculculateBalances() ;
+SET @AmountPaidX=NULL,@PrincipalPaidX=NULL,@InterestPaidX=NULL,@AccumulatedInterestPaidX=NULL,@LoanPenaltyPaidX=NULL;
+SET counter=counter+1;
+SET innerNotFound=0;
+
+END LOOP TXNIDS_LOOP;
+ CLOSE forBatchNos; 
+END INNER_BLOCK;
+
+
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK ##
+DELIMITER ;
+
+ CALL reculculateBalances() ;
+
+
+ DROP PROCEDURE IF EXISTS reculculateBalances;
+DELIMITER ##
+CREATE PROCEDURE normaliseDueDatesMaintainDisburseDate()     READS SQL DATA
+
+OUTER_BLOCK: BEGIN
+DECLARE theLoanTxnId, instalmentNo INT;
+DECLARE startingDate DATE;
+DECLARE outerNotFound, c INTEGER DEFAULT 0; 
+DECLARE forLoanTxnId CURSOR FOR SELECT trn_id from new_loan_appstore WHERE loan_cycle_status='Renewed';
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET outerNotFound=1;
+
+OPEN forLoanTxnId; 
+
+LOANTXN_LOOP: LOOP 
+
+FETCH forLoanTxnId into theLoanTxnId;
+
+ IF outerNotFound=1 THEN
+LEAVE LOANTXN_LOOP;
+ END IF;
+ 
+ SELECT instalment_start_date INTO startingDate FROM new_loan_appstore WHERE trn_id=theLoanTxnId; 
+
+SELECT theLoanTxnId,startingDate;
+
+INNER_BLOCK: BEGIN
+
+DECLARE instalmentNos INT;
+DECLARE innerNotFound INTEGER DEFAULT 0; 
+DECLARE forBatchNos CURSOR FOR SELECT instalment_no FROM new_loan_appstoreamort WHERE master1_id=theLoanTxnId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET innerNotFound=1;
+
+
+
+
+OPEN forBatchNos; 
+
+
+TXNIDS_LOOP:LOOP
+
+FETCH forBatchNos INTO instalmentNo;
+SET startingDate=DATE_ADD(startingDate, INTERVAL 1 DAY);
+SELECT theLoanTxnId,instalmentNo,startingDate;
+UPDATE new_loan_appstoreamort SET instalment_due_date=startingDate WHERE instalment_no=instalmentNo AND master1_id=theLoanTxnId;
+
+ IF innerNotFound=1 THEN
+LEAVE TXNIDS_LOOP;
+ END IF;
+
+
+
+SET innerNotFound=0;
+END LOOP TXNIDS_LOOP; 
+CLOSE forBatchNos; 
+END INNER_BLOCK;
+
+
+SET outerNotFound=0;
+ END LOOP LOANTXN_LOOP;
+CLOSE forLoanTxnId;
+END OUTER_BLOCK ##
+DELIMITER ;
 
 
 

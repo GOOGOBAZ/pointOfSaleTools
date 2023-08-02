@@ -1,4 +1,4 @@
-/* /*=========================================================DAVIDED PAYMENT AND RUNNING BALANCE ON SHARES==================================================*/
+ /*=========================================================DAVIDED PAYMENT AND RUNNING BALANCE ON SHARES==================================================*/
 
  DROP PROCEDURE IF EXISTS creatingRunningBalancesOfShares;
  

@@ -13026,7 +13026,7 @@ SET @ActualTotalAmountCollectedToday=@theCollectionsMade;
 
 IF @ActualTotalAmountCollectedToday>0 THEN
 
-INSERT INTO smsSummury VALUES("TC:",@ActualTotalAmountCollectedToday);
+INSERT INTO smsSummury VALUES("TC:",FORMAT(@ActualTotalAmountCollectedToday,0));
 
   END IF;
 
@@ -13450,7 +13450,7 @@ END IF;
 SET @OpeningCahdBala=@OpeningCahdBala-@bankDepositMade;
 
 IF @bankDepositMade>0 THEN 
-INSERT INTO smsSummury VALUES("BankW:",FORMAT(@bankDepositMade,0));
+INSERT INTO smsSummury VALUES("BankD:",FORMAT(@bankDepositMade,0));
 END IF;
 
 
@@ -13467,7 +13467,7 @@ SET @OpeningCahdBala=@OpeningCahdBala+@BankWithdrws;
 
 
 IF @BankWithdrws>0 THEN 
-INSERT INTO smsSummury VALUES("MomoW:",FORMAT(@BankWithdrws,0));
+INSERT INTO smsSummury VALUES("BankW:",FORMAT(@BankWithdrws,0));
 END IF;
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN

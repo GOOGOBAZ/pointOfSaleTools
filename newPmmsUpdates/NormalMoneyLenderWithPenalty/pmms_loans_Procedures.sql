@@ -9345,30 +9345,30 @@ SET @principalAmount=0;
 
 END IF;/*/ */
 
-IF   ISNULL(@interestAmount) THEN SET  @interestAmount=0; END IF;/* /*/
+IF   ISNULL(@interestAmount) THEN SET  @interestAmount=0; END IF;
 
-IF   ISNULL(@instalmentAmount) THEN SET   @instalmentAmount=0; END IF;/*/ */
+IF   ISNULL(@instalmentAmount) THEN SET   @instalmentAmount=0; END IF;
 
-IF   ISNULL(@interestRemaining) THEN SET  @interestRemaining=0; END IF;/* /*/
+IF   ISNULL(@interestRemaining) THEN SET  @interestRemaining=0; END IF;
 
-IF ISNULL(@principalRemaining) THEN SET @principalRemaining0; END IF;/* /*/
+IF ISNULL(@principalRemaining) THEN SET @principalRemaining0; END IF;
 
-IF  ISNULL(@instalmentRemaining) THEN SET @instalmentRemaining=0; END IF;/*/ */
+IF  ISNULL(@instalmentRemaining) THEN SET @instalmentRemaining=0; END IF;
 
-IF  ISNULL(@TotalprincipalAmount) THEN SET @TotalprincipalAmount=0; END IF;/* /*/
+IF  ISNULL(@TotalprincipalAmount) THEN SET @TotalprincipalAmount=0; END IF;
 
-IF  ISNULL(@totalInterestAmount) THEN SET @totalInterestAmount=0; END IF;/* /*/
+IF  ISNULL(@totalInterestAmount) THEN SET @totalInterestAmount=0; END IF;
 
-IF  ISNULL(@totalLoanAmount) THEN SET  @totalLoanAmount=0; END IF;/* /*/
+IF  ISNULL(@totalLoanAmount) THEN SET  @totalLoanAmount=0; END IF;
 
-IF  ISNULL(@balanceDue) THEN SET  @balanceDue=0; END IF;/*/ */
+IF  ISNULL(@balanceDue) THEN SET  @balanceDue=0; END IF;
 
-IF   ISNULL(@instalmentAmount) THEN SET  @instalmentAmount=0; END IF;/*/ */
+IF   ISNULL(@instalmentAmount) THEN SET  @instalmentAmount=0; END IF;
 
 
-IF   ISNULL(@totalInterestRemaining) THEN SET  @totalInterestRemaining=0; END IF;/* */
+IF   ISNULL(@totalInterestRemaining) THEN SET  @totalInterestRemaining=0; END IF;
 
-IF   ISNULL(@totalInterestRemaining) THEN SET  @totalPrincipalRemaining=0; END IF;/* */
+IF   ISNULL(@totalInterestRemaining) THEN SET  @totalPrincipalRemaining=0; END IF;
 
 IF ISNULL(@intBal) THEN SET @intBal=0; END IF;
 

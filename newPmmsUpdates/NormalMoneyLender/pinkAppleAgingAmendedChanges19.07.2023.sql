@@ -3371,7 +3371,7 @@ IF  ISNULL (@principalAmount) THEN
 
 SET @principalAmount=0; 
 
-END IF;/*/ */
+END IF;
 
 IF   ISNULL(@interestAmount) THEN SET  @interestAmount=0; END IF;
 
@@ -3379,7 +3379,7 @@ IF   ISNULL(@instalmentAmount) THEN SET   @instalmentAmount=0; END IF;
 
 IF   ISNULL(@interestRemaining) THEN SET  @interestRemaining=0; END IF;
 
-IF ISNULL(@principalRemaining) THEN SET @principalRemaining0; END IF;
+IF ISNULL(@principalRemaining) THEN SET @principalRemaining=0; END IF;
 
 IF  ISNULL(@instalmentRemaining) THEN SET @instalmentRemaining=0; END IF;
 
@@ -13026,7 +13026,7 @@ SET @ActualTotalAmountCollectedToday=@theCollectionsMade;
 
 IF @ActualTotalAmountCollectedToday>0 THEN
 
-INSERT INTO smsSummury VALUES("TotalCollections:",@ActualTotalAmountCollectedToday);
+INSERT INTO smsSummury VALUES("TotalCollections:",FORMAT(@ActualTotalAmountCollectedToday,0));
 
   END IF;
 
@@ -15726,6 +15726,7 @@ CREATE TABLE IF NOT EXISTS backupRestrict (
   PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8;
 
+DELETE FROM backupRestrict;
 
 -- 1	73934	closedloan205502147210	Completed
 
