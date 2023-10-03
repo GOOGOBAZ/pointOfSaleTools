@@ -8113,9 +8113,7 @@ SELECT  id_7,
   interest_inarrears ,
   number_of_days_in_arrears FROM aging_loan_analysis7;
   
-END
-
-##
+END ##
 DELIMITER ;
 
 -- CALL agingAnalysisG();
