@@ -1,0 +1,10 @@
+2024-03-21 18:01:38 [JavaFX-Launcher] INFO  o.s.boot.SpringApplication - Starting application using Java 17.0.10 on DESKTOP-HH2N9VM with PID 9616 (started by user in D:\Googo Projects\PROJECTS\pointOfSaleTools\NormalMoneyLender)
+2024-03-21 18:01:38 [JavaFX-Launcher] INFO  o.s.boot.SpringApplication - No active profile set, falling back to 1 default profile: "default"
+2024-03-21 18:01:44 [JavaFX-Launcher] INFO  o.s.b.w.e.netty.NettyWebServer - Netty started on port 8080
+2024-03-21 18:01:44 [JavaFX-Launcher] INFO  o.s.boot.SpringApplication - Started application in 6.624 seconds (JVM running for 7.572)
+2024-03-21 18:01:45 [JavaFX Application Thread] WARN  javafx - Loading FXML document with JavaFX API of version 21 by JavaFX runtime of version 19-ea
+2024-03-21 18:11:47 [JavaFX-Launcher] INFO  o.s.boot.SpringApplication - Starting application using Java 17.0.10 on DESKTOP-HH2N9VM with PID 7496 (started by user in D:\Googo Projects\PROJECTS\pointOfSaleTools\NormalMoneyLender)
+2024-03-21 18:11:47 [JavaFX-Launcher] INFO  o.s.boot.SpringApplication - No active profile set, falling back to 1 default profile: "default"
+2024-03-21 18:11:49 [JavaFX-Launcher] INFO  o.s.b.w.e.netty.NettyWebServer - Netty started on port 8080
+2024-03-21 18:11:49 [JavaFX-Launcher] INFO  o.s.boot.SpringApplication - Started application in 3.124 seconds (JVM running for 3.993)
+2024-03-21 18:11:50 [JavaFX Application Thread] WARN  javafx - Loading FXML document with JavaFX API of version 21 by JavaFX runtime of version 19-ea

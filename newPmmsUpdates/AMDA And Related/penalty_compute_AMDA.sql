@@ -323,8 +323,11 @@ RETURN newBal;
 END ##
 DELIMITER ;
 
-
-
+      --   ReportsPDFFormulars pdf = new ReportsPDFFormulars("10001",c);
+      --  loanStatement loanS=new loanStatement("10001",c);
+      --    ReportsPDFFormulars statement= new ReportsPDFFormulars("10001",c);
+      -- BalanceSheet balSheet= new BalanceSheet("10001",c);
+      --     BogaStatement boga = new BogaStatement("10001",c);
 
 DROP FUNCTION IF EXISTS changeInstalmentAmount;
 
