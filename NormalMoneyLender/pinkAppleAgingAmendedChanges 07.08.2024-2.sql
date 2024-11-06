@@ -169,14 +169,14 @@ INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,DATE(NOW()),MONTH(DATE(
 
 
 
--- SELECT previousLoanTrnId;
+-- -- SELECT previousLoanTrnId;
 
-IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
+-- IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
 
-    -- Insert guarantors for the new loan
-         INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
+--     -- Insert guarantors for the new loan
+--          INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
 
-END IF;
+-- END IF;
 
 
 
@@ -355,12 +355,12 @@ END IF;
 
 
 
-IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
+-- IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
 
-    -- Insert guarantors for the new loan
-        INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
+--     -- Insert guarantors for the new loan
+--         INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
 
-END IF;
+-- END IF;
 
 
 COMMIT;
@@ -2946,6 +2946,72 @@ END//
 
 
 
+DROP PROCEDURE IF EXISTS theLoansForRenewalByTrnId;
+DELIMITER //
+CREATE PROCEDURE theLoansForRenewalByTrnId(IN input_trn_id INT) READS SQL DATA 
+BEGIN
+    DECLARE theRenewalRate DOUBLE;
+    DECLARE theDeadline, numberOfRenewals, theRateTypeUsed, periodSet, loanId INT;
+    DECLARE theDealineMeeasure, theLoanTenurez VARCHAR(30);
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET loanId = NULL;
+
+    DROP TABLE IF EXISTS theRenewalLoanDetailsN;
+
+    CREATE TEMPORARY TABLE theRenewalLoanDetailsN(
+        accountNumberN VARCHAR(60),
+        officerIdN INT,
+        balanceDueN DOUBLE,
+        interestRateUsed DOUBLE,
+        trnDateUsed DATE,
+        initialDisDateUsed DATE,
+        tenureUsed INT,
+        periodUsed INT,
+        theBusinessId INT,
+        theNumberOfRenewals INT,
+        theDidId INT,
+        theNRateTypeUsed INT,
+        thePeriodTypeInt INT,
+        thePeriodTypeString VARCHAR(60)
+    );
+
+    SET loanId = input_trn_id;
+
+    SELECT renewalDeadline, renewalMeasure, renewalRate, periodUsed, renewalTimes, rateTypeUsed 
+    INTO theDeadline, theDealineMeeasure, theRenewalRate, periodSet, numberOfRenewals, theRateTypeUsed 
+    FROM autoRenewalSettings;
+    
+    IF loanId IS NOT NULL THEN
+        SELECT loan_tenure INTO theLoanTenurez 
+        FROM new_loan_appstore1 
+        WHERE trn_id = loanId;
+
+      IF theLoanTenurez<>'1 MONTHS' OR theLoanTenurez<>'1.0 MONTHS' THEN
+
+SET @dueDateX = concat(CAST("SELECT new_loan_appstore.applicant_account_number,new_loan_appstore.gruop_id, new_loan_appstore.balance_due,new_loan_appstore.trn_date,new_loan_appstore.instalment_start_date,new_loan_appstore.loan_tenure,new_loan_appstore.OtherGroups2,new_loan_appstore.OtherGroups3,new_loan_appstore.authoriser_id,new_loan_appstore.interest_rate,new_loan_appstore1.loan_tenure INTO @accountNumber,@loansOfficer, @balanceDueN,@trnDate,@initialDisDate,@loanTenure,@theBuzId,@numberRenewals,@previousId,@originalRate,@originalTenure  FROM new_loan_appstore INNER JOIN new_loan_appstore1 ON new_loan_appstore.trn_id=new_loan_appstore1.trn_id WHERE DATE(NOW())>=" AS CHAR CHARACTER SET utf8),CAST("(SELECT DATE_ADD(instalment_end_date, INTERVAL " AS CHAR CHARACTER SET utf8),theDeadline, CAST(" " AS CHAR CHARACTER SET utf8),theDeadilineReturn(theDealineMeeasure),CAST(" ) FROM new_loan_appstore WHERE trn_id=" AS CHAR CHARACTER SET utf8),loanId,CAST(")  AND new_loan_appstore.OtherGroups3<" AS CHAR CHARACTER SET utf8),numberOfRenewals,CAST(" AND new_loan_appstore.trn_id=" AS CHAR CHARACTER SET utf8),loanId);
+  -- select  @dueDateX;
+  PREPARE stmt2 FROM @dueDateX;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+-- SELECT thePeriodDecoded(TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1)));
+IF NOT ISNULL(@accountNumber) THEN
+IF theRateTypeUsed=1 THEN
+
+INSERT INTO theRenewalLoanDetailsN VALUES(@accountNumber,@loansOfficer,@balanceDueN,theRenewalRate,@trnDate,@initialDisDate,@loanTenure,periodSet,@theBuzId,@numberRenewals,@previousId,theRateTypeUsed,thePeriodDecoded(TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1))),TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1)));
+ELSE
+
+INSERT INTO theRenewalLoanDetailsN VALUES(@accountNumber,@loansOfficer,@balanceDueN,@originalRate,@trnDate,@initialDisDate,@loanTenure,periodSet,@theBuzId,@numberRenewals,@previousId,theRateTypeUsed,thePeriodDecoded(TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1))),TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1)));
+
+END IF;
+END IF;
+
+
+END IF;
+    END IF;
+
+    SELECT * FROM theRenewalLoanDetailsN;
+END//
+DELIMITER ;
 
 
 
@@ -11177,6 +11243,9 @@ DELIMITER ;
 
 
 
+
+
+
 DROP PROCEDURE IF EXISTS totalNumberOfActiveNewCustomers;
 DELIMITER $$
 CREATE  PROCEDURE totalNumberOfActiveNewCustomers(OUT activeCustomers INT)
@@ -11262,6 +11331,60 @@ END IF;
 
 END $$
 DELIMITER ;
+
+
+
+--  DROP PROCEDURE IF EXISTS merchantBalance;   
+-- DELIMITER $$
+-- CREATE  PROCEDURE merchantBalance(OUT TheMerchantBalance INT)
+-- BEGIN
+
+-- SELECT master_balance INTO TheMerchantBalance from pmms.bsanca01117000010 where trn_date<=DATE(NOW()) ORDER BY trn_id DESC LIMIT 1;
+
+-- IF ISNULL(TheMerchantBalance) THEN
+-- SET TheMerchantBalance=0.0;
+
+-- END IF;
+
+-- END $$
+-- DELIMITER ;
+
+DROP PROCEDURE IF EXISTS merchantBalance;
+DELIMITER $$
+CREATE PROCEDURE merchantBalance(OUT TheMerchantBalance DECIMAL(10,2))
+BEGIN
+    DECLARE table_exists INT DEFAULT 0;
+
+    -- Check if the table exists
+    SELECT COUNT(*)
+    INTO table_exists
+    FROM information_schema.tables 
+    WHERE table_schema = 'pmms'
+    AND table_name = 'bsanca01117000010';
+
+    IF table_exists = 0 THEN
+        -- If the table does not exist, set TheMerchantBalance to 0.0
+        SET TheMerchantBalance = 0.0;
+    ELSE
+        -- If the table exists, get the master balance
+        SELECT master_balance 
+        INTO TheMerchantBalance 
+        FROM pmms.bsanca01117000010 
+        WHERE trn_date <= DATE(NOW()) 
+        ORDER BY trn_id DESC 
+        LIMIT 1;
+
+        -- If the balance is NULL, set TheMerchantBalance to 0.0
+        IF ISNULL(TheMerchantBalance) THEN
+            SET TheMerchantBalance = 0.0;
+        END IF;
+    END IF;
+END $$
+DELIMITER ;
+
+
+
+
 
 
  DROP PROCEDURE IF EXISTS countNumberOfRenewals;   
@@ -11863,6 +11986,23 @@ DELIMITER ;
 SELECT @princimpalRepaymentsMade; */
 
 
+DROP PROCEDURE IF EXISTS merchantWithdrawReport;
+
+DELIMITER //
+
+CREATE PROCEDURE merchantWithdrawReport(IN theDate DATE,OUT merchantWithdraw VARCHAR(100)) READS SQL DATA 
+
+
+BEGIN
+SELECT  SUM(credit) INTO merchantWithdraw FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01117%';
+IF ISNULL(merchantWithdraw) THEN
+SET merchantWithdraw=0.0;
+END IF;
+
+
+
+END //
+DELIMITER ;
 
 
 
@@ -11885,9 +12025,6 @@ END //
 DELIMITER ;
 
 
-/* CALL refundFromMobileMoneyPayableMade('2019-06-23',@mobileMoneyRefund);
-
-SELECT @mobileMoneyRefund; */
 
 
 
@@ -13153,17 +13290,28 @@ IF ISNULL(mobileMoneyc) THEN
 SET mobileMoneyc=0.0;
 END IF;
 
-
-
-
 END //
 DELIMITER ;
 
 
-/* CALL MobileMoneyReceivableCreated('2019-06-24',@mobileMoneyc);
 
-SELECT @mobileMoneyc; */
 
+
+
+DROP PROCEDURE IF EXISTS merchantDepositsReport;
+
+DELIMITER //
+
+CREATE PROCEDURE merchantDepositsReport(IN theDate DATE,OUT merchantDeposit VARCHAR(100)) READS SQL DATA 
+
+BEGIN
+SELECT  SUM(debit) INTO merchantDeposit FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01117%';
+IF ISNULL(merchantDeposit) THEN
+SET merchantDeposit=0.0;
+END IF;
+
+END //
+DELIMITER ;
 
 
 
@@ -13178,7 +13326,7 @@ CREATE PROCEDURE OtherReceivablesAndPrepaymentsCreated(IN theDate DATE,OUT other
 
 
 BEGIN
-SELECT  SUM(debit) INTO otherRecePreMade FROM pmms.general_ledger WHERE  trn_date=theDate AND  (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+SELECT  SUM(debit) INTO otherRecePreMade FROM pmms.general_ledger WHERE  trn_date=theDate AND  ( debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
  OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%');
 IF ISNULL(otherRecePreMade) THEN
 SET otherRecePreMade=0.0;
@@ -13908,7 +14056,7 @@ IF @Refundreceiavale>0 THEN
 INSERT INTO smsSummury VALUES("ReceivablesRefunded:",FORMAT(@Refundreceiavale,0));
 END IF;
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
  OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%')) THEN
 CALL OtherReceivablesAndPrepaymentsRefunded(DATE(NOW()),@otherReceiAndPrepaymentRend);
 END IF;
@@ -13954,6 +14102,66 @@ IF @BankWithdrws>0 THEN
 INSERT INTO smsSummury VALUES("BankWithdraws:",FORMAT(@BankWithdrws,0));
 END IF;
 
+
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01117%') THEN
+CALL merchantDepositsReport(DATE(NOW()),@merchantDeposits);
+END IF;
+
+IF ISNULL(@merchantDeposits) THEN
+SET @merchantDeposits=0;
+END IF;
+
+SET @OpeningCahdBala=@OpeningCahdBala-@merchantDeposits;
+
+IF @merchantDeposits>0 THEN 
+INSERT INTO smsSummury VALUES("MerchantDeposits:",FORMAT(@merchantDeposits,0));
+END IF;
+
+
+
+
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01117%') THEN
+CALL merchantWithdrawReport(DATE(NOW()),@merchantWithdraw);
+END IF;
+
+
+IF ISNULL(@merchantWithdraw) THEN
+SET @merchantWithdraw=0;
+END IF;
+-- SELECT CONCAT("MomoWithdraws:=",@mobileMoneyRefund);
+SET @OpeningCahdBala=@OpeningCahdBala+@merchantWithdraw;
+
+IF @merchantWithdraw>0 THEN 
+INSERT INTO smsSummury VALUES("MerchantWithdraws:",FORMAT(@merchantWithdraw,0));
+END IF;
+
+
+
+
+
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
+CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
+END IF;
+
+IF ISNULL(@mobileMoney) THEN
+SET @mobileMoney=0;
+END IF;
+
+SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
+
+IF @mobileMoney>0 THEN 
+INSERT INTO smsSummury VALUES("MomoDeposits:",FORMAT(@mobileMoney,0));
+END IF;
+
+
+
+
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
 CALL refundFromMobileMoneyPayableMade(DATE(NOW()),@mobileMoneyRefund);
 END IF;
@@ -13970,19 +14178,6 @@ INSERT INTO smsSummury VALUES("MomoWithdraws:",FORMAT(@mobileMoneyRefund,0));
 END IF;
 
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
-CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
-END IF;
-
-IF ISNULL(@mobileMoney) THEN
-SET @mobileMoney=0;
-END IF;
-
-SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
-
-IF @mobileMoney>0 THEN 
-INSERT INTO smsSummury VALUES("MomoDeposits:",FORMAT(@mobileMoney,0));
-END IF;
 
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01100%' OR debit_account_no LIKE '01101%'
@@ -14103,7 +14298,7 @@ INSERT INTO smsSummury VALUES("ReceivablesCreated:",FORMAT(@receiavale,0));
 END IF;
 
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
  OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%')) THEN
 CALL OtherReceivablesAndPrepaymentsCreated(DATE(NOW()),@otherRecePreMade);
 END IF;
@@ -14247,12 +14442,31 @@ INSERT INTO smsSummury VALUES("ClosingCash:",FORMAT( @closingCashBal,0) );
 
 CALL momoBalance(@TheMomoBalance);
 
+
+IF ISNULL(@TheMomoBalance) THEN 
+SET @TheMomoBalance=0;
+END IF;
+
  IF @TheMomoBalance>0 THEN 
 INSERT INTO smsSummury VALUES("MoMoBalance:",FORMAT(@TheMomoBalance,0) );
 END IF;
 
- IF @TheMomoBalance>0 THEN 
-INSERT INTO smsSummury VALUES("TotalCashAndMoMo:",FORMAT((@TheMomoBalance+@closingCashBal),0));
+
+CALL merchantBalance(@TheMerchantBalance);
+
+IF ISNULL(@TheMerchantBalance) THEN 
+SET @TheMerchantBalance=0;
+END IF;
+
+ IF @TheMerchantBalance>0 THEN 
+INSERT INTO smsSummury VALUES("MerchantBalance:",FORMAT(@TheMerchantBalance,0) );
+END IF;
+
+
+
+
+ IF @TheMomoBalance>0 OR @TheMerchantBalance>0  THEN 
+INSERT INTO smsSummury VALUES("TotalCashMomoAndMerchant:",FORMAT((@TheMomoBalance+@closingCashBal+@TheMerchantBalance),0));
 END IF;
 
 --   INSERT INTO  aging_loan_analysis2x( 
@@ -14288,6 +14502,368 @@ END $$
 DELIMITER ;
 
 
+
+
+
+
+DROP FUNCTION IF EXISTS NumberOfCustomersPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION NumberOfCustomersPerOfficer(loanOfficeId INT) RETURNS INT
+BEGIN
+    DECLARE activeCustomers INT;
+
+    SELECT COUNT(trn_id) INTO activeCustomers 
+    FROM new_loan_appstore 
+    WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed') AND gruop_id=loanOfficeId;
+
+    RETURN activeCustomers;
+END$$
+DELIMITER ;
+
+
+
+
+DROP FUNCTION IF EXISTS PaidCustomersPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION PaidCustomersPerOfficer(loanOfficerId INT) RETURNS INT
+BEGIN
+    DECLARE numberRenewed INT;
+    DECLARE totalPaidRenewed INT;
+    DECLARE activeCustomersPaid INT;
+
+    -- Calculate the number of renewed loans that have been fully paid today for the specified loan office
+    -- SELECT COUNT(trn_id) INTO numberRenewed
+    -- FROM new_loan_appstore 
+    -- WHERE loan_cycle_status = 'Renewed' 
+    --   AND trn_date = DATE(NOW()) 
+    --   AND CAST(balance_due AS DECIMAL(10,2)) = (CAST(princimpal_amount AS DECIMAL(10,2)) + CAST(total_interest AS DECIMAL(10,2)))
+    --   AND gruop_id = loanOfficerId;
+
+    -- Calculate the distinct count of paid or partially paid instalments today for the specified loan office
+    SELECT COUNT(DISTINCT master1_id) INTO totalPaidRenewed 
+    FROM new_loan_appstoreamort 
+    WHERE (instalment_status = 'P' OR instalment_status = 'PP') 
+      AND instalment_paid_date = DATE(NOW())
+      AND master1_id IN (SELECT trn_id FROM new_loan_appstore WHERE NOT loan_cycle_status='RenewedClosed' AND  gruop_id = loanOfficerId);
+
+    -- Calculate the difference to get active paid customers for the specified loan office
+    -- SET activeCustomersPaid = totalPaidRenewed - numberRenewed;
+
+    RETURN totalPaidRenewed;
+END$$
+DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS PercentPaidCustomersPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION PercentPaidCustomersPerOfficer(loanOfficerId INT) RETURNS DECIMAL(5,2)
+BEGIN
+    DECLARE totalCustomers INT;
+    DECLARE paidCustomers INT;
+    DECLARE percentPaid DECIMAL(5,2);
+
+    -- Get the total number of customers for the loan officer
+    SET totalCustomers = NumberOfCustomersPerOfficer(loanOfficerId);
+
+    -- Get the number of paid customers for the loan officer
+    SET paidCustomers = PaidCustomersPerOfficer(loanOfficerId);
+
+    -- Calculate the percentage of paid customers
+    IF totalCustomers > 0 THEN
+        SET percentPaid = (paidCustomers / totalCustomers) * 100;
+    ELSE
+        SET percentPaid = 0;
+    END IF;
+
+    RETURN percentPaid;
+END$$
+DELIMITER ;
+
+
+
+
+
+-- DROP PROCEDURE IF EXISTS totalPrincimpalBalancePerOfficer;
+-- DELIMITER $$
+-- CREATE  PROCEDURE totalPrincimpalBalancePerOfficer(loanOfficerId INT)
+-- BEGIN
+
+-- SELECT SUM(TotalPrincipalRemaining) INTO princimpalBalance FROM new_loan_appstore WHERE loan_cycle_status='Renewed' OR loan_cycle_status='Disbursed' ;
+
+-- END $$
+-- DELIMITER ;
+
+
+
+
+-- DROP PROCEDURE IF EXISTS totalInterestBalancePerOfficer;
+-- DELIMITER $$
+-- CREATE  PROCEDURE totalInterestBalancePerOfficer(loanOfficerId INT)
+-- BEGIN
+
+-- SELECT SUM(TotalInterestRemaining) INTO interestBalance FROM new_loan_appstore WHERE loan_cycle_status='Renewed' OR loan_cycle_status='Disbursed' ;
+
+-- END $$
+-- DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS TotalPrincipalBalancePerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION TotalPrincipalBalancePerOfficer(loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE principalBalance DECIMAL(20,2);
+
+    SELECT SUM(CAST(TotalPrincipalRemaining AS DECIMAL(20,2))) INTO principalBalance
+    FROM new_loan_appstore 
+    WHERE (loan_cycle_status = 'Renewed' OR loan_cycle_status = 'Disbursed') 
+      AND gruop_id = loanOfficerId;
+
+    RETURN principalBalance;
+END$$
+DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS TotalInterestBalancePerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION TotalInterestBalancePerOfficer(loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE interestBalance DECIMAL(20,2);
+
+    SELECT SUM(CAST(TotalInterestRemaining AS DECIMAL(20,2))) INTO interestBalance
+    FROM new_loan_appstore 
+    WHERE (loan_cycle_status = 'Renewed' OR loan_cycle_status = 'Disbursed') 
+      AND gruop_id = loanOfficerId;
+
+    RETURN interestBalance;
+END$$
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS PortfolioAmountPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION PortfolioAmountPerOfficer(loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE principalBalance DECIMAL(20,2);
+    DECLARE interestBalance DECIMAL(20,2);
+    DECLARE portfolioAmount DECIMAL(20,2);
+
+    -- Get the total principal balance for the loan officer
+    SET principalBalance = TotalPrincipalBalancePerOfficer(loanOfficerId);
+
+    -- Get the total interest balance for the loan officer
+    SET interestBalance = TotalInterestBalancePerOfficer(loanOfficerId);
+
+    -- Calculate the total portfolio amount
+    SET portfolioAmount = principalBalance + interestBalance;
+
+    RETURN portfolioAmount;
+END$$
+DELIMITER ;
+
+
+
+
+
+-- DROP PROCEDURE IF EXISTS collectionsMadePerOfficer;
+
+-- DELIMITER //
+
+-- CREATE PROCEDURE collectionsMadePerOfficer(theDate DATE,loanOfficerId INT) READS SQL DATA 
+
+
+-- BEGIN
+
+-- SELECT SUM(AmountPaid) INTO theCollectionsMade FROM pmms.loandisburserepaystatement WHERE TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+-- IF ISNULL(theCollectionsMade) THEN
+-- SET theCollectionsMade=0.0;
+-- END IF;
+
+
+-- END //
+-- DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS CollectionsMadePerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION CollectionsMadePerOfficer(theDate DATE, loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE theCollectionsMade DECIMAL(20,2);
+
+    -- Calculate the total collections made for the specified loan officer on the given date
+    SELECT SUM(CAST(lrs.AmountPaid AS DECIMAL(20,2))) INTO theCollectionsMade
+    FROM pmms.loandisburserepaystatement lrs
+    JOIN pmms_loans.new_loan_appstore nls ON lrs.loanTrnId = nls.trn_id
+    WHERE lrs.TrnDate = theDate 
+      AND CAST(lrs.AmountPaid AS DECIMAL(20,2)) > 0.0
+      AND lrs.LoanStatusReport <> 'RenewedClosed'
+      AND nls.gruop_id = loanOfficerId;
+
+    -- Handle NULL case
+    IF ISNULL(theCollectionsMade) THEN
+        SET theCollectionsMade = 0.0;
+    END IF;
+
+    RETURN theCollectionsMade;
+END$$
+DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS NewCustomersPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION NewCustomersPerOfficer(loanOfficerId INT) RETURNS INT
+BEGIN
+    DECLARE activeCustomers INT;
+
+    -- Calculate the number of new customers for the specified loan officer for today
+    SELECT COUNT(DISTINCT nls.trn_id) INTO activeCustomers
+    FROM pmms_loans.new_loan_appstore nls
+    INNER JOIN pmms.account_created_store acs ON nls.applicant_account_number = acs.account_number
+    WHERE nls.loan_cycle_status = 'Disbursed'
+      AND acs.creation_date = DATE(NOW())
+      AND nls.gruop_id = loanOfficerId;
+
+    RETURN activeCustomers;
+END$$
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS `staffName`;
+DELIMITER $$
+CREATE  FUNCTION `staffName`(staffId INT) RETURNS varchar(40) CHARSET latin1
+    DETERMINISTIC
+BEGIN
+DECLARE staffNameNow VARCHAR(40);
+
+SELECT account_name INTO staffNameNow FROM pmms.log_in WHERE  user_id=staffId;
+ IF ISNULL(staffNameNow) THEN
+ SET staffNameNow='MISSING';
+ END IF;
+RETURN staffNameNow;
+END $$
+DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS CountNumberOfDisbursementsByOfficer;
+
+DELIMITER $$
+CREATE FUNCTION CountNumberOfDisbursementsByOfficer(loanOfficerId INT) RETURNS INT
+BEGIN
+    DECLARE numberOfDisbursements INT;
+
+    -- Calculate the number of disbursements for the specified loan officer for today
+    SELECT COUNT(trn_id) INTO numberOfDisbursements
+    FROM new_loan_appstore 
+    WHERE trn_date = DATE(NOW()) 
+      AND loan_cycle_status = 'Disbursed'
+      AND gruop_id = loanOfficerId;
+
+    RETURN numberOfDisbursements;
+END$$
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS SumDisbursementsByOfficer;
+
+DELIMITER $$
+CREATE FUNCTION SumDisbursementsByOfficer(loanOfficerId INT) RETURNS DOUBLE
+BEGIN
+    DECLARE totalDisbursement DOUBLE;
+
+    -- Calculate the sum of disbursements for the specified loan officer for today
+    SELECT SUM(CAST(princimpal_amount AS DECIMAL(20,2))) INTO totalDisbursement
+    FROM new_loan_appstore 
+    WHERE trn_date = DATE(NOW()) 
+      AND loan_cycle_status = 'Disbursed'
+      AND gruop_id = loanOfficerId;
+
+    -- Handle NULL case
+    IF ISNULL(totalDisbursement) THEN
+        SET totalDisbursement = 0.0;
+    END IF;
+
+    RETURN totalDisbursement;
+END$$
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS smsSummuryLoansOfficerReport;
+DELIMITER $$
+CREATE PROCEDURE smsSummuryLoansOfficerReport()
+    READS SQL DATA
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE loanOfficerId INT;
+    DECLARE theNoOfCustomer INT;
+    DECLARE curLoanOfficer CURSOR FOR 
+        SELECT DISTINCT user_id FROM pmms.log_in; -- Replace loansTable with the actual table name containing loanOfficerId
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    DROP TABLE IF EXISTS smsSummuryOfficer;
+
+    CREATE TEMPORARY TABLE smsSummuryOfficer(
+        officerId INT,
+        officerName VARCHAR(200), 
+        noOfCustomer VARCHAR(200), 
+        paidC VARCHAR(200), 
+        percentPaid VARCHAR(200), 
+        portfolioAmount VARCHAR(200), 
+        amountPaid VARCHAR(200),
+        noOfLoansDisbursed VARCHAR(200),
+        amountLoanDisbursed VARCHAR(200),
+        newCustomers VARCHAR(200)
+    );
+
+    OPEN curLoanOfficer;
+    
+    read_loop: LOOP
+        FETCH curLoanOfficer INTO loanOfficerId;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+-- SELECT loanOfficerId;
+        -- Get the number of customers for the current loan officer
+        SET theNoOfCustomer = NumberOfCustomersPerOfficer(loanOfficerId);
+        
+        -- Insert only if noOfCustomer is greater than 0
+        IF theNoOfCustomer > 0 THEN
+            INSERT INTO smsSummuryOfficer (officerId, officerName, noOfCustomer, paidC, percentPaid, portfolioAmount, amountPaid,noOfLoansDisbursed, amountLoanDisbursed,newCustomers)
+            SELECT 
+                loanOfficerId AS officerId,
+                 CONCAT('OfficerName: ', staffName(loanOfficerId)) AS officerName,
+                CONCAT('NoOfCustomers: ', theNoOfCustomer) AS noOfCustomer,
+                CONCAT('NoOfCustomersPaid: ', IFNULL(PaidCustomersPerOfficer(loanOfficerId), '0')) AS paidC,
+                CONCAT('PercentPaid: ', IFNULL(CONCAT(ROUND(PercentPaidCustomersPerOfficer(loanOfficerId),0), '%'), '0%')) AS percentPaid,
+                CONCAT('PortfolioAmount: ', FORMAT(IFNULL(PortfolioAmountPerOfficer(loanOfficerId), '0'),0)) AS portfolioAmount,
+                CONCAT('CollectionsMade: ', FORMAT(IFNULL(CollectionsMadePerOfficer(DATE(NOW()), loanOfficerId), '0'),0)) AS amountPaid,
+                CONCAT('NoOfLoansDisbursed: ', CountNumberOfDisbursementsByOfficer(loanOfficerId)) AS noOfDisbursements,
+                  CONCAT('TotalamountDisbursed: ', FORMAT(IFNULL(SumDisbursementsByOfficer(loanOfficerId), '0'),0)) AS amountDisbursed,
+                CONCAT('NewCustomers: ', IFNULL(NewCustomersPerOfficer(loanOfficerId), '0')) AS newCustomers;
+        END IF;
+    END LOOP;
+
+    CLOSE curLoanOfficer;
+
+    -- Fetch and display the summary data
+    SELECT officerName, noOfCustomer, paidC, percentPaid, portfolioAmount, amountPaid, noOfLoansDisbursed, amountLoanDisbursed,newCustomers FROM smsSummuryOfficer;
+
+    DROP TABLE IF EXISTS smsSummuryOfficer;
+END $$
+DELIMITER ;
 
 
 
@@ -15091,6 +15667,7 @@ CREATE PROCEDURE theClosedRenewedLoan( IN theLoanId INT) BEGIN
 UPDATE pmms_loans.new_loan_appstore SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
 UPDATE pmms_loans.new_loan_appstore1 SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
 UPDATE pmms.loandisburserepaystatement SET LoanStatusReport='RenewedClosed' WHERE loanTrnId=theLoanId;
+
 END $$
 
 DELIMITER ;
@@ -17511,6 +18088,57 @@ END //
 DELIMITER ;
 
 CALL dailyCollectionARenewedUnpaidAtRiskCustomers('2024-05-23')\G
+
+
+
+DELIMITER $$
+
+CREATE PROCEDURE updateGaurantor(
+    IN p_gaurantorsName VARCHAR(255),
+    IN p_gaurantorsContact1 VARCHAR(255),
+    IN p_gaurantorsContact2 VARCHAR(255),
+    IN p_gaurantorsIdNumber VARCHAR(255),
+    IN p_gaurantorsRelationWithBorrower VARCHAR(255),
+    IN p_gaurantorsHomeArea VARCHAR(255),
+    IN p_gaurantorsBusiness VARCHAR(255),
+    IN p_loanTrnId INT,
+    IN p_gourantorPhone VARCHAR(255)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback on any error
+        ROLLBACK;
+    END;
+
+    START TRANSACTION;
+
+    -- Update gaurantors table
+    UPDATE gaurantors 
+    SET
+        gaurantorsName = p_gaurantorsName,
+        gaurantorsContact1 = p_gaurantorsContact1,
+        gaurantorsContact2 = p_gaurantorsContact2,
+        gaurantorsIdNumber = p_gaurantorsIdNumber,
+        gaurantorsRelationWithBorrower = p_gaurantorsRelationWithBorrower,
+        gaurantorsHomeArea = p_gaurantorsHomeArea,
+        gaurantorsBusiness = p_gaurantorsBusiness
+    WHERE
+        loanTrnId = p_loanTrnId;
+
+    -- Update dailycollection table
+    UPDATE dailycollection
+    SET
+        gourantorName = p_gaurantorsName,
+        gourantorPhone = p_gourantorPhone
+    WHERE
+        trnId = p_loanTrnId;
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+
 
 
 
@@ -20330,17 +20958,47 @@ DELIMITER ;
 
 
 
-
-29/05/2024	29/05/2024	WASSWA ASHIRAF 0750368448 Loan payment for Renewal Processed on 29/05/2024
-  LOAN PAYMENT	27440.0	-	-27440.0	BTN81522
-
+ALTER TABLE sequencenumbers
+ADD COLUMN officerReportingNo int(11) DEFAULT 11;
 
 
-  -- CREATE PROCEDURE createdRenewedLoan(
-  -- '05502003810',
-  -- 27440.0,
-  -- 240.0,
-  -- 30,
-  -- '2024-05-29',
-  -- 30.0,
-  -- 'DAYS',10001,1.0,'2024-05-29',10001,1,1,'BTN81522',1,3,72606);
+
+
+
+
+
+
+-- DELETE new_loan_appstore,new_loan_appstoreamort from new_loan_appstore INNER JOIN new_loan_appstoreamort ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.loan_cycle_status='Completed' AND new_loan_appstore.trn_date<='2024-03-31';
+
+-- DELETE pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId WHERE new_loan_appstore1.loan_cycle_status='Completed' AND new_loan_appstore1.trn_date<='2024-03-31';
+
+
+
+
+
+-- Help me with a comprehensive structure/modules for a simple enterprise resource planning web and mobile application that has a production, planning and control module and accounting module. Also help me with the necessary workflows involved in each module and the accounting entries required at each stage
+
+
+-- I want an ERP boss not just PPC AND ACCOUNTING SYSTEM ONLY
+
+-- Also help me with the necessary workflows involved in each module and the accounting entries required at each stage
+
+
+-- List for me the transaction documents involved in each module, e.g invoice scm and the reports expected
+
+
+-- Give me a more comprehensive List for me the transaction documents involved in each module, e.g invoice scm and the reports expected
+
+
+-- I kindly request for more comprehensive, kindly steadily but slowyly take your time and give me  more comprehensive List for me the transaction documents involved in each module, e.g invoice scm and the reports expected
+
+
+-- What could be the data captured for each module, kindly give me comprehensive list
+
+
+-- Other than the normal forms, what could be the other data sources?
+
+
+-- Finally give me a detailed data model with the relevant data relationship , sql based
+
+-- Debits	Merchant Payments		Merchant Payments	0
