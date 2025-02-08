@@ -261,145 +261,264 @@ DELIMITER ;
 
 
 
-DROP PROCEDURE IF EXISTS theAMDAPenaltyComputation;
-DELIMITER //
-CREATE PROCEDURE theAMDAPenaltyComputation() READS SQL DATA 
+-- DROP PROCEDURE IF EXISTS theAMDAPenaltyComputation;
+-- DELIMITER //
+-- CREATE PROCEDURE theAMDAPenaltyComputation() READS SQL DATA 
 
-BEGIN
+-- BEGIN
 
-DECLARE lDone1 INTEGER DEFAULT 0;
+-- DECLARE lDone1 INTEGER DEFAULT 0;
 
-DECLARE loanIdZ,numberOfDays,numberOfDays1,numberOfDays2,n,n1,n2,n3,nx INT; 
-DECLARE originalDueDate,lastDate,nextDate,endDate DATE;
+-- DECLARE loanIdZ,numberOfDays,numberOfDays1,numberOfDays2,n,n1,n2,n3,nx INT; 
+-- DECLARE originalDueDate,lastDate,nextDate,endDate DATE;
 
-DECLARE forSelectingLoanIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore  WHERE (loan_cycle_status='Disbursed' OR  loan_cycle_status='Renewed')  AND  NOT (loan_tenure='1.0 MONTHS' OR  loan_tenure='1 MONTHS') ;
+-- DECLARE forSelectingLoanIds CURSOR FOR SELECT trn_id  FROM new_loan_appstore  WHERE (loan_cycle_status='Disbursed' OR  loan_cycle_status='Renewed')  AND  NOT (loan_tenure='1.0 MONTHS' OR  loan_tenure='1 MONTHS') ;
 
 
- DECLARE CONTINUE HANDLER FOR NOT FOUND SET lDone1=1;
+--  DECLARE CONTINUE HANDLER FOR NOT FOUND SET lDone1=1;
  
 
-OPEN forSelectingLoanIds; 
+-- OPEN forSelectingLoanIds; 
 
-LoanIdLoop: LOOP /* Loop through the due dates since the last duedate*/
+-- LoanIdLoop: LOOP /* Loop through the due dates since the last duedate*/
 
-FETCH forSelectingLoanIds into loanIdZ; /* Pick the loan id into the variable loanIdz */
--- SET nx=6;
-SELECT NoofDays INTO nx FROM controlPenaltyCompute;
--- SELECT nx;
-IF ISNULL(nx) THEN 
-SET nx=7;
-END IF;
-
-IF lDone1=1 THEN /* check whether the cusor sitll holds more values and if not terminate loop */
--- SELECT loanIdZ;
-LEAVE LoanIdLoop; /* */
- END IF;  /* */
-
-SELECT instalment_end_date INTO endDate FROM new_loan_appstore WHERE trn_id=loanIdZ;
-
--- SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE instalment_due_date<DATE(NOW()) AND NOT instalment_status='P' AND  master1_id=loanIdZ ORDER BY instalment_due_date ASC LIMIT 1;/* The instalment due date is the last due date*/
-
-SET @theLoansNowX = concat(CAST("SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE instalment_due_date<='" AS CHAR CHARACTER SET utf8),DATE(NOW()), CAST("' AND  master1_id=" AS CHAR CHARACTER SET utf8),loanIdZ,  CAST(" AND NOT instalment_status='P' ORDER BY trn_id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
--- IF loanIdZ=70387 THEN
---  select  @theLoansNowX;
+-- FETCH forSelectingLoanIds into loanIdZ; /* Pick the loan id into the variable loanIdz */
+-- -- SET nx=6;
+-- SELECT NoofDays INTO nx FROM controlPenaltyCompute;
+-- -- SELECT nx;
+-- IF ISNULL(nx) THEN 
+-- SET nx=7;
 -- END IF;
-  PREPARE stmt22X FROM @theLoansNowX;
-  EXECUTE stmt22X;
-DROP PREPARE stmt22X;
+
+-- IF lDone1=1 THEN /* check whether the cusor sitll holds more values and if not terminate loop */
+-- -- SELECT loanIdZ;
+-- LEAVE LoanIdLoop; /* */
+--  END IF;  /* */
+
+-- SELECT instalment_end_date INTO endDate FROM new_loan_appstore WHERE trn_id=loanIdZ;
+
+-- -- SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE instalment_due_date<DATE(NOW()) AND NOT instalment_status='P' AND  master1_id=loanIdZ ORDER BY instalment_due_date ASC LIMIT 1;/* The instalment due date is the last due date*/
+
+-- SET @theLoansNowX = concat(CAST("SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE instalment_due_date<='" AS CHAR CHARACTER SET utf8),DATE(NOW()), CAST("' AND  master1_id=" AS CHAR CHARACTER SET utf8),loanIdZ,  CAST(" AND NOT instalment_status='P' ORDER BY trn_id ASC LIMIT 1" AS CHAR CHARACTER SET utf8));
+-- -- IF loanIdZ=70387 THEN
+-- --  select  @theLoansNowX;
+-- -- END IF;
+--   PREPARE stmt22X FROM @theLoansNowX;
+--   EXECUTE stmt22X;
+-- DROP PREPARE stmt22X;
 
 
-IF ISNULL(@originalDueDate) THEN 
+-- IF ISNULL(@originalDueDate) THEN 
 
-SET @originalDueDate=DATE(NOW());
-END IF;
-
-SELECT DATEDIFF(DATE(NOW()),@originalDueDate) INTO numberOfDays;
--- IF loanIdZ=70387 THEN
-
--- SELECT @originalDueDate,numberOfDays,loanIdZ;
+-- SET @originalDueDate=DATE(NOW());
 -- END IF;
-IF endDate>DATE(NOW()) THEN /* IF 0*/
--- SELECT 'Yes';
-IF numberOfDays>=nx THEN /* IF 1*/
--- SELECT 'Yes2';
--- IF loanIdZ=70387 THEN
--- SELECT numberOfDays,loanIdZ,@originalDueDate;
--- END IF;
-IF EXISTS (SELECT * FROM amdaPenaltyComputeNow WHERE loanTrnId = loanIdZ) THEN   /* IF 2*/
--- SELECT 'Yes3';
-SELECT lastAccrued INTO lastDate FROM amdaPenaltyComputeNow WHERE loanTrnId = loanIdZ ORDER BY id DESC LIMIT 1;
+
+-- SELECT DATEDIFF(DATE(NOW()),@originalDueDate) INTO numberOfDays;
+-- -- IF loanIdZ=70387 THEN
+
+-- -- SELECT @originalDueDate,numberOfDays,loanIdZ;
+-- -- END IF;
+-- IF endDate>DATE(NOW()) THEN /* IF 0*/
+-- -- SELECT 'Yes';
+-- IF numberOfDays>=nx THEN /* IF 1*/
+-- -- SELECT 'Yes2';
+-- -- IF loanIdZ=70387 THEN
+-- -- SELECT numberOfDays,loanIdZ,@originalDueDate;
+-- -- END IF;
+-- IF EXISTS (SELECT * FROM amdaPenaltyComputeNow WHERE loanTrnId = loanIdZ) THEN   /* IF 2*/
+-- -- SELECT 'Yes3';
+-- SELECT lastAccrued INTO lastDate FROM amdaPenaltyComputeNow WHERE loanTrnId = loanIdZ ORDER BY id DESC LIMIT 1;
 
 
-IF lastDate<@originalDueDate THEN   /* IF 3*/
+-- IF lastDate<@originalDueDate THEN   /* IF 3*/
 
-SET n=TRUNCATE((numberOfDays/nx),0);
+-- SET n=TRUNCATE((numberOfDays/nx),0);
 
-SET nextDate=@originalDueDate;
+-- SET nextDate=@originalDueDate;
 
-REPEAT 
--- SELECT loanIdZ,"1";
-CALL computeAndApplyTheAMDAPenalty(loanIdZ);
-SET n=n-1;
-SET nextDate=DATE_ADD(nextDate,INTERVAL nx DAY);
-UNTIL n=0 END REPEAT;
-INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
+-- REPEAT 
+-- -- SELECT loanIdZ,"1";
+-- CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+-- SET n=n-1;
+-- SET nextDate=DATE_ADD(nextDate,INTERVAL nx DAY);
+-- UNTIL n=0 END REPEAT;
+-- INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
 
-ELSE /* IF 3*/
-SELECT DATEDIFF(DATE(NOW()),lastDate) INTO numberOfDays1;
-IF numberOfDays1>=nx THEN /* IF 5*/
-SET n1=TRUNCATE((numberOfDays1/nx),0);
-SET nextDate=lastDate;
-REPEAT 
--- SELECT loanIdZ,"2";
-CALL computeAndApplyTheAMDAPenalty(loanIdZ);
-SET n1=n1-1;
-SET nextDate=DATE_ADD(nextDate,INTERVAL nx DAY);
-UNTIL n1=0 END REPEAT;
-INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
-END IF;/* IF 5*/
-END IF; /* IF 3*/
+-- ELSE /* IF 3*/
+-- SELECT DATEDIFF(DATE(NOW()),lastDate) INTO numberOfDays1;
+-- IF numberOfDays1>=nx THEN /* IF 5*/
+-- SET n1=TRUNCATE((numberOfDays1/nx),0);
+-- SET nextDate=lastDate;
+-- REPEAT 
+-- -- SELECT loanIdZ,"2";
+-- CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+-- SET n1=n1-1;
+-- SET nextDate=DATE_ADD(nextDate,INTERVAL nx DAY);
+-- UNTIL n1=0 END REPEAT;
+-- INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
+-- END IF;/* IF 5*/
+-- END IF; /* IF 3*/
 
-ELSE   /* IF 2*/
--- SELECT 'Yes4';
-IF numberOfDays=5 THEN /* IF 4*/
--- SELECT loanIdZ,"3";
-CALL computeAndApplyTheAMDAPenalty(loanIdZ);
-SET nextDate=DATE_ADD(@originalDueDate,INTERVAL nx DAY);
-INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
-ELSE /* IF 4*/
-SELECT DATEDIFF(DATE(NOW()),@originalDueDate) INTO numberOfDays2;
--- SELECT numberOfDays2;
-SET n2=TRUNCATE((numberOfDays2/nx),0);
-SET nextDate=@originalDueDate;
-REPEAT 
--- SELECT n2,nextDate,loanIdZ;
--- SELECT loanIdZ,"4";
-CALL computeAndApplyTheAMDAPenalty(loanIdZ);
-SET n2=n2-1;
-SET nextDate=DATE_ADD(nextDate,INTERVAL nx DAY);
-UNTIL n2=0 END REPEAT;
-INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
-END IF; /* IF 4*/
-
-
-
-END IF;  /* IF 2*/
+-- ELSE   /* IF 2*/
+-- -- SELECT 'Yes4';
+-- IF numberOfDays=5 THEN /* IF 4*/
+-- -- SELECT loanIdZ,"3";
+-- CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+-- SET nextDate=DATE_ADD(@originalDueDate,INTERVAL nx DAY);
+-- INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
+-- ELSE /* IF 4*/
+-- SELECT DATEDIFF(DATE(NOW()),@originalDueDate) INTO numberOfDays2;
+-- -- SELECT numberOfDays2;
+-- SET n2=TRUNCATE((numberOfDays2/nx),0);
+-- SET nextDate=@originalDueDate;
+-- REPEAT 
+-- -- SELECT n2,nextDate,loanIdZ;
+-- -- SELECT loanIdZ,"4";
+-- CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+-- SET n2=n2-1;
+-- SET nextDate=DATE_ADD(nextDate,INTERVAL nx DAY);
+-- UNTIL n2=0 END REPEAT;
+-- INSERT INTO amdaPenaltyComputeNow VALUES(NULL,loanIdZ,1,nextDate);
+-- END IF; /* IF 4*/
 
 
 
-END IF;/* IF 1*/
+-- END IF;  /* IF 2*/
 
-END IF;/* IF 0*/
-SET @originalDueDate=NULL;
-SET lDone1=0;
-END LOOP LoanIdLoop;
 
-CLOSE forSelectingLoanIds;
+
+-- END IF;/* IF 1*/
+
+-- END IF;/* IF 0*/
+-- SET @originalDueDate=NULL;
+-- SET lDone1=0;
+-- END LOOP LoanIdLoop;
+
+-- CLOSE forSelectingLoanIds;
+-- END //
+-- DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS theAMDAPenaltyComputation;
+DELIMITER //
+CREATE PROCEDURE theAMDAPenaltyComputation() READS SQL DATA
+BEGIN
+    DECLARE lDone1 INTEGER DEFAULT 0;
+    DECLARE loanIdZ, numberOfDays, numberOfDays1, numberOfDays2, n, n1, n2, nx INT;
+    DECLARE originalDueDate, lastDate, nextDate, endDate DATE;
+
+    DECLARE forSelectingLoanIds CURSOR FOR 
+        SELECT trn_id  
+        FROM new_loan_appstore 
+        WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed')  
+          AND NOT (loan_tenure='1.0 MONTHS' OR loan_tenure='1 MONTHS');
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET lDone1 = 1;
+
+    -- Open cursor for loan IDs
+    OPEN forSelectingLoanIds;
+
+    LoanIdLoop: LOOP
+        -- Fetch loan ID into variable
+        FETCH forSelectingLoanIds INTO loanIdZ;
+
+        -- Get penalty interval (nx) from control table
+        SELECT NoofDays INTO nx FROM controlPenaltyCompute;
+        IF ISNULL(nx) THEN 
+            SET nx = 7;
+        END IF;
+
+        IF lDone1 = 1 THEN 
+            LEAVE LoanIdLoop; 
+        END IF;
+
+        -- Get end date of the loan
+        SELECT instalment_end_date INTO endDate 
+        FROM new_loan_appstore 
+        WHERE trn_id = loanIdZ;
+
+        -- Fetch the original due date dynamically
+        SET @theLoansNowX = CONCAT(
+            "SELECT instalment_due_date INTO @originalDueDate 
+            FROM new_loan_appstoreamort 
+            WHERE instalment_due_date <= '", DATE(NOW()), 
+            "' AND master1_id = ", loanIdZ, 
+            " AND NOT instalment_status='P' 
+            ORDER BY trn_id ASC LIMIT 1");
+        PREPARE stmt22X FROM @theLoansNowX;
+        EXECUTE stmt22X;
+        DROP PREPARE stmt22X;
+
+        IF ISNULL(@originalDueDate) THEN 
+            SET @originalDueDate = DATE(NOW());
+        END IF;
+
+        -- Calculate the number of days since the last due date
+        SELECT TIMESTAMPDIFF(DAY, @originalDueDate, NOW()) INTO numberOfDays;
+
+        -- Process penalties if the loan is not yet completed
+        IF endDate > DATE(NOW()) THEN
+            IF numberOfDays >= nx THEN
+                -- Check if penalties already exist
+                IF EXISTS (SELECT * FROM amdaPenaltyComputeNow WHERE loanTrnId = loanIdZ) THEN
+                    SELECT lastAccrued INTO lastDate 
+                    FROM amdaPenaltyComputeNow 
+                    WHERE loanTrnId = loanIdZ 
+                    ORDER BY id DESC LIMIT 1;
+
+                    IF ISNULL(lastDate) THEN
+                        SET lastDate = @originalDueDate;
+                    END IF;
+
+                    IF lastDate < @originalDueDate THEN
+                        SET n = CEIL(numberOfDays / nx);
+                        SET nextDate = @originalDueDate;
+                        REPEAT
+                            CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+                            SET nextDate = DATE_ADD(nextDate, INTERVAL nx DAY);
+                            SET n = n - 1;
+                        UNTIL n = 0 END REPEAT;
+                        INSERT INTO amdaPenaltyComputeNow 
+                        VALUES (NULL, loanIdZ, 1, nextDate);
+                    ELSE
+                        SELECT TIMESTAMPDIFF(DAY, lastDate, NOW()) INTO numberOfDays1;
+                        IF numberOfDays1 >= nx THEN
+                            SET n1 = CEIL(numberOfDays1 / nx);
+                            SET nextDate = lastDate;
+                            REPEAT
+                                CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+                                SET nextDate = DATE_ADD(nextDate, INTERVAL nx DAY);
+                                SET n1 = n1 - 1;
+                            UNTIL n1 = 0 END REPEAT;
+                            INSERT INTO amdaPenaltyComputeNow 
+                            VALUES (NULL, loanIdZ, 1, nextDate);
+                        END IF;
+                    END IF;
+                ELSE
+                    -- Apply penalties for loans without prior penalty
+                    SET n2 = CEIL(numberOfDays / nx);
+                    SET nextDate = @originalDueDate;
+                    REPEAT
+                        CALL computeAndApplyTheAMDAPenalty(loanIdZ);
+                        SET nextDate = DATE_ADD(nextDate, INTERVAL nx DAY);
+                        SET n2 = n2 - 1;
+                    UNTIL n2 = 0 END REPEAT;
+                    INSERT INTO amdaPenaltyComputeNow 
+                    VALUES (NULL, loanIdZ, 1, nextDate);
+                END IF;
+            END IF;
+        END IF;
+
+        -- Reset variables for the next iteration
+        SET @originalDueDate = NULL;
+        SET lDone1 = 0;
+    END LOOP LoanIdLoop;
+
+    -- Close the cursor
+    CLOSE forSelectingLoanIds;
 END //
 DELIMITER ;
-
-
-
 
 
 
