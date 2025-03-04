@@ -12311,6 +12311,18 @@ DELIMITER ;
 
 
 
+DROP PROCEDURE IF EXISTS totalNumberOfActiveCustomersOnly;
+DELIMITER $$
+CREATE PROCEDURE totalNumberOfActiveCustomersOnly(OUT activeCustomersOnly INT)
+BEGIN
+  SELECT COUNT(trn_id)
+    INTO activeCustomersOnly
+    FROM new_loan_appstore
+    WHERE (loan_cycle_status = 'Disbursed' OR loan_cycle_status = 'Renewed')
+      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) <= 60;
+END $$
+DELIMITER ;
+
 
 
 
@@ -14613,7 +14625,19 @@ CALL totalNumberOfActiveCustomers(@activeCustomers);
 -- SELECT @activeCustomers;
 IF @activeCustomers>0 THEN
 -- SELECT @activeCustomers;
-INSERT INTO smsSummury VALUES("No.OfActiveLoans:",FORMAT(@activeCustomers,0));
+INSERT INTO smsSummury VALUES("Total No.OfCustomers:",FORMAT(@activeCustomers,0));
+
+  END IF;
+
+
+
+
+
+  CALL totalNumberOfActiveCustomersOnly(@activeCustomersOnly);
+-- SELECT @activeCustomers;
+IF @activeCustomers>0 THEN
+-- SELECT @activeCustomers;
+INSERT INTO smsSummury VALUES("No.OfActiveCustomers:",FORMAT(@activeCustomersOnly,0));
 
   END IF;
 
@@ -16502,80 +16526,109 @@ END //
 
 
 
+-- /* LOAN RECEIPT PRINTING */
+
 -- DROP PROCEDURE IF EXISTS loanStatementDetails;
--- DELIMITER //
--- CREATE PROCEDURE loanStatementDetails(IN accountNumber VARCHAR(60)) READS SQL DATA 
+
+-- DELIMITER ##
+
+-- CREATE PROCEDURE   loanStatementDetails(IN SloanTrnId VARCHAR(45))
 -- BEGIN
 
--- DECLARE StateExpectedInterest,StateExpectedTotalAmount,StateTotalamountPaid,StateTotalamountRemaining,StateTotalInterestPaid,StateTotalInterestRemaining,theATrnId DOUBLE;
+-- DROP TABLE IF EXISTS loanStatementtDetailsTable;
 
---  SET @dueDateX1 = concat(CAST("SELECT  ExpectedInterest,ExpectedTotalAmount, AmountPaid, LoanBalance,InterestPaid,InterestBalance,TrnId INTO @StateExpectedInterest, @StateExpectedTotalAmount,@StateTotalamountPaid,@StateTotalamountRemaining,@StateTotalInterestPaid,@StateTotalInterestRemaining,@theATrnId FROM pmms.loandisburserepaystatement  WHERE AccountNumber= " AS CHAR CHARACTER SET utf8),accountNumber,CAST(" ORDER BY TrnId DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+-- CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
+-- `id` INTEGER NOT NULL AUTO_INCREMENT, 
+-- `trn_date` DATE,
+-- `amount_paid` VARCHAR(60),
+-- `princimpal_paid` VARCHAR(60),
+-- `interest_paid` VARCHAR(60),
+-- `amount_remaining` VARCHAR(60),
+-- `princimpal_remaining`  VARCHAR(60),
+-- `interest_remaining`  VARCHAR(60),
+--  PRIMARY KEY (`id`))
+-- ENGINE = InnoDB
+-- AUTO_INCREMENT =0
+-- DEFAULT CHARACTER SET = utf8;
 
---   PREPARE stmt2X1 FROM @dueDateX1;
---   EXECUTE stmt2X1;
--- DROP PREPARE stmt2X1;
+  
 
---  SET StateExpectedInterest=@StateExpectedInterest, StateExpectedTotalAmount=@StateExpectedTotalAmount,StateTotalamountPaid=@StateTotalamountPaid,StateTotalamountRemaining=@StateTotalamountRemaining,StateTotalInterestPaid=@StateTotalInterestPaid,StateTotalInterestRemaining=@StateTotalInterestRemaining,theATrnId=@theATrnId;
+-- INSERT INTO  loanStatementtDetailsTable( 
+--   `id` ,
+--   `trn_date` ,
+--       `amount_paid`,
+--      `princimpal_paid`,
+--   `interest_paid`,
+--         `amount_remaining`,
+--           `princimpal_remaining`,
+--           `interest_remaining`
+--   ) SELECT  null,`TrnDate` ,FORMAT(`AmountPaid`,0) ,  FORMAT(`PrincipalPaid`,0) ,  FORMAT(`InterestPaid`,0) ,  FORMAT(`LoanBalance`,0) ,  FORMAT(`PrincipalBalance`,0) ,  FORMAT(`InterestBalance`,0)  FROM loandisburserepaystatement WHERE loanTrnId=SloanTrnId LIMIT 1,20000;
 
--- SELECT StateExpectedInterest, StateExpectedTotalAmount,StateTotalamountPaid,StateTotalamountRemaining,StateTotalInterestPaid,StateTotalInterestRemaining,theATrnId;
 
--- END //
+--    SELECT * FROM loanStatementtDetailsTable;
+
+-- END  ##
 
 --  DELIMITER ;
 
 
+
 DROP PROCEDURE IF EXISTS loanStatementDetails;
-DELIMITER //
-CREATE PROCEDURE loanStatementDetails(IN accountNumber VARCHAR(60))
-    READS SQL DATA
+DELIMITER ##
+CREATE PROCEDURE loanStatementDetails(IN SloanTrnId VARCHAR(45))
 BEGIN
-    DECLARE StateExpectedInterest DOUBLE;
-    DECLARE StateExpectedTotalAmount DOUBLE;
-    DECLARE StateTotalamountPaid DOUBLE;
-    DECLARE StateTotalamountRemaining DOUBLE;
-    DECLARE StateTotalInterestPaid DOUBLE;
-    DECLARE StateTotalInterestRemaining DOUBLE;
-    DECLARE theATrnId DOUBLE;
 
-    SET @sql = CONCAT(
-       "SELECT ExpectedInterest, ExpectedTotalAmount, AmountPaid, LoanBalance, InterestPaid, InterestBalance, TrnId ",
-       "INTO @StateExpectedInterest, @StateExpectedTotalAmount, @StateTotalamountPaid, @StateTotalamountRemaining, ",
-       "@StateTotalInterestPaid, @StateTotalInterestRemaining, @theATrnId ",
-       "FROM ( ",
-         "SELECT ExpectedInterest, ExpectedTotalAmount, AmountPaid, LoanBalance, InterestPaid, InterestBalance, TrnId ",
-         "FROM pmms.loandisburserepaystatement WHERE AccountNumber = '", accountNumber, "' ",
-         "UNION ALL ",
-         "SELECT ExpectedInterest, ExpectedTotalAmount, AmountPaid, LoanBalance, InterestPaid, InterestBalance, TrnId ",
-         "FROM pmms.arch_loandisburserepaystatement WHERE AccountNumber = '", accountNumber, "' ",
-       ") AS combinedData ",
-       "ORDER BY TrnId DESC LIMIT 1"
-    );
+    DROP TABLE IF EXISTS loanStatementtDetailsTable;
 
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
+    CREATE TEMPORARY TABLE loanStatementtDetailsTable (
+      id                    INTEGER NOT NULL AUTO_INCREMENT, 
+      trn_date              DATE,
+      amount_paid           VARCHAR(60),
+      princimpal_paid       VARCHAR(60),
+      interest_paid         VARCHAR(60),
+      amount_remaining      VARCHAR(60),
+      princimpal_remaining  VARCHAR(60),
+      interest_remaining    VARCHAR(60),
+      PRIMARY KEY (id)
+    )
+    ENGINE = InnoDB
+    AUTO_INCREMENT = 0
+    DEFAULT CHARACTER SET = utf8;
 
-    SET StateExpectedInterest = @StateExpectedInterest;
-    SET StateExpectedTotalAmount = @StateExpectedTotalAmount;
-    SET StateTotalamountPaid = @StateTotalamountPaid;
-    SET StateTotalamountRemaining = @StateTotalamountRemaining;
-    SET StateTotalInterestPaid = @StateTotalInterestPaid;
-    SET StateTotalInterestRemaining = @StateTotalInterestRemaining;
-    SET theATrnId = @theATrnId;
+    INSERT INTO loanStatementtDetailsTable (
+      id,
+      trn_date,
+      amount_paid,
+      princimpal_paid,
+      interest_paid,
+      amount_remaining,
+      princimpal_remaining,
+      interest_remaining
+    )
+    SELECT 
+      null,
+      TrnDate,
+      FORMAT(AmountPaid, 0),
+      FORMAT(PrincipalPaid, 0),
+      FORMAT(InterestPaid, 0),
+      FORMAT(LoanBalance, 0),
+      FORMAT(PrincipalBalance, 0),
+      FORMAT(InterestBalance, 0)
+    FROM (
+      SELECT TrnDate, AmountPaid, PrincipalPaid, InterestPaid, LoanBalance, PrincipalBalance, InterestBalance
+      FROM loandisburserepaystatement
+      WHERE loanTrnId = SloanTrnId
+      UNION ALL
+      SELECT TrnDate, AmountPaid, PrincipalPaid, InterestPaid, LoanBalance, PrincipalBalance, InterestBalance
+      FROM arch_loandisburserepaystatement
+      WHERE loanTrnId = SloanTrnId
+    ) AS combined
+    LIMIT 1, 20000;
 
-    SELECT StateExpectedInterest AS ExpectedInterest,
-           StateExpectedTotalAmount AS ExpectedTotalAmount,
-           StateTotalamountPaid AS AmountPaid,
-           StateTotalamountRemaining AS LoanBalance,
-           StateTotalInterestPaid AS InterestPaid,
-           StateTotalInterestRemaining AS InterestBalance,
-           theATrnId AS TrnId;
-END //
+    SELECT * FROM loanStatementtDetailsTable;
+
+END ##
 DELIMITER ;
-
-
-
--- 1	71137	newloan05502062210	Disbursed
 
 
 DROP PROCEDURE IF EXISTS loanStatementDetailsExpected;
