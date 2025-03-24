@@ -2365,6 +2365,9 @@ END//
 
 
 
+-- CALL RepayTheLoanNow('05502006510',30012.0,'BTN146889',10000,'2025-03-13',10000);
+
+
 
 
 DROP PROCEDURE IF EXISTS RepayTheLoanNow;
@@ -2452,7 +2455,7 @@ SET totalInsterestX=totalInsterestX+currentIntestX;
 
 SET amountTxed=amountTxed-currentIntestX;
 
-IF amountTxed<9 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
@@ -2482,7 +2485,7 @@ END IF;
 SET totalPrincipalX=totalPrincipalX+currentPrincipalX;
 SET amountTxed=amountTxed-currentPrincipalX;
 -- SELECT amountTxed; 
-IF amountTxed<9 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
@@ -2509,7 +2512,7 @@ END IF;
 SET totalPenaltyX=totalPenaltyX+currentPenaltyX;
 SET amountTxed=amountTxed-currentPenaltyX;
 
-IF amountTxed<2 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
@@ -2538,15 +2541,35 @@ END IF;
 SET totalAccumulatedInterestX=totalAccumulatedInterestX+currentAccumulatedInterestX;
 SET amountTxed=amountTxed-currentAccumulatedInterestX;
 
-IF amountTxed<2 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
 END IF;
 
+IF (currentIntestX + currentPenaltyX + currentAccumulatedInterestX + currentPrincipalX) = 0 THEN
+    -- Mark the instalment as fully paid
+    UPDATE new_loan_appstoreamort
+    SET
+        instalment_status = 'P',
+        instalment_paid_date = instalmentPaidDate,
+        instalment_paid = instalment_amount,  -- or however you track "fully paid"
+        InstalmentRemaining = 0
+    WHERE instalment_no = runningInstalmentId
+      AND master1_id = theLoanId;
+
+    -- Optionally decrement remaining_instalments in new_loan_appstore if needed:
+    UPDATE new_loan_appstore
+    SET remaining_instalments = remaining_instalments - 1
+    WHERE trn_id = theLoanId;
+
+    -- Now set the leftover amount to 0 and exit
+    -- SET amountTxed = 0;
+    -- LEAVE label1;
+END IF;
 
 
-UNTIL amountTxed<=9  END REPEAT label1;
+UNTIL amountTxed<=1 END REPEAT label1;
 ELSE
 SET balanceCdue=0,@balanceCdue=0,AmountPaid=0;
 
@@ -2676,7 +2699,7 @@ IF ISNULL(balanceCdue) THEN
 SET balanceCdue=0;
 END IF;
 
-IF balanceCdue<=9 THEN
+IF balanceCdue<=1 THEN
 
 SELECT loan_id INTO theExistingLoanId FROM arch_new_loan_appstore where applicant_account_number=accountNumber AND loan_cycle_status='Completed' ORDER BY trn_id DESC LIMIT 1;
 
@@ -2763,6 +2786,9 @@ SELECT totalPrincipalX,totalInsterestX,totalAccumulatedInterestX,totalPenaltyX,c
 END//
 
  DELIMITER ;
+
+
+CALL RepayTheLoanNow('05502006510',30012.0,'BTN146889',10001,'2025-03-16',10001);
 
 
 CREATE TABLE error_log (
@@ -2893,6 +2919,20 @@ BEGIN
             WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
         END IF;
     END IF;
+
+    SELECT InstalmentRemaining;
+
+    IF InstalmentRemaining<1 THEN
+
+    UPDATE new_loan_appstoreamort
+            SET 
+                instalment_status = 'P',
+                instalment_paid_date = instalmentPaidDate,
+                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
+            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+
+    END IF;
+
 
 END //
 DELIMITER ;
@@ -3075,6 +3115,20 @@ BEGIN
                 instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
             WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
         END IF;
+    END IF;
+
+    
+    SELECT InstalmentRemaining;
+
+     IF InstalmentRemaining<1 THEN
+
+    UPDATE new_loan_appstoreamort
+            SET 
+                instalment_status = 'P',
+                instalment_paid_date = instalmentPaidDate,
+                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
+            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+
     END IF;
 
 END //
@@ -3289,6 +3343,19 @@ BEGIN
                 instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
             WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
         END IF;
+    END IF;
+
+
+    SELECT InstalmentRemaining;
+     IF InstalmentRemaining<1 THEN
+
+    UPDATE new_loan_appstoreamort
+            SET 
+                instalment_status = 'P',
+                instalment_paid_date = instalmentPaidDate,
+                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
+            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+
     END IF;
 
 END //
@@ -3643,6 +3710,20 @@ BEGIN
                 instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
             WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
         END IF;
+    END IF;
+
+
+
+    SELECT InstalmentRemaining;
+     IF InstalmentRemaining<1 THEN
+
+    UPDATE new_loan_appstoreamort
+            SET 
+                instalment_status = 'P',
+                instalment_paid_date = instalmentPaidDate,
+                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
+            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+
     END IF;
 
     -- Call additional procedure
@@ -20237,6 +20318,66 @@ DELIMITER ;
 
 
 
+DROP PROCEDURE IF EXISTS sp_portfolio_summary;
+DELIMITER $$
+
+CREATE PROCEDURE sp_portfolio_summary()
+BEGIN
+    -- 1. Drop the temporary table if it already exists (safety measure)
+    DROP TEMPORARY TABLE IF EXISTS tmp_portfolio_summary;
+
+    -- 2. Create a new temporary table for storing the summary
+    CREATE TEMPORARY TABLE tmp_portfolio_summary (
+      category VARCHAR(100),
+      total INT
+    );
+
+    -- 3. Insert rows, each representing a specific category with the day range in the label
+
+    -- 3a) Active (0–30 days)
+    INSERT INTO tmp_portfolio_summary (category, total)
+    SELECT 
+        'Active (0-30 days)' AS category,
+        COUNT(*) AS total
+    FROM new_loan_appstore
+    WHERE loan_cycle_status IN ('Disbursed','Renewed')
+      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) <= 30;
+
+    -- 3b) At Risk (31–90 days)
+    INSERT INTO tmp_portfolio_summary (category, total)
+    SELECT 
+        'At Risk (31-90 days)' AS category,
+        COUNT(*) AS total
+    FROM new_loan_appstore
+    WHERE loan_cycle_status IN ('Disbursed','Renewed')
+      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) BETWEEN 31 AND 90;
+
+    -- 3c) Non Performing (91–360 days)
+    INSERT INTO tmp_portfolio_summary (category, total)
+    SELECT 
+        'Non Performing (91-360 days)' AS category,
+        COUNT(*) AS total
+    FROM new_loan_appstore
+    WHERE loan_cycle_status IN ('Disbursed','Renewed')
+      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) BETWEEN 91 AND 360;
+
+    -- 3d) Due For Write Off (>360 days)
+    INSERT INTO tmp_portfolio_summary (category, total)
+    SELECT 
+        'Due For Write Off (>360 days)' AS category,
+        COUNT(*) AS total
+    FROM new_loan_appstore
+    WHERE loan_cycle_status IN ('Disbursed','Renewed')
+      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) > 360;
+
+    -- 4. Finally, select the data from the temporary table
+    SELECT category, total
+    FROM tmp_portfolio_summary;
+END $$
+
+DELIMITER ;
+
+CALL sp_portfolio_summary();
 
 
 
@@ -22309,7 +22450,7 @@ DROP PROCEDURE IF EXISTS getAllSendingDetailsLimit2;
 DELIMITER ##
 CREATE PROCEDURE getAllSendingDetailsLimit2() BEGIN
 
-SELECT contactName1 AS name,backUpContactNotification1 AS contact,TIME(CURRENT_TIMESTAMP) AS theTime,DATE_FORMAT(DATE(CURRENT_TIMESTAMP),"%d/%m/%Y") AS theDate FROM  backupcontact WHERE enabled=2 LIMIT 2;
+SELECT contactName1 AS name,backUpContactNotification1 AS contact,TIME(CURRENT_TIMESTAMP) AS theTime,DATE_FORMAT(DATE(CURRENT_TIMESTAMP),"%d/%m/%Y") AS theDate FROM  backupcontact WHERE enabled=2;
 
 END ##
 DELIMITER ;
