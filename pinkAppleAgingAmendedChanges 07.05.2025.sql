@@ -24205,3 +24205,4 @@ ADD COLUMN password_used VARCHAR(10) NOT NULL AFTER quantity;
 ALTER TABLE the_company_datails
   ADD COLUMN licence_verified_ym CHAR(6) NULL
       COMMENT 'YYYYMM of the most recent PAID verification';
+UPDATE the_company_datails SET licence_verified_ym= 202505;
