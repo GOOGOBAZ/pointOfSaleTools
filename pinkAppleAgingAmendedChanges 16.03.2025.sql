@@ -2549,6 +2549,8 @@ END IF;
 
 IF (currentIntestX + currentPenaltyX + currentAccumulatedInterestX + currentPrincipalX) = 0 THEN
     -- Mark the instalment as fully paid
+
+    SELECT currentIntestX + currentPenaltyX + currentAccumulatedInterestX + currentPrincipalX;
     UPDATE new_loan_appstoreamort
     SET
         instalment_status = 'P',
@@ -2800,1002 +2802,340 @@ CREATE TABLE error_log (
 
 DROP PROCEDURE IF EXISTS updateThePrincipalComponent;
 DELIMITER //
-
-CREATE PROCEDURE updateThePrincipalComponent(
-    IN theRunningInstalmentId INT,
-    IN currentPrincipalX DOUBLE,
-    IN theLoanId INT,
-    IN instalmentPaidDate DATE
-) READS SQL DATA 
+CREATE PROCEDURE updateThePrincipalComponent(IN theRunningInstalmentId INT,IN currentPrincipalX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
 BEGIN
-    DECLARE totalAmountPaid, totalAmountRemaining, totalPrincipalPaid, totalPrincipalRemaining DOUBLE;
-    DECLARE isArchived BOOLEAN DEFAULT FALSE;
 
-    -- Initialize variables
-    SET totalAmountPaid = NULL, totalAmountRemaining = NULL, totalPrincipalPaid = NULL, totalPrincipalRemaining = NULL;
+DECLARE runningInstalmentId INT;
 
-    -- Determine if the loan is archived
-    SELECT COUNT(*) INTO isArchived
-    FROM arch_new_loan_appstoreamort
-    WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-    -- Fetch data from the appropriate table
-    IF isArchived THEN
-        SELECT 
-            instalment_paid,
-            InstalmentRemaining,
-            PrincipalPaid,
-            PrincipalRemaining
-        INTO 
-            totalAmountPaid,
-            totalAmountRemaining,
-            totalPrincipalPaid,
-            totalPrincipalRemaining
-        FROM arch_new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        SELECT 
-            instalment_paid,
-            InstalmentRemaining,
-            PrincipalPaid,
-            PrincipalRemaining
-        INTO 
-            totalAmountPaid,
-            totalAmountRemaining,
-            totalPrincipalPaid,
-            totalPrincipalRemaining
-        FROM new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
-
-    -- Update principal calculations
-    SET totalAmountPaid = totalAmountPaid + currentPrincipalX,
-        totalAmountRemaining = totalAmountRemaining - currentPrincipalX,
-        totalPrincipalPaid = totalPrincipalPaid + currentPrincipalX,
-        totalPrincipalRemaining = totalPrincipalRemaining - currentPrincipalX;
-
-    -- Update the appropriate amortization table
-    IF isArchived THEN
-        UPDATE arch_new_loan_appstoreamort
-        SET 
-            instalment_paid = totalAmountPaid,
-            InstalmentRemaining = totalAmountRemaining,
-            PrincipalPaid = totalPrincipalPaid,
-            PrincipalRemaining = totalPrincipalRemaining
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        UPDATE new_loan_appstoreamort
-        SET 
-            instalment_paid = totalAmountPaid,
-            InstalmentRemaining = totalAmountRemaining,
-            PrincipalPaid = totalPrincipalPaid,
-            PrincipalRemaining = totalPrincipalRemaining
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
-
-    -- Update instalment status
-    IF totalAmountRemaining < 1 THEN
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE arch_new_loan_appstore
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE new_loan_appstore
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-
-            UPDATE new_loan_appstore1
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-        END IF;
-    ELSE
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET 
-                instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        END IF;
-    END IF;
-
-    SELECT InstalmentRemaining;
-
-    IF InstalmentRemaining<1 THEN
-
-    UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-    END IF;
-
-
-END //
-DELIMITER ;
-
-
-
--- DROP PROCEDURE IF EXISTS updateThePrincipalComponent;
--- DELIMITER //
--- CREATE PROCEDURE updateThePrincipalComponent(IN theRunningInstalmentId INT,IN currentPrincipalX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
--- BEGIN
-
--- DECLARE runningInstalmentId INT;
-
--- DECLARE totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid, totalPrincipalRemaining,amountPaid,amountRemaining,princimpalPaid,principalRemaining  DOUBLE;
--- SET  totalAmountPaid=NULL,totatAmountRemaianing=NULL,totalPrincipalPaid=NULL,totalPrincipalRemaining=NULL;
--- -- select theRunningInstalmentId,theLoanId,currentPrincipalX;
+DECLARE totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid, totalPrincipalRemaining,amountPaid,amountRemaining,princimpalPaid,principalRemaining  DOUBLE;
+SET  totalAmountPaid=NULL,totatAmountRemaianing=NULL,totalPrincipalPaid=NULL,totalPrincipalRemaining=NULL;
+-- select theRunningInstalmentId,theLoanId,currentPrincipalX;
 
 
  
--- SELECT instalment_paid, InstalmentRemaining,PrincipalPaid,PrincipalRemaining INTO  totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid,totalPrincipalRemaining FROM new_loan_appstoreamort  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+SELECT instalment_paid, InstalmentRemaining,PrincipalPaid,PrincipalRemaining INTO  totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid,totalPrincipalRemaining FROM new_loan_appstoreamort  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
--- SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,PrincipalPaid,PrincipalRemaining INTO @totalAmountPaid,@totatAmountRemaianing,@totalPrincipalPaid,@totalPrincipalRemaining FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
--- --  select  @dueDate;
---   PREPARE stmt2 FROM @dueDate;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
+SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,PrincipalPaid,PrincipalRemaining INTO @totalAmountPaid,@totatAmountRemaianing,@totalPrincipalPaid,@totalPrincipalRemaining FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
 
 
 
--- -- SELECT totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid,totalPrincipalRemaining;
+-- SELECT totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid,totalPrincipalRemaining;
 
---   SET totalAmountPaid=@totalAmountPaid+currentPrincipalX,
---   totatAmountRemaianing=@totatAmountRemaianing-currentPrincipalX,
---   totalPrincipalPaid=@totalPrincipalPaid+currentPrincipalX, totalPrincipalRemaining=@totalPrincipalRemaining-currentPrincipalX;
+  SET totalAmountPaid=@totalAmountPaid+currentPrincipalX,
+  totatAmountRemaianing=@totatAmountRemaianing-currentPrincipalX,
+  totalPrincipalPaid=@totalPrincipalPaid+currentPrincipalX, totalPrincipalRemaining=@totalPrincipalRemaining-currentPrincipalX;
 
--- -- SELECT totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid,totalPrincipalRemaining;
+-- SELECT totalAmountPaid,totatAmountRemaianing,totalPrincipalPaid,totalPrincipalRemaining;
 
--- UPDATE new_loan_appstoreamort SET  instalment_paid=totalAmountPaid, InstalmentRemaining=totatAmountRemaianing,PrincipalPaid=totalPrincipalPaid,PrincipalRemaining=totalPrincipalRemaining WHERE  instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+UPDATE new_loan_appstoreamort SET  instalment_paid=totalAmountPaid, InstalmentRemaining=totatAmountRemaianing,PrincipalPaid=totalPrincipalPaid,PrincipalRemaining=totalPrincipalRemaining WHERE  instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---         -- SELECT 'PRINCIPAL',amountRemaining; 
---     IF totatAmountRemaianing<1 THEN
+        -- SELECT 'PRINCIPAL',amountRemaining; 
+    IF totatAmountRemaianing<1 THEN
       
      
--- UPDATE  new_loan_appstoreamort  SET 
---   instalment_status='P',
---  instalment_paid_date=instalmentPaidDate,
---  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+UPDATE  new_loan_appstoreamort  SET 
+  instalment_status='P',
+ instalment_paid_date=instalmentPaidDate,
+ instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
  
---  UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
---  UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
---  ELSE
+ UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+ UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+ ELSE
 
--- UPDATE  new_loan_appstoreamort   SET 
---  instalment_status='PP',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+UPDATE  new_loan_appstoreamort   SET 
+ instalment_status='PP',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---  END IF;
+ END IF;
 
--- END//
+END//
 
---  DELIMITER ;
+ DELIMITER ;
+
+
 
 
 
 DROP PROCEDURE IF EXISTS updateThePenaltyComponent;
 DELIMITER //
-
-CREATE PROCEDURE updateThePenaltyComponent(
-    IN theRunningInstalmentId INT,
-    IN currentPenaltyX DOUBLE,
-    IN theLoanId INT,
-    IN instalmentPaidDate DATE
-) READS SQL DATA 
+CREATE PROCEDURE updateThePenaltyComponent(IN theRunningInstalmentId INT,IN currentPenaltyX DOUBLE,theLoanId INT,instalmentPaidDate DATE) READS SQL DATA 
 BEGIN
-    DECLARE amountPaid, amountRemaining, penaltyPaid, penaltyRemaining DOUBLE DEFAULT 0.0;
-    DECLARE isArchived BOOLEAN DEFAULT FALSE;
 
-    -- Determine if the loan is archived
-    SELECT COUNT(*) INTO isArchived
-    FROM arch_new_loan_appstoreamort 
-    WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+DECLARE runningInstalmentId INT;
 
-    -- Fetch data from the appropriate table
-    IF isArchived THEN
-        SELECT 
-            instalment_paid,
-            InstalmentRemaining,
-            LoanPenaltyPaid,
-            LoanPenaltyRemaining
-        INTO 
-            amountPaid,
-            amountRemaining,
-            penaltyPaid,
-            penaltyRemaining
-        FROM arch_new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        SELECT 
-            instalment_paid,
-            InstalmentRemaining,
-            LoanPenaltyPaid,
-            LoanPenaltyRemaining
-        INTO 
-            amountPaid,
-            amountRemaining,
-            penaltyPaid,
-            penaltyRemaining
-        FROM new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
-
-    -- Update penalty calculations
-    SET amountPaid = amountPaid + currentPenaltyX,
-        amountRemaining = amountRemaining - currentPenaltyX,
-        penaltyPaid = penaltyPaid + currentPenaltyX,
-        penaltyRemaining = penaltyRemaining - currentPenaltyX;
-
-    -- Update the appropriate amortization table
-    IF isArchived THEN
-        UPDATE arch_new_loan_appstoreamort
-        SET 
-            instalment_paid = amountPaid,
-            InstalmentRemaining = amountRemaining,
-            LoanPenaltyPaid = penaltyPaid,
-            LoanPenaltyRemaining = penaltyRemaining
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        UPDATE new_loan_appstoreamort
-        SET 
-            instalment_paid = amountPaid,
-            InstalmentRemaining = amountRemaining,
-            LoanPenaltyPaid = penaltyPaid,
-            LoanPenaltyRemaining = penaltyRemaining
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
-
-    -- Update instalment status
-    IF amountRemaining < 1 THEN
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE arch_new_loan_appstore
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE new_loan_appstore
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-
-            UPDATE new_loan_appstore1
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-        END IF;
-    ELSE
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET 
-                instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        END IF;
-    END IF;
-
-    
-    SELECT InstalmentRemaining;
-
-     IF InstalmentRemaining<1 THEN
-
-    UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-    END IF;
-
-END //
-DELIMITER ;
-
-
--- DROP PROCEDURE IF EXISTS updateThePenaltyComponent;
--- DELIMITER //
--- CREATE PROCEDURE updateThePenaltyComponent(IN theRunningInstalmentId INT,IN currentPenaltyX DOUBLE,theLoanId INT,instalmentPaidDate DATE) READS SQL DATA 
--- BEGIN
-
--- DECLARE runningInstalmentId INT;
-
--- DECLARE amountPaid,amountRemaining,penaltyPaid,penaltyRemaining  DOUBLE DEFAULT 0.0;
+DECLARE amountPaid,amountRemaining,penaltyPaid,penaltyRemaining  DOUBLE DEFAULT 0.0;
 
 
 
 
 
--- SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,LoanPenaltyPaid,LoanPenaltyRemaining INTO @amountPaid,@amountRemaining,@penaltyPaid,@penaltyRemaining FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
--- --  select  @dueDate;
---   PREPARE stmt2 FROM @dueDate;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
+SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,LoanPenaltyPaid,LoanPenaltyRemaining INTO @amountPaid,@amountRemaining,@penaltyPaid,@penaltyRemaining FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
 
--- -- SELECT 
--- -- instalment_paid,
---   -- InstalmentRemaining,
--- --  LoanPenaltyPaid,
--- -- LoanPenaltyRemaining INTO amountPaid,amountRemaining,penaltyPaid,penaltyRemaining FROM  new_loan_appstoreamort  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
-
-
-
---   SET amountPaid=@amountPaid+currentPenaltyX,
---   amountRemaining=@amountRemaining-currentPenaltyX,
---   penaltyPaid=@penaltyPaid+currentPenaltyX,penaltyRemaining=@penaltyRemaining-currentPenaltyX;
+-- SELECT 
+-- instalment_paid,
+  -- InstalmentRemaining,
+--  LoanPenaltyPaid,
+-- LoanPenaltyRemaining INTO amountPaid,amountRemaining,penaltyPaid,penaltyRemaining FROM  new_loan_appstoreamort  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
 
--- UPDATE new_loan_appstoreamort   SET 
---   instalment_paid=amountPaid,
---  InstalmentRemaining=amountRemaining,
---  LoanPenaltyPaid=penaltyPaid,
--- LoanPenaltyRemaining=  penaltyRemaining  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---       -- SELECT 'PENALTY',amountRemaining; 
---     IF amountRemaining<1 THEN  
--- UPDATE new_loan_appstoreamort   SET 
---   instalment_status='P',
---    instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date,instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
---  UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
---  UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
-
---  ELSE
-
--- UPDATE  new_loan_appstoreamort   SET 
---  instalment_status='PP',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
-
---  END IF;
+  SET amountPaid=@amountPaid+currentPenaltyX,
+  amountRemaining=@amountRemaining-currentPenaltyX,
+  penaltyPaid=@penaltyPaid+currentPenaltyX,penaltyRemaining=@penaltyRemaining-currentPenaltyX;
 
 
--- END//
+UPDATE new_loan_appstoreamort   SET 
+  instalment_paid=amountPaid,
+ InstalmentRemaining=amountRemaining,
+ LoanPenaltyPaid=penaltyPaid,
+LoanPenaltyRemaining=  penaltyRemaining  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---  DELIMITER ;
+      -- SELECT 'PENALTY',amountRemaining; 
+    IF amountRemaining<1 THEN  
+UPDATE new_loan_appstoreamort   SET 
+  instalment_status='P',
+   instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date,instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+ UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+ UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
 
+ ELSE
+
+UPDATE  new_loan_appstoreamort   SET 
+ instalment_status='PP',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+
+ END IF;
+
+
+END//
+
+ DELIMITER ;
 
 
 
 DROP PROCEDURE IF EXISTS updateTheAccumulatedInterestComponentSpecial;
 DELIMITER //
-
-CREATE PROCEDURE updateTheAccumulatedInterestComponentSpecial(
-    IN theRunningInstalmentId INT,
-    IN currentAccumulatedInterestX DOUBLE,
-    IN theLoanId INT,
-    IN instalmentPaidDate DATE
-) READS SQL DATA 
+CREATE PROCEDURE updateTheAccumulatedInterestComponentSpecial(IN theRunningInstalmentId INT,IN currentAccumulatedInterestX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
 BEGIN
-    DECLARE runningInstalmentId, thId INT;
-    DECLARE amountPaid, amountRemaining, AccumulatedInterestPaidX, AccumulatedInterestRemainingX DOUBLE DEFAULT 0.0;
-    DECLARE isArchived BOOLEAN DEFAULT FALSE;
 
-    -- Determine if the loan is archived
-    SELECT COUNT(*) INTO isArchived
-    FROM arch_new_loan_appstoreamort 
-    WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+DECLARE runningInstalmentId,thId INT;
 
-    -- Fetch data from the appropriate table
-    IF isArchived THEN
-        SELECT 
-            instalment_paid,
-            InstalmentRemaining,
-            AccumulatedInterestPaid,
-            AccumulatedInterestRemaining
-        INTO 
-            amountPaid,
-            amountRemaining,
-            AccumulatedInterestPaidX,
-            AccumulatedInterestRemainingX
-        FROM arch_new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        SELECT 
-            instalment_paid,
-            InstalmentRemaining,
-            AccumulatedInterestPaid,
-            AccumulatedInterestRemaining
-        INTO 
-            amountPaid,
-            amountRemaining,
-            AccumulatedInterestPaidX,
-            AccumulatedInterestRemainingX
-        FROM new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
+DECLARE amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX  DOUBLE DEFAULT 0.0;
 
-    -- Update accumulated interest calculations
-    SET amountPaid = amountPaid + currentAccumulatedInterestX,
-        AccumulatedInterestPaidX = AccumulatedInterestPaidX + currentAccumulatedInterestX;
+-- SELECT 
+--  instalment_paid,
+--  InstalmentRemaining,
+--  AccumulatedInterestPaid,
+--   AccumulatedInterestRemaining INTO  amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX FROM new_loan_appstoreamort WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
-    -- Update the appropriate amortization table
-    IF isArchived THEN
-        UPDATE arch_new_loan_appstoreamort
-        SET 
-            instalment_paid = amountPaid,
-            AccumulatedInterestPaid = AccumulatedInterestPaidX
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        UPDATE new_loan_appstoreamort
-        SET 
-            instalment_paid = amountPaid,
-            AccumulatedInterestPaid = AccumulatedInterestPaidX
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
-
-    -- Update the appropriate master table
-    IF isArchived THEN
-        UPDATE arch_new_loan_appstore
-        SET 
-            instalments_paid = instalments_paid + currentAccumulatedInterestX,
-            TotalAccruedInterestPaid = TotalAccruedInterestPaid + currentAccumulatedInterestX,
-            balance_due = 0.0
-        WHERE trn_id = theLoanId;
-    ELSE
-        UPDATE new_loan_appstore
-        SET 
-            instalments_paid = instalments_paid + currentAccumulatedInterestX,
-            TotalAccruedInterestPaid = TotalAccruedInterestPaid + currentAccumulatedInterestX,
-            balance_due = 0.0
-        WHERE trn_id = theLoanId;
-    END IF;
-
-    -- Update `loandisburserepaystatement`
-    SELECT AccumulatedInterestPaid, TrnId INTO @totalInstalPaid, thId
-    FROM pmms.loandisburserepaystatement
-    WHERE loanTrnId = theLoanId
-    ORDER BY TrnId DESC
-    LIMIT 1;
-
-    SET @totalInstalPaid = @totalInstalPaid + currentAccumulatedInterestX;
-
-    UPDATE pmms.loandisburserepaystatement
-    SET 
-        AccumulatedInterestPaid = @totalInstalPaid,
-        LoanBalance = 0.0
-    WHERE TrnId = thId;
-
-    -- Update instalment status
-    IF amountRemaining < 1 THEN
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE arch_new_loan_appstore
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE new_loan_appstore
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-
-            UPDATE new_loan_appstore1
-            SET remaining_instalments = remaining_instalments - 1
-            WHERE trn_id = theLoanId;
-        END IF;
-    ELSE
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET 
-                instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        END IF;
-    END IF;
+  SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,AccumulatedInterestPaid,AccumulatedInterestRemaining INTO @amountPaid,@amountRemaining,@AccumulatedInterestPaidX,@AccumulatedInterestRemainingX FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
 
 
-    SELECT InstalmentRemaining;
-     IF InstalmentRemaining<1 THEN
+  SET amountPaid=@amountPaid+currentAccumulatedInterestX,
+  -- amountRemaining=@amountRemaining-currentAccumulatedInterestX,
+  AccumulatedInterestPaidX=@AccumulatedInterestPaidX+currentAccumulatedInterestX;
 
-    UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-    END IF;
-
-END //
-DELIMITER ;
+  -- AccumulatedInterestRemainingX=@AccumulatedInterestRemainingX-currentAccumulatedInterestX;
 
 
--- DROP PROCEDURE IF EXISTS updateTheAccumulatedInterestComponentSpecial;
--- DELIMITER //
--- CREATE PROCEDURE updateTheAccumulatedInterestComponentSpecial(IN theRunningInstalmentId INT,IN currentAccumulatedInterestX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
--- BEGIN
-
--- DECLARE runningInstalmentId,thId INT;
-
--- DECLARE amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX  DOUBLE DEFAULT 0.0;
-
--- -- SELECT 
--- --  instalment_paid,
--- --  InstalmentRemaining,
--- --  AccumulatedInterestPaid,
--- --   AccumulatedInterestRemaining INTO  amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX FROM new_loan_appstoreamort WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
-
---   SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,AccumulatedInterestPaid,AccumulatedInterestRemaining INTO @amountPaid,@amountRemaining,@AccumulatedInterestPaidX,@AccumulatedInterestRemainingX FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
--- --  select  @dueDate;
---   PREPARE stmt2 FROM @dueDate;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
-
-
---   SET amountPaid=@amountPaid+currentAccumulatedInterestX,
---   -- amountRemaining=@amountRemaining-currentAccumulatedInterestX,
---   AccumulatedInterestPaidX=@AccumulatedInterestPaidX+currentAccumulatedInterestX;
-
---   -- AccumulatedInterestRemainingX=@AccumulatedInterestRemainingX-currentAccumulatedInterestX;
-
-
--- UPDATE   new_loan_appstoreamort   SET 
---   instalment_paid=amountPaid,
---   -- InstalmentRemaining=amountRemaining,
---   AccumulatedInterestPaid=AccumulatedInterestPaidX
---   -- AccumulatedInterestRemaining=AccumulatedInterestRemainingX   
+UPDATE   new_loan_appstoreamort   SET 
+  instalment_paid=amountPaid,
+  -- InstalmentRemaining=amountRemaining,
+  AccumulatedInterestPaid=AccumulatedInterestPaidX
+  -- AccumulatedInterestRemaining=AccumulatedInterestRemainingX   
   
---   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
 
 
   
--- SELECT instalments_paid, TotalAccruedInterestPaid INTO @totalInstalPaid,@totaAccumuPaid FROM new_loan_appstore WHERE trn_id=theLoanId;
+SELECT instalments_paid, TotalAccruedInterestPaid INTO @totalInstalPaid,@totaAccumuPaid FROM new_loan_appstore WHERE trn_id=theLoanId;
 
--- SET @totalInstalPaid=@totalInstalPaid+currentAccumulatedInterestX,@totaAccumuPaid=@totaAccumuPaid+currentAccumulatedInterestX;
-
-      
--- UPDATE new_loan_appstore SET instalments_paid=@totalInstalPaid, TotalAccruedInterestPaid=@totaAccumuPaid, balance_due=0.0 WHERE  trn_id=theLoanId;
-
-
--- SELECT AccumulatedInterestPaid,TrnId INTO @totalInstalPaid,thId FROM pmms.loandisburserepaystatement WHERE loanTrnId=theLoanId ORDER BY TrnId DESC LIMIT 1;
-
--- SET @totalInstalPaid=@totalInstalPaid+currentAccumulatedInterestX;
+SET @totalInstalPaid=@totalInstalPaid+currentAccumulatedInterestX,@totaAccumuPaid=@totaAccumuPaid+currentAccumulatedInterestX;
 
       
--- UPDATE pmms.loandisburserepaystatement SET AccumulatedInterestPaid=@totalInstalPaid, LoanBalance=0.0 WHERE  TrnId=thId;
+UPDATE new_loan_appstore SET instalments_paid=@totalInstalPaid, TotalAccruedInterestPaid=@totaAccumuPaid, balance_due=0.0 WHERE  trn_id=theLoanId;
 
 
---     IF amountRemaining<1 THEN
+SELECT AccumulatedInterestPaid,TrnId INTO @totalInstalPaid,thId FROM pmms.loandisburserepaystatement WHERE loanTrnId=theLoanId ORDER BY TrnId DESC LIMIT 1;
+
+SET @totalInstalPaid=@totalInstalPaid+currentAccumulatedInterestX;
+
+      
+UPDATE pmms.loandisburserepaystatement SET AccumulatedInterestPaid=@totalInstalPaid, LoanBalance=0.0 WHERE  TrnId=thId;
+
+
+    IF amountRemaining<1 THEN
       
      
--- UPDATE  new_loan_appstoreamort     SET 
---   instalment_status='P',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
---  UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
---  UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+UPDATE  new_loan_appstoreamort     SET 
+  instalment_status='P',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+ UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+ UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
 
---  ELSE
+ ELSE
 
--- UPDATE  new_loan_appstoreamort   SET 
---  instalment_status='PP',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+UPDATE  new_loan_appstoreamort   SET 
+ instalment_status='PP',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---  END IF;
+ END IF;
 
 
 
--- END//
+END//
 
---  DELIMITER ;
+ DELIMITER ;
 
    
---    DROP PROCEDURE IF EXISTS updateTheAccumulatedInterestComponent;
--- DELIMITER //
-
--- CREATE PROCEDURE updateTheAccumulatedInterestComponent(
---     IN theRunningInstalmentId INT,
---     IN currentAccumulatedInterestX DOUBLE,
---     IN theLoanId INT,
---     IN instalmentPaidDate DATE
--- ) READS SQL DATA 
--- BEGIN
---     DECLARE amountPaid, amountRemaining, AccumulatedInterestPaidX, AccumulatedInterestRemainingX DOUBLE DEFAULT 0.0;
---     DECLARE isArchived BOOLEAN DEFAULT FALSE;
-
---     -- Determine if the loan is archived
---     SELECT COUNT(*) INTO isArchived
---     FROM arch_new_loan_appstoreamort 
---     WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
---     -- Fetch data from the appropriate table
---     IF isArchived THEN
---         SELECT 
---             instalment_paid, 
---             InstalmentRemaining, 
---             AccumulatedInterestPaid, 
---             AccumulatedInterestRemaining
---         INTO 
---             amountPaid, 
---             amountRemaining, 
---             AccumulatedInterestPaidX, 
---             AccumulatedInterestRemainingX
---         FROM arch_new_loan_appstoreamort
---         WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
---     ELSE
---         SELECT 
---             instalment_paid, 
---             InstalmentRemaining, 
---             AccumulatedInterestPaid, 
---             AccumulatedInterestRemaining
---         INTO 
---             amountPaid, 
---             amountRemaining, 
---             AccumulatedInterestPaidX, 
---             AccumulatedInterestRemainingX
---         FROM new_loan_appstoreamort
---         WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
---     END IF;
-
---     -- Update accumulated interest calculations
---     SET amountPaid = amountPaid + currentAccumulatedInterestX,
---         amountRemaining = amountRemaining - currentAccumulatedInterestX,
---         AccumulatedInterestPaidX = AccumulatedInterestPaidX + currentAccumulatedInterestX,
---         AccumulatedInterestRemainingX = AccumulatedInterestRemainingX - currentAccumulatedInterestX;
-
---     -- Update the appropriate table
---     IF isArchived THEN
---         UPDATE arch_new_loan_appstoreamort
---         SET 
---             instalment_paid = amountPaid,
---             InstalmentRemaining = amountRemaining,
---             AccumulatedInterestPaid = AccumulatedInterestPaidX,
---             AccumulatedInterestRemaining = AccumulatedInterestRemainingX
---         WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
---     ELSE
---         UPDATE new_loan_appstoreamort
---         SET 
---             instalment_paid = amountPaid,
---             InstalmentRemaining = amountRemaining,
---             AccumulatedInterestPaid = AccumulatedInterestPaidX,
---             AccumulatedInterestRemaining = AccumulatedInterestRemainingX
---         WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
---     END IF;
-
---     -- Update instalment status and remaining instalments
---     IF amountRemaining < 1 THEN
---         IF isArchived THEN
---             UPDATE arch_new_loan_appstoreamort
---             SET 
---                 instalment_status = 'P',
---                 instalment_paid_date = instalmentPaidDate,
---                 instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
---             WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
---             UPDATE arch_new_loan_appstore
---             SET remaining_instalments = remaining_instalments - 1
---             WHERE trn_id = theLoanId;
---         ELSE
---             UPDATE new_loan_appstoreamort
---             SET 
---                 instalment_status = 'P',
---                 instalment_paid_date = instalmentPaidDate,
---                 instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
---             WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
---             UPDATE new_loan_appstore
---             SET remaining_instalments = remaining_instalments - 1
---             WHERE trn_id = theLoanId;
-
---             UPDATE new_loan_appstore1
---             SET remaining_instalments = remaining_instalments - 1
---             WHERE trn_id = theLoanId;
---         END IF;
---     ELSE
---         IF isArchived THEN
---             UPDATE arch_new_loan_appstoreamort
---             SET 
---                 instalment_status = 'PP',
---                 instalment_paid_date = instalmentPaidDate,
---                 instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
---             WHERE instalment_no = theRunningInstalmentI
+   
 
 
+DROP PROCEDURE IF EXISTS updateTheAccumulatedInterestComponent;
+DELIMITER //
+CREATE PROCEDURE updateTheAccumulatedInterestComponent(IN theRunningInstalmentId INT,IN currentAccumulatedInterestX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
+BEGIN
 
--- DROP PROCEDURE IF EXISTS updateTheAccumulatedInterestComponent;
--- DELIMITER //
--- CREATE PROCEDURE updateTheAccumulatedInterestComponent(IN theRunningInstalmentId INT,IN currentAccumulatedInterestX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
--- BEGIN
+DECLARE runningInstalmentId INT;
 
--- DECLARE runningInstalmentId INT;
+DECLARE amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX  DOUBLE DEFAULT 0.0;
 
--- DECLARE amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX  DOUBLE DEFAULT 0.0;
+-- SELECT 
+--  instalment_paid,
+--  InstalmentRemaining,
+--  AccumulatedInterestPaid,
+--   AccumulatedInterestRemaining INTO  amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX FROM new_loan_appstoreamort WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
--- -- SELECT 
--- --  instalment_paid,
--- --  InstalmentRemaining,
--- --  AccumulatedInterestPaid,
--- --   AccumulatedInterestRemaining INTO  amountPaid,amountRemaining,AccumulatedInterestPaidX,AccumulatedInterestRemainingX FROM new_loan_appstoreamort WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
-
---   SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,AccumulatedInterestPaid,AccumulatedInterestRemaining INTO @amountPaid,@amountRemaining,@AccumulatedInterestPaidX,@AccumulatedInterestRemainingX FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
--- --  select  @dueDate;
---   PREPARE stmt2 FROM @dueDate;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
-
-
---   SET amountPaid=@amountPaid+currentAccumulatedInterestX,
---   amountRemaining=@amountRemaining-currentAccumulatedInterestX,
---   AccumulatedInterestPaidX=@AccumulatedInterestPaidX+currentAccumulatedInterestX,AccumulatedInterestRemainingX=@AccumulatedInterestRemainingX-currentAccumulatedInterestX;
+  SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,AccumulatedInterestPaid,AccumulatedInterestRemaining INTO @amountPaid,@amountRemaining,@AccumulatedInterestPaidX,@AccumulatedInterestRemainingX FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
 
 
--- UPDATE   new_loan_appstoreamort   SET 
---   instalment_paid=amountPaid,
---   InstalmentRemaining=amountRemaining,
---   AccumulatedInterestPaid=AccumulatedInterestPaidX,
---   AccumulatedInterestRemaining=AccumulatedInterestRemainingX   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+  SET amountPaid=@amountPaid+currentAccumulatedInterestX,
+  amountRemaining=@amountRemaining-currentAccumulatedInterestX,
+  AccumulatedInterestPaidX=@AccumulatedInterestPaidX+currentAccumulatedInterestX,AccumulatedInterestRemainingX=@AccumulatedInterestRemainingX-currentAccumulatedInterestX;
 
---     IF amountRemaining<1 THEN
+
+UPDATE   new_loan_appstoreamort   SET 
+  instalment_paid=amountPaid,
+  InstalmentRemaining=amountRemaining,
+  AccumulatedInterestPaid=AccumulatedInterestPaidX,
+  AccumulatedInterestRemaining=AccumulatedInterestRemainingX   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+
+    IF amountRemaining<1 THEN
      
--- UPDATE  new_loan_appstoreamort     SET 
---   instalment_status='P',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
---  UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
---  UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+UPDATE  new_loan_appstoreamort     SET 
+  instalment_status='P',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+ UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+ UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
 
   
---  ELSE
+ ELSE
 
--- UPDATE  new_loan_appstoreamort   SET 
---  instalment_status='PP',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+UPDATE  new_loan_appstoreamort   SET 
+ instalment_status='PP',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---  END IF;
+ END IF;
 
 
 
--- END//
+END//
 
---  DELIMITER ;
+ DELIMITER ;
+
+
+
 
 
 
 DROP PROCEDURE IF EXISTS updateTheInterestComponent;
 DELIMITER //
-
-CREATE PROCEDURE updateTheInterestComponent(
-    IN theRunningInstalmentId INT,
-    IN currentInterestX DOUBLE,
-    IN theLoanId INT,
-    IN instalmentPaidDate DATE
-) READS SQL DATA 
+CREATE PROCEDURE updateTheInterestComponent(IN theRunningInstalmentId INT,IN currentInterestX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
 BEGIN
-    DECLARE amountPaid, amountRemaining, InterestPaid, InterestRemaining DOUBLE DEFAULT 0.0;
-    DECLARE isArchived BOOLEAN DEFAULT FALSE;
 
-    -- Determine if the loan is archived
-    SELECT COUNT(*) INTO isArchived
-    FROM arch_new_loan_appstoreamort 
-    WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
+DECLARE runningInstalmentId INT;
 
-    -- Fetch data from the appropriate table
-    IF isArchived THEN
-        SELECT instalment_paid, InstalmentRemaining, InterestPaid, InterestRemaing
-        INTO amountPaid, amountRemaining, InterestPaid, InterestRemaining
-        FROM arch_new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        SELECT instalment_paid, InstalmentRemaining, InterestPaid, InterestRemaing
-        INTO amountPaid, amountRemaining, InterestPaid, InterestRemaining
-        FROM new_loan_appstoreamort
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
+DECLARE amountPaid,amountRemaining,InterestPaid,InterestRemaining  DOUBLE DEFAULT 0.0;
+-- SELECT theRunningInstalmentId,theLoanId,currentInterestX,instalmentPaidDate;
 
-    -- Update interest calculations
-    SET amountPaid = amountPaid + currentInterestX,
-        amountRemaining = amountRemaining - currentInterestX,
-        InterestPaid = InterestPaid + currentInterestX,
-        InterestRemaining = InterestRemaining - currentInterestX;
-
-    -- Update the respective table
-    IF isArchived THEN
-        UPDATE arch_new_loan_appstoreamort
-        SET instalment_paid = amountPaid,
-            InstalmentRemaining = amountRemaining,
-            InterestPaid = InterestPaid,
-            InterestRemaing = InterestRemaining
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    ELSE
-        UPDATE new_loan_appstoreamort
-        SET instalment_paid = amountPaid,
-            InstalmentRemaining = amountRemaining,
-            InterestPaid = InterestPaid,
-            InterestRemaing = InterestRemaining
-        WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-    END IF;
-
-    -- Update instalment status
-    IF amountRemaining < 1 THEN
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE arch_new_loan_appstore
-            SET remaining_instalments = (remaining_instalments - 1)
-            WHERE trn_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-            UPDATE new_loan_appstore
-            SET remaining_instalments = (remaining_instalments - 1)
-            WHERE trn_id = theLoanId;
-            UPDATE new_loan_appstore1
-            SET remaining_instalments = (remaining_instalments - 1)
-            WHERE trn_id = theLoanId;
-        END IF;
-    ELSE
-        IF isArchived THEN
-            UPDATE arch_new_loan_appstoreamort
-            SET instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        ELSE
-            UPDATE new_loan_appstoreamort
-            SET instalment_status = 'PP',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-        END IF;
-    END IF;
-
-
-
-    SELECT InstalmentRemaining;
-     IF InstalmentRemaining<1 THEN
-
-    UPDATE new_loan_appstoreamort
-            SET 
-                instalment_status = 'P',
-                instalment_paid_date = instalmentPaidDate,
-                instalment_paid_variance = DATEDIFF(instalment_due_date, instalment_paid_date)
-            WHERE instalment_no = theRunningInstalmentId AND master1_id = theLoanId;
-
-    END IF;
-
-    -- Call additional procedure
-    CALL DateManagementForLenders(currentInterestX, theLoanId);
-
-END //
-DELIMITER ;
-
-
-
--- DROP PROCEDURE IF EXISTS updateTheInterestComponent;
--- DELIMITER //
--- CREATE PROCEDURE updateTheInterestComponent(IN theRunningInstalmentId INT,IN currentInterestX DOUBLE,theLoanId INT,IN instalmentPaidDate DATE) READS SQL DATA 
--- BEGIN
-
--- DECLARE runningInstalmentId INT;
-
--- DECLARE amountPaid,amountRemaining,InterestPaid,InterestRemaining  DOUBLE DEFAULT 0.0;
--- -- SELECT theRunningInstalmentId,theLoanId,currentInterestX,instalmentPaidDate;
-
--- SELECT instalment_paid,InstalmentRemaining,InterestPaid,InterestRemaing INTO  amountPaid,amountRemaining,InterestPaid,InterestRemaining FROM  new_loan_appstoreamort  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+SELECT instalment_paid,InstalmentRemaining,InterestPaid,InterestRemaing INTO  amountPaid,amountRemaining,InterestPaid,InterestRemaining FROM  new_loan_appstoreamort  WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
     
--- -- SELECT  amountPaid,amountRemaining,InterestPaid,InterestRemaining;
+-- SELECT  amountPaid,amountRemaining,InterestPaid,InterestRemaining;
     
---   SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,InterestPaid,InterestRemaing,master2_id INTO @amountPaid,@amountRemaining,@InterestPaid,@InterestRemaining,@theLoanId FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
--- --  select  @dueDate;
---   PREPARE stmt2 FROM @dueDate;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
+  SET @dueDate = concat(CAST("SELECT instalment_paid, InstalmentRemaining,InterestPaid,InterestRemaing,master2_id INTO @amountPaid,@amountRemaining,@InterestPaid,@InterestRemaining,@theLoanId FROM new_loan_appstoreamort  WHERE instalment_no=" AS CHAR CHARACTER SET utf8),theRunningInstalmentId, CAST(" AND master1_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+--  select  @dueDate;
+  PREPARE stmt2 FROM @dueDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
 
--- -- SELECT amountPaid,amountRemaining,InterestPaid,InterestRemaining;
+-- SELECT amountPaid,amountRemaining,InterestPaid,InterestRemaining;
 
---   SET amountPaid=@amountPaid+currentInterestX,
---   amountRemaining=@amountRemaining-currentInterestX,
---   InterestPaid=@InterestPaid+currentInterestX,
---   InterestRemaining=@InterestRemaining-currentInterestX;
+  SET amountPaid=@amountPaid+currentInterestX,
+  amountRemaining=@amountRemaining-currentInterestX,
+  InterestPaid=@InterestPaid+currentInterestX,
+  InterestRemaining=@InterestRemaining-currentInterestX;
 
--- --  SELECT 'iNTEREST',amountRemaining,theLoanId,amountPaid,amountRemaining,InterestPaid,InterestRemaining,theRunningInstalmentId,theLoanId;
--- UPDATE  new_loan_appstoreamort    SET 
---   instalment_paid=amountPaid,
---   InstalmentRemaining=amountRemaining,
---   InterestPaid=InterestPaid,
---   InterestRemaing=InterestRemaining   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
--- -- SELECT @theLoanId;
+--  SELECT 'iNTEREST',amountRemaining,theLoanId,amountPaid,amountRemaining,InterestPaid,InterestRemaining,theRunningInstalmentId,theLoanId;
+UPDATE  new_loan_appstoreamort    SET 
+  instalment_paid=amountPaid,
+  InstalmentRemaining=amountRemaining,
+  InterestPaid=InterestPaid,
+  InterestRemaing=InterestRemaining   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+-- SELECT @theLoanId;
 
--- CALL DateManagementForLenders(currentInterestX,@theLoanId);
+CALL DateManagementForLenders(currentInterestX,@theLoanId);
 
---     -- SELECT 'iNTEREST',amountRemaining,theLoanId;
---     IF amountRemaining<1 THEN
+    -- SELECT 'iNTEREST',amountRemaining,theLoanId;
+    IF amountRemaining<1 THEN
       
      
--- UPDATE  new_loan_appstoreamort   SET 
---  instalment_status='P',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
---  UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
---  UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+UPDATE  new_loan_appstoreamort   SET 
+ instalment_status='P',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+ UPDATE new_loan_appstore SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
+ UPDATE new_loan_appstore1 SET remaining_instalments=(remaining_instalments-1) WHERE trn_id=theLoanId;
 
---  ELSE
+ ELSE
 
--- UPDATE  new_loan_appstoreamort   SET 
---  instalment_status='PP',
---   instalment_paid_date=instalmentPaidDate,
---   instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
+UPDATE  new_loan_appstoreamort   SET 
+ instalment_status='PP',
+  instalment_paid_date=instalmentPaidDate,
+  instalment_paid_variance=DATEDIFF(instalment_due_date, instalment_paid_date)   WHERE instalment_no=theRunningInstalmentId AND master1_id=theLoanId;
 
---  END IF;
+ END IF;
 
--- -- SELECT 'iNSIDE IT';
+-- SELECT 'iNSIDE IT';
 
--- END//
+END//
 
---  DELIMITER ;
+ DELIMITER ;
+
+
 
 
 
@@ -5363,7 +4703,8 @@ DEFAULT CHARACTER SET = utf8;
 -- INSERT INTO oneTimeUpdate VALUES(1);
 
 
-
+-- 1	LoanPyt	P&I	05502003910	01128000110	ASASIRA MICHEAL 0700802107's Loan Payment	4,000	0	0	09/04/2025
+-- 2	Savings	P&I	01123000110	05502001810	MUKIMBIRI GODFREY's Savings	10,000	0	0	0
 
 
 DROP PROCEDURE IF EXISTS grossLoanPortfolio;
@@ -19714,13 +19055,137 @@ END$$
 DELIMITER ;
 
 
+-- DROP PROCEDURE IF EXISTS agingAnalysisSimple;
+
+-- DELIMITER ##
+
+-- CREATE PROCEDURE agingAnalysisSimple()
+-- BEGIN
+--     DECLARE l_done INT;
+--     DECLARE TrnId INT;
+--     DECLARE LoanId VARCHAR(20);
+--     DECLARE customerName VARCHAR(60);
+--     DECLARE customerContactNumber VARCHAR(60);
+--     DECLARE theLoanStatus VARCHAR(20);
+--     DECLARE gaurantorName1 VARCHAR(100);
+--     DECLARE gaurantorContact1 VARCHAR(100);
+--     DECLARE gaurantorName2 VARCHAR(100);
+--     DECLARE gaurantorContact2 VARCHAR(100);
+--     DECLARE remainport DOUBLE;
+--     DECLARE princeremain DOUBLE;
+--     DECLARE interestRem DOUBLE;
+--     DECLARE p_remain,loanTaken,totalRem,amount_arrears,P,I DOUBLE;
+--     DECLARE i_remain DOUBLE;
+--     DECLARE arrears INT;
+--     DECLARE TrnDate DATE;
+
+--     -- Cursor for loan IDs with status 'Disbursed' or 'Renewed'
+--     DECLARE forSelectingLoanIds CURSOR FOR
+--         SELECT DISTINCT trn_id
+--         FROM new_loan_appstore
+--         WHERE loan_cycle_status IN ('Disbursed', 'Renewed');
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
+
+--     -- Temporary table for aging analysis
+--     DROP TABLE IF EXISTS aging_loan_analysis;
+--     CREATE TEMPORARY TABLE aging_loan_analysis (
+--         id INT NOT NULL AUTO_INCREMENT,
+--         trn_id INT,
+--         loan_id VARCHAR(20),
+--         customer_name VARCHAR(60),
+--         customer_contact VARCHAR(60),
+--         gaurantor1_name VARCHAR(100),
+--         gaurantor1_contact VARCHAR(100),
+--         gaurantor2_name VARCHAR(100),
+--         gaurantor2_contact VARCHAR(100),
+--         date_taken DATE,
+--         due_date DATE,
+--         loan_taken DOUBLE,
+--         principal_remaining DOUBLE,
+--         interest_remaining DOUBLE,
+--         total_remaining DOUBLE,
+--         total_inarrears DOUBLE,
+--         number_of_days_in_arrears INT,
+--         loan_status VARCHAR(20),
+--         PRIMARY KEY (id)
+--     ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+--     -- Open cursor and start loop
+--     OPEN forSelectingLoanIds;
+--     accounts_loop: LOOP
+--         FETCH forSelectingLoanIds INTO TrnId;
+--         IF l_done THEN
+--             LEAVE accounts_loop;
+--         END IF;
+
+--         -- Reset variables for each loan
+--         SET customerName = NULL, customerContactNumber = NULL, theLoanStatus = NULL;
+--         SET gaurantorName1 = NULL, gaurantorContact1 = NULL, gaurantorName2 = NULL, gaurantorContact2 = NULL;
+--         SET remainport = 0, princeremain = 0, interestRem = 0, p_remain = 0, i_remain = 0, arrears = 0;
+
+--         -- Fetch main loan details
+--         SELECT pl.loan_id, applicant_account_name, m.mobile1, pl.trn_date,
+--                pl.princimpal_amount, pl.TotalPrincipalRemaining, pl.TotalInterestRemaining,
+--               pl.balance_due, pl.loan_cycle_status
+--         INTO LoanId, customerName, customerContactNumber, TrnDate, loanTaken,
+--              princeremain, interestRem, totalRem, theLoanStatus
+--         FROM pmms.master m
+--         INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number = m.account_number
+--         WHERE pl.trn_id = TrnId;
+
+--         -- Calculate remaining amounts and arrears
+--         SELECT SUM(PrincipalRemaining) ,SUM(InterestRemaing),(SUM(PrincipalRemaining) + SUM(InterestRemaing)), numberOfDayInArrears(LoanId)
+--         INTO P,I, amount_arrears, arrears
+--         FROM new_loan_appstoreamort
+--         WHERE master1_id = TrnId AND instalment_due_date <= DATE(NOW()) AND NOT instalment_status = 'P';
+-- /* SELECT P,I,  amount_arrears; */
+--         -- Fetch guarantors
+--         SELECT gaurantorsName, gaurantorsContact1 INTO gaurantorName1, gaurantorContact1
+--         FROM gaurantors
+--         WHERE loanTrnId = LoanId
+--         ORDER BY id ASC
+--         LIMIT 1;
+
+--         SELECT gaurantorsName, gaurantorsContact1 INTO gaurantorName2, gaurantorContact2
+--         FROM gaurantors
+--         WHERE loanTrnId = LoanId
+--         ORDER BY id DESC
+--         LIMIT 1;
+
+--         -- Insert data into consolidated table
+--         INSERT INTO aging_loan_analysis (
+--             trn_id,loan_id, customer_name, customer_contact, gaurantor1_name, gaurantor1_contact, 
+--             gaurantor2_name, gaurantor2_contact, date_taken, due_date, loan_taken, 
+--             principal_remaining, interest_remaining,total_remaining,total_inarrears,number_of_days_in_arrears, loan_status
+--         )
+--         VALUES (
+--             TrnId,LoanId, customerName, customerContactNumber, gaurantorName1, gaurantorContact1,
+--             gaurantorName2, gaurantorContact2, TrnDate, DATE_ADD(TrnDate, INTERVAL 30 DAY),
+--             loanTaken, princeremain, interestRem, totalRem, amount_arrears, arrears, theLoanStatus
+--         );
+
+--         SET l_done = 0;
+--     END LOOP;
+
+--     CLOSE forSelectingLoanIds;
+
+--     -- Select data categorized by aging period
+--     SELECT * FROM aging_loan_analysis ORDER BY loan_status, number_of_days_in_arrears;
+
+-- END ##
+
+-- -- 17/03/2025	17/03/2025	Twesiime Paul cleared with 12.3 Processed on 17/03/2025
+-- --   From Cash At Hand	-	2700000.0	Cash At Hand
+
+-- DELIMITER ;
+
 DROP PROCEDURE IF EXISTS agingAnalysisSimple;
 
 DELIMITER ##
 
 CREATE PROCEDURE agingAnalysisSimple()
 BEGIN
-    DECLARE l_done INT;
+    DECLARE l_done INT DEFAULT 0;
     DECLARE TrnId INT;
     DECLARE LoanId VARCHAR(20);
     DECLARE customerName VARCHAR(60);
@@ -19733,10 +19198,18 @@ BEGIN
     DECLARE remainport DOUBLE;
     DECLARE princeremain DOUBLE;
     DECLARE interestRem DOUBLE;
-    DECLARE p_remain,loanTaken,totalRem,amount_arrears,P,I DOUBLE;
+    DECLARE p_remain DOUBLE;
+    DECLARE loanTaken DOUBLE;
+    DECLARE totalRem DOUBLE;
+    DECLARE amount_arrears DOUBLE;
+    DECLARE P DOUBLE;
+    DECLARE I DOUBLE;
     DECLARE i_remain DOUBLE;
     DECLARE arrears INT;
     DECLARE TrnDate DATE;
+    DECLARE userId VARCHAR(50);
+    DECLARE comp_name VARCHAR(100);
+    DECLARE branch_name VARCHAR(100);
 
     -- Cursor for loan IDs with status 'Disbursed' or 'Renewed'
     DECLARE forSelectingLoanIds CURSOR FOR
@@ -19745,7 +19218,7 @@ BEGIN
         WHERE loan_cycle_status IN ('Disbursed', 'Renewed');
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
 
-    -- Temporary table for aging analysis
+    -- Temporary table for aging analysis with additional company and user details
     DROP TABLE IF EXISTS aging_loan_analysis;
     CREATE TEMPORARY TABLE aging_loan_analysis (
         id INT NOT NULL AUTO_INCREMENT,
@@ -19766,10 +19239,19 @@ BEGIN
         total_inarrears DOUBLE,
         number_of_days_in_arrears INT,
         loan_status VARCHAR(20),
+        company_name VARCHAR(100),
+        branch_name VARCHAR(100),
+        user_id VARCHAR(50),
         PRIMARY KEY (id)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
-    -- Open cursor and start loop
+    -- Retrieve company details (only one row exists)
+    SELECT the_company_name, the_company_branch
+      INTO comp_name, branch_name
+      FROM pmms.the_company_datails
+      LIMIT 1;
+
+    -- Open cursor and process each loan record
     OPEN forSelectingLoanIds;
     accounts_loop: LOOP
         FETCH forSelectingLoanIds INTO TrnId;
@@ -19777,50 +19259,64 @@ BEGIN
             LEAVE accounts_loop;
         END IF;
 
-        -- Reset variables for each loan
+        -- Reset variables for each iteration
         SET customerName = NULL, customerContactNumber = NULL, theLoanStatus = NULL;
         SET gaurantorName1 = NULL, gaurantorContact1 = NULL, gaurantorName2 = NULL, gaurantorContact2 = NULL;
-        SET remainport = 0, princeremain = 0, interestRem = 0, p_remain = 0, i_remain = 0, arrears = 0;
+        SET remainport = 0, princeremain = 0, interestRem = 0, p_remain = 0, i_remain = 0, arrears = 0, userId = NULL;
 
-        -- Fetch main loan details
+        -- Fetch main loan details including gruop_id as userId
         SELECT pl.loan_id, applicant_account_name, m.mobile1, pl.trn_date,
                pl.princimpal_amount, pl.TotalPrincipalRemaining, pl.TotalInterestRemaining,
-              pl.balance_due, pl.loan_cycle_status
-        INTO LoanId, customerName, customerContactNumber, TrnDate, loanTaken,
-             princeremain, interestRem, totalRem, theLoanStatus
-        FROM pmms.master m
-        INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number = m.account_number
-        WHERE pl.trn_id = TrnId;
+               pl.balance_due, pl.loan_cycle_status, pl.gruop_id
+          INTO LoanId, customerName, customerContactNumber, TrnDate, loanTaken,
+               princeremain, interestRem, totalRem, theLoanStatus, userId
+          FROM pmms.master m
+          INNER JOIN pmms_loans.new_loan_appstore pl 
+             ON pl.applicant_account_number = m.account_number
+         WHERE pl.trn_id = TrnId;
 
-        -- Calculate remaining amounts and arrears
-        SELECT SUM(PrincipalRemaining) ,SUM(InterestRemaing),(SUM(PrincipalRemaining) + SUM(InterestRemaing)), numberOfDayInArrears(LoanId)
-        INTO P,I, amount_arrears, arrears
-        FROM new_loan_appstoreamort
-        WHERE master1_id = TrnId AND instalment_due_date <= DATE(NOW()) AND NOT instalment_status = 'P';
-/* SELECT P,I,  amount_arrears; */
-        -- Fetch guarantors
-        SELECT gaurantorsName, gaurantorsContact1 INTO gaurantorName1, gaurantorContact1
-        FROM gaurantors
-        WHERE loanTrnId = LoanId
-        ORDER BY id ASC
-        LIMIT 1;
+        -- Calculate arrears details from amortization table
+        SELECT SUM(PrincipalRemaining), SUM(InterestRemaing), 
+               (SUM(PrincipalRemaining) + SUM(InterestRemaing)), numberOfDayInArrears(LoanId)
+          INTO P, I, amount_arrears, arrears
+          FROM new_loan_appstoreamort
+         WHERE master1_id = TrnId 
+           AND instalment_due_date <= DATE(NOW()) 
+           AND NOT instalment_status = 'P';
 
-        SELECT gaurantorsName, gaurantorsContact1 INTO gaurantorName2, gaurantorContact2
-        FROM gaurantors
-        WHERE loanTrnId = LoanId
-        ORDER BY id DESC
-        LIMIT 1;
+        -- Fetch guarantors (first and last if available)
+        SELECT gaurantorsName, gaurantorsContact1 
+          INTO gaurantorName1, gaurantorContact1
+          FROM gaurantors
+         WHERE loanTrnId = LoanId
+         ORDER BY id ASC
+         LIMIT 1;
 
-        -- Insert data into consolidated table
+        SELECT gaurantorsName, gaurantorsContact1 
+          INTO gaurantorName2, gaurantorContact2
+          FROM gaurantors
+         WHERE loanTrnId = LoanId
+         ORDER BY id DESC
+         LIMIT 1;
+
+        -- Insert data into temporary aging analysis table including company and user details
         INSERT INTO aging_loan_analysis (
-            trn_id,loan_id, customer_name, customer_contact, gaurantor1_name, gaurantor1_contact, 
-            gaurantor2_name, gaurantor2_contact, date_taken, due_date, loan_taken, 
-            principal_remaining, interest_remaining,total_remaining,total_inarrears,number_of_days_in_arrears, loan_status
+            trn_id, loan_id, customer_name, customer_contact, 
+            gaurantor1_name, gaurantor1_contact, 
+            gaurantor2_name, gaurantor2_contact, 
+            date_taken, due_date, loan_taken, 
+            principal_remaining, interest_remaining, total_remaining, 
+            total_inarrears, number_of_days_in_arrears, loan_status, 
+            company_name, branch_name, user_id
         )
         VALUES (
-            TrnId,LoanId, customerName, customerContactNumber, gaurantorName1, gaurantorContact1,
-            gaurantorName2, gaurantorContact2, TrnDate, DATE_ADD(TrnDate, INTERVAL 30 DAY),
-            loanTaken, princeremain, interestRem, totalRem, amount_arrears, arrears, theLoanStatus
+            TrnId, LoanId, customerName, customerContactNumber, 
+            gaurantorName1, gaurantorContact1,
+            gaurantorName2, gaurantorContact2, 
+            TrnDate, DATE_ADD(TrnDate, INTERVAL 30 DAY),
+            loanTaken, princeremain, interestRem, totalRem, 
+            amount_arrears, arrears, theLoanStatus,
+            comp_name, branch_name, userId
         );
 
         SET l_done = 0;
@@ -19828,13 +19324,12 @@ BEGIN
 
     CLOSE forSelectingLoanIds;
 
-    -- Select data categorized by aging period
+    -- Return the aging analysis results ordered by loan status and days in arrears
     SELECT * FROM aging_loan_analysis ORDER BY loan_status, number_of_days_in_arrears;
-
+    
 END ##
-
-
 DELIMITER ;
+
 
 CREATE TABLE loan_files (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -20039,6 +19534,21 @@ CREATE TABLE pmms.arch_loandisburserepaystatement (
     OtherFour varchar(100) DEFAULT 'NA'
 );
 
+-- -- Step 1: Drop the existing primary key on trn_id
+-- ALTER TABLE arch_new_loan_appstore
+-- DROP PRIMARY KEY;
+
+-- -- Step 2: Add a new auto-increment column 'id'
+-- ALTER TABLE arch_new_loan_appstore
+-- ADD COLUMN id INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+-- -- Step 3: Add a composite primary key (auto_increment column must be the leftmost part)
+-- ALTER TABLE arch_new_loan_appstore
+-- ADD PRIMARY KEY (id, trn_id);
+
+-- -- (Optional) Step 4: Create a non-unique index on trn_id if needed for lookups
+-- ALTER TABLE arch_new_loan_appstore
+-- ADD INDEX idx_trn_id (trn_id);
 
 
 DROP PROCEDURE InitialArchiveCompletedLoans;
@@ -20098,6 +19608,7 @@ DELIMITER ;
 
 
 CALL  InitialArchiveCompletedLoans();
+
 
 
 
@@ -23583,6 +23094,22 @@ ALTER TABLE sequencenumbers
 ADD COLUMN optionalGaurantorCapture int(11) DEFAULT 11;
 
 
+
+
+ALTER TABLE sequencenumbers ADD COLUMN remoteCollectionsWithTerminal int(11) DEFAULT 11;
+
+
+
+ CREATE TABLE `sequencenumbersnew` (
+  `trn_id` enum('1') NOT NULL,
+   `remoteCollectionsWithTerminal` int(11) DEFAULT '11',
+  PRIMARY KEY (`trn_id`),
+  UNIQUE KEY `trn_id` (`trn_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO sequencenumbersnew (trn_id, remoteCollectionsWithTerminal)
+VALUES ('1', 0);
+
 DELETE FROM specialgroups;
 
 INSERT INTO specialgroups (
@@ -23857,3 +23384,9 @@ DELIMITER ;
 
 
 -- SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;SHOW PROCESSLIST;
+
+
+-- CALL RepayTheLoanNow('05502092610',10000.0,'BTN125117',10004,'2025-04-12',10004);
+
+
+-- CALL createdRenewedLoan('05502092610',10000.0,300.0,30,'2025-03-02',1.0,'DAYS',10004,1.0,'2025-03-02',10004,0,1,'BTN125118',46,0,74601);

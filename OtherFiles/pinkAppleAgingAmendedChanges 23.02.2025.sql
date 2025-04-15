@@ -218,6 +218,8 @@ START TRANSACTION;
 
 SELECT theLoanId(),CONCAT("newloan",accountNumber) INTO theLoanTxnId,theLoanId;
 
+-- SELECT theLoanTxnId,theLoanId;
+
 SELECT trn_id INTO previousLoanTrnId from new_loan_appstore where applicant_account_number=accountNumber ORDER BY trn_id DESC LIMIT 1;
 
 
