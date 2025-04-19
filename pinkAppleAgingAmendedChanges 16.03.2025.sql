@@ -15148,52 +15148,6 @@ DELIMITER ;
 
 
 
--- DROP PROCEDURE IF EXISTS collectionsMadePerOfficer;
-
--- DELIMITER //
-
--- CREATE PROCEDURE collectionsMadePerOfficer(theDate DATE,loanOfficerId INT) READS SQL DATA 
-
-
--- BEGIN
-
--- SELECT SUM(AmountPaid) INTO theCollectionsMade FROM pmms.loandisburserepaystatement WHERE TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
--- IF ISNULL(theCollectionsMade) THEN
--- SET theCollectionsMade=0.0;
--- END IF;
-
-
--- END //
--- DELIMITER ;
-
-
-
--- DROP FUNCTION IF EXISTS CollectionsMadePerOfficer;
-
--- DELIMITER $$
--- CREATE FUNCTION CollectionsMadePerOfficer(theDate DATE, loanOfficerId INT) RETURNS DECIMAL(20,2)
--- BEGIN
---     DECLARE theCollectionsMade DECIMAL(20,2);
-
---     -- Calculate the total collections made for the specified loan officer on the given date
---     SELECT SUM(CAST(lrs.AmountPaid AS DECIMAL(20,2))) INTO theCollectionsMade
---     FROM pmms.loandisburserepaystatement lrs
---     JOIN pmms_loans.new_loan_appstore nls ON lrs.loanTrnId = nls.trn_id
---     WHERE lrs.TrnDate = theDate 
---       AND CAST(lrs.AmountPaid AS DECIMAL(20,2)) > 0.0
---       AND lrs.LoanStatusReport <> 'RenewedClosed'
---       AND nls.gruop_id = loanOfficerId;
-
---     -- Handle NULL case
---     IF ISNULL(theCollectionsMade) THEN
---         SET theCollectionsMade = 0.0;
---     END IF;
-
---     RETURN theCollectionsMade;
--- END$$
--- DELIMITER ;
-
-
 DROP FUNCTION IF EXISTS CollectionsMadePerOfficer;
 
 DELIMITER $$
@@ -15394,9 +15348,9 @@ DELIMITER ;
 
 -- CALL  smsSummuryReport() ;
 
-update new_Loan_appstore SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
+-- update new_Loan_appstore SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
 
-update new_Loan_appstore1 SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
+-- update new_Loan_appstore1 SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
 
 
 DROP PROCEDURE IF EXISTS runSMSReportFirst;
@@ -19828,67 +19782,301 @@ UPDATE pmms.summurystats SET TotalNumberOfAllInterestAndPrincipalLoanRepayments=
 DELIMITER ;
 
 
-
+/* ──────────────────────────────────────────────────────────
+   Portfolio summary ‑ counts, amounts, % of total
+   Amount = Principal + Interest + Penalty remaining
+   MySQL 5.5 compatible
+────────────────────────────────────────────────────────── */
 DROP PROCEDURE IF EXISTS sp_portfolio_summary;
 DELIMITER $$
 
 CREATE PROCEDURE sp_portfolio_summary()
 BEGIN
-    -- 1. Drop the temporary table if it already exists (safety measure)
-    DROP TEMPORARY TABLE IF EXISTS tmp_portfolio_summary;
+    /* 1. Working vars */
+    DECLARE v_grand_total_loans   INT;
+    DECLARE v_grand_total_amount  DECIMAL(22,2);
 
-    -- 2. Create a new temporary table for storing the summary
+    /* 2. Clean slate */
+    DROP TEMPORARY TABLE IF EXISTS tmp_portfolio_summary;
     CREATE TEMPORARY TABLE tmp_portfolio_summary (
-      category VARCHAR(100),
-      total INT
+        category          VARCHAR(100),
+        total_loans       INT,
+        amount_remaining  DECIMAL(22,2),
+        percent_of_total  DECIMAL(6,2)
     );
 
-    -- 3. Insert rows, each representing a specific category with the day range in the label
+    /* 3. Consistent snapshot */
+    START TRANSACTION;
 
-    -- 3a) Active (0–30 days)
-    INSERT INTO tmp_portfolio_summary (category, total)
-    SELECT 
-        'Active (0-30 days)' AS category,
-        COUNT(*) AS total
-    FROM new_loan_appstore
-    WHERE loan_cycle_status IN ('Disbursed','Renewed')
-      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) <= 30;
+        /* 3a. Grand totals (all active loans) */
+        SELECT  COUNT(*),
+                SUM(
+                    CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                )
+          INTO  v_grand_total_loans, v_grand_total_amount
+        FROM    new_loan_appstore
+        WHERE   loan_cycle_status IN ('Disbursed','Renewed');
 
-    -- 3b) At Risk (31–90 days)
-    INSERT INTO tmp_portfolio_summary (category, total)
-    SELECT 
-        'At Risk (31-90 days)' AS category,
-        COUNT(*) AS total
-    FROM new_loan_appstore
-    WHERE loan_cycle_status IN ('Disbursed','Renewed')
-      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) BETWEEN 31 AND 90;
+        IF v_grand_total_amount IS NULL OR v_grand_total_amount = 0 THEN
+            SET v_grand_total_amount := 1;  /* avoid ÷0 */
+        END IF;
 
-    -- 3c) Non Performing (91–360 days)
-    INSERT INTO tmp_portfolio_summary (category, total)
-    SELECT 
-        'Non Performing (91-360 days)' AS category,
-        COUNT(*) AS total
-    FROM new_loan_appstore
-    WHERE loan_cycle_status IN ('Disbursed','Renewed')
-      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) BETWEEN 91 AND 360;
+        /* 3b. Active (0‑30) */
+        INSERT INTO tmp_portfolio_summary (category,total_loans,amount_remaining,percent_of_total)
+        SELECT  'Active (0‑30 days)',
+                COUNT(*),
+                SUM(
+                    CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                ) AS amt,
+                ROUND(
+                    SUM(
+                        CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                    ) / v_grand_total_amount * 100
+                ) AS pct
+        FROM    new_loan_appstore
+        WHERE   loan_cycle_status IN ('Disbursed','Renewed')
+          AND   ABS(DATEDIFF(instalment_end_date,CURDATE())) <= 30;
 
-    -- 3d) Due For Write Off (>360 days)
-    INSERT INTO tmp_portfolio_summary (category, total)
-    SELECT 
-        'Due For Write Off (>360 days)' AS category,
-        COUNT(*) AS total
-    FROM new_loan_appstore
-    WHERE loan_cycle_status IN ('Disbursed','Renewed')
-      AND ABS(DATEDIFF(instalment_end_date, CURDATE())) > 360;
+        /* 3c. At Risk (31‑90) */
+        INSERT INTO tmp_portfolio_summary
+        SELECT  'At Risk (31‑90 days)',
+                COUNT(*),
+                SUM(
+                    CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                ),
+                ROUND(
+                    SUM(
+                        CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                    ) / v_grand_total_amount * 100
+                )
+        FROM    new_loan_appstore
+        WHERE   loan_cycle_status IN ('Disbursed','Renewed')
+          AND   ABS(DATEDIFF(instalment_end_date,CURDATE())) BETWEEN 31 AND 90;
 
-    -- 4. Finally, select the data from the temporary table
-    SELECT category, total
-    FROM tmp_portfolio_summary;
-END $$
+        /* 3d. Non‑Performing (91‑360) */
+        INSERT INTO tmp_portfolio_summary
+        SELECT  'Non Performing (91‑360 days)',
+                COUNT(*),
+                SUM(
+                    CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                ),
+                ROUND(
+                    SUM(
+                        CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                    ) / v_grand_total_amount * 100
+                )
+        FROM    new_loan_appstore
+        WHERE   loan_cycle_status IN ('Disbursed','Renewed')
+          AND   ABS(DATEDIFF(instalment_end_date,CURDATE())) BETWEEN 91 AND 360;
 
+        /* 3e. Due‑For‑Write‑Off (>360) */
+        INSERT INTO tmp_portfolio_summary
+        SELECT  'Due For Write Off (>360 days)',
+                COUNT(*),
+                SUM(
+                    CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                    CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                ),
+                ROUND(
+                    SUM(
+                        CAST(COALESCE(TotalInterestRemaining ,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalPrincipalRemaining,0) AS DECIMAL(22,2)) +
+                        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+                    ) / v_grand_total_amount * 100
+                )
+        FROM    new_loan_appstore
+        WHERE   loan_cycle_status IN ('Disbursed','Renewed')
+          AND   ABS(DATEDIFF(instalment_end_date,CURDATE())) > 360;
+
+        /* 3f. Grand total row */
+        INSERT INTO tmp_portfolio_summary
+            VALUES ('Grand Total', v_grand_total_loans, v_grand_total_amount, 100);
+
+    COMMIT;
+
+    /* 4. Nicely formatted output */
+    SELECT  category,
+            total_loans,
+            FORMAT(amount_remaining,0)         AS amount_remaining,   -- commas, 0 dp
+            CONCAT(ROUND(percent_of_total,0),'%') AS percent_of_total
+    FROM    tmp_portfolio_summary;
+END$$
 DELIMITER ;
 
+-- Run it
 CALL sp_portfolio_summary();
+
+
+
+DROP PROCEDURE IF EXISTS smsExpensesSummaryReport;
+DELIMITER $$
+
+CREATE PROCEDURE smsExpensesSummaryReport()
+    READS SQL DATA
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE vAccNo VARCHAR(100);
+    DECLARE vAccName VARCHAR(200);
+    DECLARE vTbl VARCHAR(130);
+    DECLARE vTotal DECIMAL(22,2);
+
+    DECLARE cur CURSOR FOR
+        SELECT account_number, account_name
+        FROM   pmms.account_created_store
+        WHERE  account_l2 = 'Expenses';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    DROP TEMPORARY TABLE IF EXISTS tmp_expenses;
+    CREATE TEMPORARY TABLE tmp_expenses (
+        accountName VARCHAR(200),
+        narration   VARCHAR(200),
+        amount      DECIMAL(22,2)
+    );
+
+    OPEN cur;
+    fetch_loop: LOOP
+        FETCH cur INTO vAccNo, vAccName;
+        IF done THEN LEAVE fetch_loop; END IF;
+
+        SET vTbl = CONCAT('pmms.bsanca', vAccNo);
+
+        IF EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE  table_schema = 'pmms'
+              AND  table_name   = CONCAT('bsanca', vAccNo)
+        ) THEN
+            /* embed the account name, escaping single quotes */
+            SET @sql = CONCAT(
+              'INSERT INTO tmp_expenses (accountName,narration,amount) ',
+              'SELECT ''',
+              REPLACE(vAccName, '''', ''''''),
+              ''', ',
+              'TRIM(TRAILING '' '' FROM SUBSTRING_INDEX(narration,''Processed on'',1)), ',
+              'CAST(debit AS DECIMAL(22,2)) ',
+              'FROM ', vTbl,
+              ' WHERE trn_date = CURDATE() ',
+              '  AND CAST(debit AS DECIMAL(22,2)) > 0'
+            );
+
+            PREPARE stmt FROM @sql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        END IF;
+    END LOOP;
+    CLOSE cur;
+
+    SELECT IFNULL(SUM(amount),0) INTO vTotal FROM tmp_expenses;
+    INSERT INTO tmp_expenses VALUES ('Total','Total Expenses',vTotal);
+
+    SELECT  accountName AS account_name,
+            narration,
+            FORMAT(amount,0) AS debit
+    FROM    tmp_expenses;
+END$$
+DELIMITER ;
+
+
+
+
+-- Test:
+-- CALL smsExpensesSummaryReport();
+/* ---------------------------------------------------------
+   Daily loans‑disbursed report (with guarantor)
+   MySQL 5.5 compatible
+---------------------------------------------------------*/
+/* ---------------------------------------------------------
+   Daily loans‑disbursed report  (officer_name last column)
+---------------------------------------------------------*/
+DROP PROCEDURE IF EXISTS smsLoansDisbursedSummaryReport;
+DELIMITER $$
+
+CREATE PROCEDURE smsLoansDisbursedSummaryReport()
+    READS SQL DATA
+BEGIN
+    DECLARE vTotal DECIMAL(22,2);
+
+    /* temp table keeps same internal order                        */
+    DROP TEMPORARY TABLE IF EXISTS tmp_loans_out;
+    CREATE TEMPORARY TABLE tmp_loans_out (
+        accountName       VARCHAR(100),
+        phone             VARCHAR(50),
+        businessName      VARCHAR(100),
+        officerName       VARCHAR(100),
+        amountDisbursed   DECIMAL(22,2),
+        guarantorName     VARCHAR(100),
+        guarantorContact  VARCHAR(100),
+        clientType        VARCHAR(10)
+    );
+
+    /* populate */
+    INSERT INTO tmp_loans_out (accountName, phone, businessName, officerName,
+                               amountDisbursed, guarantorName,
+                               guarantorContact, clientType)
+    SELECT  lps.account_name,
+            COALESCE(m.mobile1,'')                                        AS phone,
+            COALESCE(bd.businessName,'')                                  AS businessName,
+            COALESCE(staffName(nls.gruop_id),'')                          AS officerName,
+            CAST(lps.princimpal_amount AS DECIMAL(22,2))                 AS amountDisbursed,
+            COALESCE(g.gaurantorsName,'')                                 AS guarantorName,
+            COALESCE(g.gaurantorsContact1,'')                             AS guarantorContact,
+            CASE WHEN DATE(acs.creation_date) = CURDATE()
+                 THEN 'NEW' ELSE 'OLD' END                                AS clientType
+    FROM    loanprocessingstore               AS lps
+    LEFT JOIN new_loan_appstore               AS nls
+           ON nls.loan_id = CONCAT('newloan', lps.account_number)
+    LEFT JOIN businessdetails                 AS bd
+           ON bd.id = nls.OtherGroups2
+    LEFT JOIN gaurantors                      AS g
+           ON g.loanTrnId = nls.trn_id
+    LEFT JOIN pmms.account_created_store      AS acs
+           ON acs.account_number = lps.account_number
+    LEFT JOIN pmms.`master`                   AS m
+           ON m.account_number  = lps.account_number
+    WHERE   lps.trn_date = CURDATE()
+      AND   IFNULL(lps.loan_cycle_status,'') = 'Disbursed';
+
+    /* grand total */
+    SELECT IFNULL(SUM(amountDisbursed),0) INTO vTotal FROM tmp_loans_out;
+    INSERT INTO tmp_loans_out
+        VALUES ('Total', '', '', '', vTotal, '', '', '');
+
+    /* final output – officer_name last */
+    SELECT  accountName                       AS account_name,
+            phone,
+            businessName                      AS business_name,
+            FORMAT(amountDisbursed,0)         AS amount_disbursed,
+            guarantorName                     AS guarantor_name,
+            guarantorContact                  AS guarantor_contact,
+            clientType                        AS client_type,
+            officerName                       AS officer_name
+    FROM    tmp_loans_out;
+END$$
+DELIMITER ;
+
+-- CALL smsLoansDisbursedSummaryReport();
+
+
+-- Run:
+CALL smsLoansDisbursedSummaryReport();
+
+-- quick test
+-- CALL smsLoansDisbursedSummaryReport();
 
 
 
