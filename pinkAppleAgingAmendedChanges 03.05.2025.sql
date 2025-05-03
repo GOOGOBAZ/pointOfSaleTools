@@ -24198,3 +24198,10 @@ CREATE TABLE `smstable_deposit_log` (
 
 ALTER TABLE smstable_deposit_log
 ADD COLUMN password_used VARCHAR(10) NOT NULL AFTER quantity;
+
+
+
+/* remember the month (YYYYMM) we last verified payment */
+ALTER TABLE the_company_datails
+  ADD COLUMN licence_verified_ym CHAR(6) NULL
+      COMMENT 'YYYYMM of the most recent PAID verification';
