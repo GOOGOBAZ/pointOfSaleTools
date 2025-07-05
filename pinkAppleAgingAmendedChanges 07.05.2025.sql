@@ -4749,14 +4749,14 @@ INSERT INTO businessDetails VALUES(null,"BODA BODA","CUSTOMERS INVOLVED IN RIDIN
 
 
 
--- DROP TABLE IF EXISTS oneTimeUpdate;
+DROP TABLE IF EXISTS oneTimeUpdate;
 CREATE  TABLE  IF NOT EXISTS   oneTimeUpdate(
 id INTEGER NOT NULL,
  PRIMARY KEY (id))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;  
 
--- INSERT INTO oneTimeUpdate VALUES(1);
+INSERT INTO oneTimeUpdate VALUES(1);
 
 
 -- 1	LoanPyt	P&I	05502003910	01128000110	ASASIRA MICHEAL 0700802107's Loan Payment	4,000	0	0	09/04/2025
@@ -18018,7 +18018,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionAllUnpaidCustomers('2024-05-22')\G
+CALL dailyCollectionAllUnpaidCustomers('2025-05-19')\G
 
 
 
@@ -20321,17 +20321,6 @@ END$$
 DELIMITER ;
 
 
-
-
--- Test:
--- CALL smsExpensesSummaryReport();
-/* ---------------------------------------------------------
-   Daily loans‑disbursed report (with guarantor)
-   MySQL 5.5 compatible
----------------------------------------------------------*/
-/* ---------------------------------------------------------
-   Daily loans‑disbursed report  (officer_name last column)
----------------------------------------------------------*/
 DROP PROCEDURE IF EXISTS smsLoansDisbursedSummaryReport;
 DELIMITER $$
 
@@ -20340,7 +20329,7 @@ CREATE PROCEDURE smsLoansDisbursedSummaryReport()
 BEGIN
     DECLARE vTotal DECIMAL(22,2);
 
-    /* temp table keeps same internal order                        */
+    -- Drop and create temporary table
     DROP TEMPORARY TABLE IF EXISTS tmp_loans_out;
     CREATE TEMPORARY TABLE tmp_loans_out (
         accountName       VARCHAR(100),
@@ -20353,39 +20342,47 @@ BEGIN
         clientType        VARCHAR(10)
     );
 
-    /* populate */
+    -- Populate the temp table with only ONE guarantor per loan (the "first" one)
     INSERT INTO tmp_loans_out (accountName, phone, businessName, officerName,
                                amountDisbursed, guarantorName,
                                guarantorContact, clientType)
-    SELECT  lps.account_name,
-            COALESCE(m.mobile1,'')                                        AS phone,
-            COALESCE(bd.businessName,'')                                  AS businessName,
-            COALESCE(staffName(nls.gruop_id),'')                          AS officerName,
-            CAST(lps.princimpal_amount AS DECIMAL(22,2))                 AS amountDisbursed,
-            COALESCE(g.gaurantorsName,'')                                 AS guarantorName,
-            COALESCE(g.gaurantorsContact1,'')                             AS guarantorContact,
-            CASE WHEN DATE(acs.creation_date) = CURDATE()
-                 THEN 'NEW' ELSE 'OLD' END                                AS clientType
-    FROM    loanprocessingstore               AS lps
-    LEFT JOIN new_loan_appstore               AS nls
-           ON nls.loan_id = CONCAT('newloan', lps.account_number)
-    LEFT JOIN businessdetails                 AS bd
-           ON bd.id = nls.OtherGroups2
-    LEFT JOIN gaurantors                      AS g
-           ON g.loanTrnId = nls.trn_id
-    LEFT JOIN pmms.account_created_store      AS acs
-           ON acs.account_number = lps.account_number
-    LEFT JOIN pmms.`master`                   AS m
-           ON m.account_number  = lps.account_number
-    WHERE   lps.trn_date = CURDATE()
-      AND   IFNULL(lps.loan_cycle_status,'') = 'Disbursed';
+    SELECT  
+        lps.account_name,
+        COALESCE(m.mobile1,'')                                       AS phone,
+        COALESCE(bd.businessName,'')                                 AS businessName,
+        COALESCE(staffName(nls.gruop_id),'')                         AS officerName,
+        CAST(lps.princimpal_amount AS DECIMAL(22,2))                AS amountDisbursed,
+        COALESCE(g.gaurantorsName,'')                                AS guarantorName,
+        COALESCE(g.gaurantorsContact1,'')                            AS guarantorContact,
+        CASE WHEN DATE(acs.creation_date) = CURDATE()
+            THEN 'NEW' ELSE 'OLD' END                                AS clientType
+    FROM    loanprocessingstore AS lps
+    LEFT JOIN new_loan_appstore AS nls
+        ON nls.loan_id = CONCAT('newloan', lps.account_number)
+    LEFT JOIN businessdetails AS bd
+        ON bd.id = nls.OtherGroups2
+    -- This subquery ensures only one row per loanTrnId (lowest gaurantorsName, change to MIN(id) if you have PK)
+    LEFT JOIN (
+        SELECT
+            loanTrnId,
+            MIN(gaurantorsName) AS gaurantorsName,
+            MIN(gaurantorsContact1) AS gaurantorsContact1
+        FROM gaurantors
+        GROUP BY loanTrnId
+    ) AS g ON g.loanTrnId = nls.trn_id
+    LEFT JOIN pmms.account_created_store AS acs
+        ON acs.account_number = lps.account_number
+    LEFT JOIN pmms.`master` AS m
+        ON m.account_number  = lps.account_number
+    WHERE lps.trn_date = CURDATE()
+      AND IFNULL(lps.loan_cycle_status,'') = 'Disbursed';
 
-    /* grand total */
+    -- Grand total
     SELECT IFNULL(SUM(amountDisbursed),0) INTO vTotal FROM tmp_loans_out;
     INSERT INTO tmp_loans_out
         VALUES ('Total', '', '', '', vTotal, '', '', '');
 
-    /* final output – officer_name last */
+    -- Final output – officer_name last
     SELECT  accountName                       AS account_name,
             phone,
             businessName                      AS business_name,
@@ -20395,10 +20392,9 @@ BEGIN
             clientType                        AS client_type,
             officerName                       AS officer_name
     FROM    tmp_loans_out;
-END$$
+END $$
 DELIMITER ;
 
--- CALL smsLoansDisbursedSummaryReport();
 
 
 -- Run:
@@ -23586,7 +23582,7 @@ DELIMITER $$
 
 -- Create a new procedure
 CREATE PROCEDURE normaliseIndividualBalanceCash(IN trnIdInd INT)
-READS SQL DATA
+MOFIFIES SQL DATA
 BEGIN
     -- Declaration of variables
     DECLARE theBatchNoS VARCHAR(60);
@@ -24206,3 +24202,11 @@ ALTER TABLE the_company_datails
   ADD COLUMN licence_verified_ym CHAR(6) NULL
       COMMENT 'YYYYMM of the most recent PAID verification';
 UPDATE the_company_datails SET licence_verified_ym= 202505;
+
+
+
+
+Credits	Suspense Account From Retained Earnings	05523000110	Unclassified Amounts	0
+
+
+CALL postingTxnsX(NULL,'2025-01-01','Loan payament from Rweheyo Crispus  Processed on 11/04/2024\n  From Cash At Hand','2024-04-11','-','2941186.0','5.853427876427996E7','05502035410',' RWEHAYO CHRISPUS','0002','BTN45016','GenXX','10000','11:51:53','2','01128000110','01128000010','Cr','Main','NA');
