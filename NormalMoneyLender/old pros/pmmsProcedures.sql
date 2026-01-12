@@ -291,15 +291,10 @@ CREATE TABLE `savingssharescomputationparameters` (
   UNIQUE KEY `TrnId_UNIQUE` (`TrnId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
---  Shares 14% = 20,202,000/=
--- Savings 5% = 9,484,656/=
--- Totaling to 29,684,656/=
--- Leaves a balance of 315,344/= 
--- I know when u run the reports it will have a plus or minus. The amount agreed is 30m
--- 31/12/2021	02277000110	Return On Investment Expense	Return On Investment Expense	0.0	Active
 
--- INSERT INTO  savingssharescomputationparameters VALUES(1,	'2019-02-23'	,'2019-03-23',	10.67,	5.33	,1	,1	,1	,1	,'NA',	'NA'	,'NA');
 
+-- CALL devidendPaymentOnSavings();
+ 
 
 DROP PROCEDURE IF EXISTS devidendPaymentOnSavings;
  
@@ -307,14 +302,14 @@ DROP PROCEDURE IF EXISTS devidendPaymentOnSavings;
 
  CREATE PROCEDURE devidendPaymentOnSavings() READS SQL DATA BEGIN
 
- DECLARE accountNumber VARCHAR(30);
+ DECLARE v_account_number VARCHAR(30);
  DECLARE theAccountDate1, anyDateInYear,lastDate,TerminatiOnDate DATE;
 
- DECLARE ledgerBalance1,amountComputed,monthlySummations INTEGER;
+ DECLARE ledgerBalance1,amountComputed,monthlySummations DOUBLE;
  DECLARE rateUsed DOUBLE;
- DECLARE monthlyTotals INTEGER DEFAULT 0;
+ DECLARE monthlyTotals DOUBLE DEFAULT 0;
 
- DECLARE l_done INTEGER DEFAULT 0;DECLARE finalTotals INTEGER DEFAULT 0;
+ DECLARE l_done INTEGER DEFAULT 0;DECLARE finalTotals DOUBLE DEFAULT 0;
 
  DECLARE forSelectingAccountNumbers CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '05502%10';
 
@@ -328,9 +323,9 @@ SELECT SavingsStartDate,SavingsRateUsed INTO anyDateInYear,rateUsed from Savings
  OPEN forSelectingAccountNumbers;
 
 
-accounts_loop: LOOP 
+accounts_loop: LOOP
 
- FETCH forSelectingAccountNumbers into accountNumber;
+ FETCH forSelectingAccountNumbers into v_account_number;
 
  IF l_done=1 THEN
 
@@ -341,83 +336,37 @@ LEAVE accounts_loop;
 SET @theAccountDate=MAKEDATE(year(anyDateInYear),1);
 SET lastDate=LAST_DAY(DATE_ADD(@theAccountDate, INTERVAL 12-MONTH(@theAccountDate) MONTH));
 
-Date_loop: LOOP 
+ CALL accountNma(v_account_number,@accountName);
+ SET monthlyTotals=0;
+ SET finalTotals=0;
+
+Date_loop: LOOP
 
 
 
 
 IF @theAccountDate>lastDate THEN
--- SELECT @theAccountDate,lastDate,accountNumber;
--- SET @tableName=CONCAT('bsanca',accountNumber);
 
-CALL accountNma(accountNumber,@accountName);
-
-
-SET @sql_text1 = concat(CAST("SELECT SavingsRunningBalance INTO @ledgerBalance from  newsavingsmembers" AS CHAR CHARACTER SET utf8), CAST("  WHERE TrnDate<=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND AccountNumber=" AS CHAR CHARACTER SET utf8), accountNumber,CAST(" ORDER BY TrnId DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
---  SELECT @sql_text1;
-
-  PREPARE stmt1 FROM @sql_text1;
-  EXECUTE stmt1;
-DROP PREPARE stmt1;
-
--- SET @sql_text1 = concat(CAST("SELECT ledger_balance INTO @ledgerBalance from  " AS CHAR CHARACTER SET utf8),@tableName,CAST("  WHERE trn_date<=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
-
-
---   PREPARE stmt1 FROM @sql_text1;
---   EXECUTE stmt1;
--- DROP PREPARE stmt1;
-
-
-IF (@ledgerBalance IS NULL) THEN
-
-SET @ledgerBalance=0;
-
-END IF;
-
-
-SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
- 
- SET monthlyTotals=monthlyTotals+amountComputed;
-
- SET finalTotals=finalTotals+amountComputed;
-
-
- INSERT INTO SavingsInterestPaymentDaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
-
- IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
- 
- INSERT INTO SavingsInterestPaymentMonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
-
-SET monthlyTotals=0;
-
- END IF;
-
-SET theAccountDate1=@theAccountDate;
-
-SET @ledgerBalance=NULL;
 LEAVE Date_loop;
 
 END IF;
 
--- SET @tableName=CONCAT('bsanca',accountNumber);
--- SELECT @tableName;
-CALL accountNma(accountNumber,@accountName);
+
+SELECT SavingsRunningBalance INTO @ledgerBalance
+ FROM newsavingsmembers
+ WHERE TrnDate<=@theAccountDate
+ AND AccountNumber=v_account_number
+ ORDER BY TrnDate DESC, TrnId DESC
+ LIMIT 1;
 
 
-SET @sql_text1 = concat(CAST("SELECT SavingsRunningBalance INTO @ledgerBalance from  newsavingsmembers" AS CHAR CHARACTER SET utf8), CAST("  WHERE TrnDate<=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND AccountNumber=" AS CHAR CHARACTER SET utf8), accountNumber,CAST(" ORDER BY TrnId DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
---  SELECT @sql_text1;
-  PREPARE stmt1 FROM @sql_text1;
-  EXECUTE stmt1;
-DROP PREPARE stmt1;
 
--- SET @sql_text1 = concat(CAST("SELECT ledger_balance INTO @ledgerBalance from  " AS CHAR CHARACTER SET utf8),@tableName,CAST("  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate,CAST("'" AS CHAR CHARACTER SET utf8), CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
 
--- SELECT @sql_text1;
---   PREPARE stmt1 FROM @sql_text1;
---   EXECUTE stmt1;
--- DROP PREPARE stmt1;
 
--- SELECT @ledgerBalance, @theAccountDate,@tableName;
+
+
+
+
 IF (@ledgerBalance IS NULL) THEN
 
 SET @ledgerBalance=0;
@@ -425,19 +374,19 @@ SET @ledgerBalance=0;
 END IF;
 
 SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
- 
+
  SET monthlyTotals=monthlyTotals+amountComputed;
 
  SET finalTotals=finalTotals+amountComputed;
 
-IF @ledgerBalance>0 THEN 
- INSERT INTO SavingsInterestPaymentDaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
+IF @ledgerBalance>0 THEN
+ INSERT INTO SavingsInterestPaymentDaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,v_account_number,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
 
  END IF;
 
  IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
- 
- INSERT INTO SavingsInterestPaymentMonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
+
+ INSERT INTO SavingsInterestPaymentMonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,v_account_number,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
 
 SET monthlyTotals=0;
 
@@ -449,16 +398,16 @@ SET theAccountDate1=@theAccountDate;
 SET ledgerBalance1=@ledgerBalance;
 
 SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
- 
+
 
 SET @ledgerBalance=NULL;
 
  END LOOP Date_loop;
 
--- IF ledgerBalance1 >0 THEN 
-INSERT INTO SavingsInterestPaymentAnnually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
 
--- END IF;
+INSERT INTO SavingsInterestPaymentAnnually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,v_account_number,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
+
+
 SET @ledgerBalance=NULL;
 SET finalTotals=0;
 
@@ -466,17 +415,17 @@ SET l_done=0;
 
  END LOOP accounts_loop;
 
+
  CLOSE forSelectingAccountNumbers;
 
 END//
 
  DELIMITER ;
 
+CREATE INDEX idx_ns_acct_date_id
+ON newsavingsmembers (AccountNumber, TrnDate, TrnId);
+
 -- CALL devidendPaymentOnSavings();
- 
-
-
-
 -- UPDATE savingssharescomputationparameters SET  SavingsStartDate= '2022-02-23',  ShareStartDate= '2022-03-23', SharesRateUsed=4.1,  SavingsRateUsed= 2.5;
 
 
@@ -488,166 +437,112 @@ DROP PROCEDURE IF EXISTS pmms.devidendPaymentOnShares;
 
  CREATE PROCEDURE devidendPaymentOnShares() READS SQL DATA BEGIN
 
- DECLARE accountNumber VARCHAR(30); 
+    DECLARE v_account_number VARCHAR(30);
+    DECLARE anyDateInYear DATE;
+    DECLARE rateUsed DOUBLE;
+    DECLARE ledgerBalance INTEGER DEFAULT 0;
+    DECLARE ledgerBalance1 INTEGER DEFAULT 0;
+    DECLARE amountComputed INTEGER;
+    DECLARE lastDate DATE;
+    DECLARE theAccountDate DATE;
 
- DECLARE theAccountDate1 DATE;
-  DECLARE anyDateInYear DATE;
-  DECLARE rateUsed DOUBLE;
+    DECLARE monthlyTotals INTEGER DEFAULT 0;
+    DECLARE finalTotals INTEGER DEFAULT 0;
+    DECLARE l_done INTEGER DEFAULT 0;
 
- DECLARE ledgerBalance1 INTEGER;
- DECLARE amountComputed INTEGER;
- DECLARE monthlySummations INTEGER;
- DECLARE lastDate DATE;
- DECLARE TerminatiOnDate DATE;
- 
- DECLARE monthlyTotals INTEGER DEFAULT 0;
-  DECLARE l_done INTEGER DEFAULT 0;
-  DECLARE finalTotals INTEGER DEFAULT 0;
 
- DECLARE forSelectingAccountNumbers CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE account_number LIKE '05502%10';
- DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
+    DECLARE forSelectingAccountNumbers CURSOR FOR
+        SELECT account_number FROM pmms.account_created_store WHERE account_number LIKE '05502%10';
 
 
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
 
-SELECT ShareStartDate,SharesRateUsed INTO anyDateInYear,rateUsed from SavingsSharesComputationParameters;
 
- OPEN forSelectingAccountNumbers;
+    SELECT ShareStartDate, SharesRateUsed INTO anyDateInYear, rateUsed
+    FROM SavingsSharesComputationParameters;
 
 
-accounts_loop: LOOP 
+    OPEN forSelectingAccountNumbers;
 
- FETCH forSelectingAccountNumbers into accountNumber;
 
- IF l_done=1 THEN
+    accounts_loop: LOOP
+        FETCH forSelectingAccountNumbers INTO v_account_number;
 
-LEAVE accounts_loop;
 
- END IF;
+        IF l_done = 1 THEN
+            LEAVE accounts_loop;
+        END IF;
 
-SET @theAccountDate=MAKEDATE(year(anyDateInYear),1);
 
+        SET theAccountDate = MAKEDATE(YEAR(anyDateInYear), 1);
+        SET monthlyTotals = 0;
+        SET finalTotals = 0;
 
-Date_loop: LOOP 
+        CALL accountNma(v_account_number, @accountName);
 
 
-SET lastDate=LAST_DAY(DATE_ADD(@theAccountDate, INTERVAL 12-MONTH(@theAccountDate) MONTH));
+        Date_loop: LOOP
 
+            SET lastDate = LAST_DAY(theAccountDate);
 
-IF @theAccountDate=lastDate THEN
--- SELECT @theAccountDate,lastDate,accountNumber;
-CALL accountNma(accountNumber,@accountName);
 
+            SELECT running_balance_v_shares INTO @ledgerBalance
+             FROM shares_run_bal
+             WHERE trn_date <= theAccountDate
+             AND account_number = v_account_number
+             ORDER BY trn_date DESC, trn_id DESC
+             LIMIT 1;
 
-SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
 
- -- SELECT @sql_text1;
+            IF @ledgerBalance IS NULL THEN
+                SET @ledgerBalance = 0;
+            END IF;
 
-  PREPARE stmt1 FROM @sql_text1;
-  EXECUTE stmt1;
-DROP PREPARE stmt1;
 
+            IF @ledgerBalance > 0 THEN
+                SET amountComputed = (@ledgerBalance * (rateUsed / 100)) / DAY(LAST_DAY(theAccountDate));
+                SET monthlyTotals = monthlyTotals + amountComputed;
+                SET finalTotals = finalTotals + amountComputed;
 
-IF (@ledgerBalance IS NULL) THEN
 
-SET @ledgerBalance=0;
+                INSERT INTO sharesinterestpaymentdaily
+                VALUES (NULL, theAccountDate, MONTHNAME(theAccountDate), YEAR(theAccountDate),
+                        @accountName, v_account_number, @ledgerBalance, 1, rateUsed, amountComputed, 
+                        finalTotals, 'Not Yet', 'NA', 'NA', 'NA');
+            END IF;
 
-END IF;
 
--- SELECT @ledgerBalance,@accountName;
+            SET ledgerBalance1 = @ledgerBalance;
+            SET @ledgerBalance = NULL;
 
-IF @ledgerBalance>0 THEN
 
-SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
- 
- SET monthlyTotals=monthlyTotals+amountComputed;
+            IF theAccountDate = lastDate THEN
+                INSERT INTO sharesinterestpaymentmonthly
+                VALUES (NULL, theAccountDate, MONTHNAME(theAccountDate), YEAR(theAccountDate),
+                        @accountName, v_account_number, ledgerBalance1, 1, rateUsed, monthlyTotals,
+                        finalTotals, 'Not Yet', 'NA', 'NA', 'NA');
+                SET monthlyTotals = 0;
+            END IF;
 
- SET finalTotals=finalTotals+amountComputed;
 
+            SET theAccountDate = DATE_ADD(theAccountDate, INTERVAL 1 DAY);
 
 
- INSERT INTO sharesinterestpaymentdaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
+            IF YEAR(theAccountDate) > YEAR(anyDateInYear) THEN
+                LEAVE Date_loop;
+            END IF;
+        END LOOP Date_loop;
 
- IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
- 
- INSERT INTO sharesinterestpaymentmonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
 
+        INSERT INTO sharesinterestpaymentannually
+        VALUES (NULL, LAST_DAY(theAccountDate), MONTHNAME(LAST_DAY(theAccountDate)),
+                YEAR(LAST_DAY(theAccountDate)), @accountName, v_account_number,
+                ledgerBalance1, 1, rateUsed, finalTotals, 'Not Yet', 'NA', 'NA', 'NA');
 
-SET monthlyTotals=0;
 
- END IF;
-END IF;
-
-SET theAccountDate1=@theAccountDate;
-SET @ledgerBalance=NULL;
-LEAVE Date_loop;
-
-END IF;
-
-
-
-
--- SELECT @theAccountDate,lastDate,accountNumber;
-CALL accountNma(accountNumber,@accountName);
-
-
-
-SET @sql_text1 = concat(CAST("SELECT running_balance_v_shares INTO @ledgerBalance from  shares_run_bal  WHERE trn_date<= " AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),@theAccountDate, CAST("'" AS CHAR CHARACTER SET utf8), CAST(" AND account_number=" AS CHAR CHARACTER SET utf8),CAST("'" AS CHAR CHARACTER SET utf8),accountNumber,CAST("'" AS CHAR CHARACTER SET utf8),CAST(' ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
-
--- SELECT @sql_text1;
-
-  PREPARE stmt1 FROM @sql_text1;
-  EXECUTE stmt1;
-DROP PREPARE stmt1;
-
-
-IF (@ledgerBalance IS NULL) THEN
-
-SET @ledgerBalance=0;
-
-END IF;
-
--- SELECT @ledgerBalance,@accountName;
-
-IF @ledgerBalance>0 THEN
-
-SET amountComputed=(@ledgerBalance*(rateUsed/100))/DAY(LAST_DAY(@theAccountDate));
-
-
- SET monthlyTotals=monthlyTotals+amountComputed;
-
- SET finalTotals=finalTotals+amountComputed;
-
--- SELECT @theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals;
-
- INSERT INTO sharesinterestpaymentdaily VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,amountComputed,finalTotals,'Not Yet','NA','NA','NA');
-
- IF @theAccountDate=LAST_DAY(@theAccountDate) THEN
- 
- INSERT INTO sharesinterestpaymentmonthly VALUES(null,@theAccountDate,MONTHNAME(@theAccountDate),YEAR(@theAccountDate),@accountName,accountNumber,@ledgerBalance,1,rateUsed,monthlyTotals,finalTotals,'Not Yet','NA','NA','NA');
-
-SET monthlyTotals=0;
-
- END IF;
-END IF;
-
-
-
-SET theAccountDate1=@theAccountDate;
-SET ledgerBalance1=@ledgerBalance;
-SET @theAccountDate=DATE_ADD(@theAccountDate, INTERVAL 1 DAY);
-
- SET @ledgerBalance=NULL;
-
- END LOOP Date_loop;
-
-  INSERT INTO sharesinterestpaymentannually VALUES(null,theAccountDate1,MONTHNAME(theAccountDate1),YEAR(theAccountDate1),@accountName,accountNumber,ledgerBalance1,1,rateUsed,finalTotals,'Not Yet','NA','NA','NA');
-
-SET finalTotals=0;
-
-SET l_done=0;
-
- END LOOP accounts_loop;
-
+        SET finalTotals = 0;
+        SET l_done = 0;
+    END LOOP accounts_loop;
 
 
  CLOSE forSelectingAccountNumbers;
@@ -657,6 +552,14 @@ SET l_done=0;
 END //
 
  DELIMITER ;
+
+CREATE INDEX idx_srb_acct_date_id
+ON shares_run_bal (account_number, trn_date, trn_id);
+
+-- 31/12/2025	05522000110	Dividends Payable	Return On Investment Payable	0.0	Active
+
+
+
  
 ALTER TABLE savingssharescomputationparameters MODIFY COLUMN SharesRateUsed DOUBLE;
 ALTER TABLE savingssharescomputationparameters MODIFY COLUMN SavingsRateUsed DOUBLE;

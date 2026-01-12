@@ -23,6 +23,12 @@ CREATE PROCEDURE createdRenewedLoan(
 DECLARE theLoanTxnId,timeP,timeP1 INT;
 DECLARE theLoanId VARCHAR(60);
    DECLARE previousLoanTrnId INT;
+
+    DECLARE v_account_num VARCHAR(60) DEFAULT accountNumber;
+    DECLARE v_active_g_id INT DEFAULT NULL;
+    DECLARE v_arch_g_archive_id INT DEFAULT NULL;
+    DECLARE v_new_guarantor_id INT DEFAULT NULL;
+    DECLARE v_carried_from VARCHAR(10) DEFAULT NULL; -- 'ACTIVE' or 'ARCHIVE'
 --   DECLARE EXIT HANDLER FOR SQLEXCEPTION
 --   BEGIN
 --   SELECT 0 AS theMessage;
@@ -171,14 +177,325 @@ INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,DATE(NOW()),MONTH(DATE(
 
 -- SELECT previousLoanTrnId;
 
-IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
+-- IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
 
-    -- Insert guarantors for the new loan
-         INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
+--     -- Insert guarantors for the new loan
+--          INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
 
+-- END IF;
+
+/* ==========================================================
+       Carry forward the MOST RECENT guarantor BY ACCOUNT NUMBER
+       Priority 1: latest active guarantor in `gaurantors` (id DESC)
+       Priority 2: latest archived guarantor in `gaurantors_archive`
+                   (archived_at DESC, archive_id DESC)
+    =========================================================== */
+
+    IF v_account_num IS NOT NULL THEN
+        -- Try latest active guarantor for this account
+        SELECT g.id
+          INTO v_active_g_id
+          FROM gaurantors g
+         WHERE g.accountNumber = v_account_num
+         ORDER BY g.id DESC
+         LIMIT 1;
+
+        IF v_active_g_id IS NOT NULL THEN
+            INSERT INTO gaurantors (
+                gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,
+                gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness,
+                accountNumber, loanTrnId
+            )
+            SELECT
+                g.gaurantorsName, g.gaurantorsContact1, g.gaurantorsContact2, g.gaurantorsIdNumber,
+                g.gaurantorsRelationWithBorrower, g.gaurantorsHomeArea, g.gaurantorsBusiness,
+                v_account_num, theLoanTxnId
+            FROM gaurantors g
+            WHERE g.id = v_active_g_id;
+
+            SET v_new_guarantor_id = LAST_INSERT_ID();
+            SET v_carried_from = 'ACTIVE';
+
+        ELSE
+            -- Fallback: latest archived guarantor for this account
+            SELECT ga.archive_id
+              INTO v_arch_g_archive_id
+              FROM gaurantors_archive ga
+             WHERE ga.accountNumber = v_account_num
+             ORDER BY ga.archived_at DESC, ga.archive_id DESC
+             LIMIT 1;
+
+            IF v_arch_g_archive_id IS NOT NULL THEN
+                INSERT INTO gaurantors (
+                    gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,
+                    gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness,
+                    accountNumber, loanTrnId
+                )
+                SELECT
+                    ga.gaurantorsName, ga.gaurantorsContact1, ga.gaurantorsContact2, ga.gaurantorsIdNumber,
+                    ga.gaurantorsRelationWithBorrower, ga.gaurantorsHomeArea, ga.gaurantorsBusiness,
+                    v_account_num, theLoanTxnId
+                FROM gaurantors_archive ga
+                WHERE ga.archive_id = v_arch_g_archive_id;
+
+                SET v_new_guarantor_id = LAST_INSERT_ID();
+                SET v_carried_from = 'ARCHIVE';
+            END IF;
+        END IF;
+    END IF;
+
+COMMIT;
+
+SELECT 1  AS theMessage;
+
+END $$
+
+DELIMITER ;
+
+
+
+
+
+-- delete from new_loan_appstore where applicant_account_number='05502119610';
+-- delete from new_loan_appstore1 where applicant_account_number='05502119610';
+-- delete from new_loan_appstoreamort where master2_id='newloan05502119610';
+-- CALL createdCombinedLoan('05502109610',247316.0,0.0,30,'2025-09-13',1.0,'DAYS',10001,1.0,'2025-09-13',10001,0,1,'BTN188856',5,4,77099);
+
+DROP PROCEDURE IF EXISTS createdCombinedLoan;
+
+DELIMITER $$
+
+CREATE PROCEDURE createdCombinedLoan(
+  IN accountNumber VARCHAR(60),
+  IN amount DOUBLE,
+  IN rate DOUBLE,
+  IN tenure DOUBLE,
+  IN theLastTransactionDate DATE,
+  IN periodTypeNumber DOUBLE,
+  IN periodTypeString VARCHAR(60),IN userId INT,IN interestRegime DOUBLE,IN initialDisburseDate DATE,IN loanOfficerId INT,IN thePeriodSet DOUBLE,IN theCompuM INT,IN batchNumber VARCHAR(30),IN buzId INT,IN renewals INT,IN theDisId INT) BEGIN
+DECLARE theLoanTxnId,timeP,timeP1 INT;
+DECLARE theLoanId VARCHAR(60);
+   DECLARE previousLoanTrnId INT;
+
+    DECLARE v_account_num VARCHAR(60) DEFAULT accountNumber;
+    DECLARE v_active_g_id INT DEFAULT NULL;
+    DECLARE v_arch_g_archive_id INT DEFAULT NULL;
+    DECLARE v_new_guarantor_id INT DEFAULT NULL;
+    DECLARE v_carried_from VARCHAR(10) DEFAULT NULL; -- 'ACTIVE' or 'ARCHIVE'
+--   DECLARE EXIT HANDLER FOR SQLEXCEPTION
+--   BEGIN
+--   SELECT 0 AS theMessage;
+--   ROLLBACK;F
+  -- Debits	Airtel Money(1221109)	01121000310	Mobile Money	2.43012E7
+-- END;
+ 
+START TRANSACTION;
+
+
+
+SELECT theLoanId(),CONCAT("newloan",accountNumber) INTO theLoanTxnId,theLoanId;
+
+SELECT trn_id INTO previousLoanTrnId from new_loan_appstore where applicant_account_number=accountNumber ORDER BY trn_id DESC LIMIT 1;
+
+CALL createAmortzationSchedule(theLoanTxnId,theLoanId,amount,0.0,tenure,periodTypeNumber,interestRegime,initialDisburseDate,thePeriodSet,theCompuM,@totalInterestComputed);
+
+SET @period= thePeriod(periodTypeNumber),timeP=1,timeP1=2;
+
+
+IF periodTypeNumber=3 THEN
+SET timeP=2,timeP1=4,tenure=(tenure*2);
 END IF;
 
 
+IF periodTypeNumber=6 THEN
+SET timeP=6,timeP1=12,tenure=(tenure*6);
+END IF;
+
+IF periodTypeNumber=8 THEN
+SET timeP=2,timeP1=4,tenure=(tenure*2);
+END IF;
+
+
+SET @startDate = concat(CAST("SELECT " AS CHAR CHARACTER SET utf8), CAST("DATE_ADD('" AS CHAR CHARACTER SET utf8),initialDisburseDate,CAST("'" AS CHAR CHARACTER SET utf8),CAST("," AS CHAR CHARACTER SET utf8),CAST("INTERVAL " AS CHAR CHARACTER SET utf8),timeP,  CAST(" " AS CHAR CHARACTER SET utf8),@period,CAST(" )" AS CHAR CHARACTER SET utf8),CAST(" INTO @startDate" AS CHAR CHARACTER SET utf8));
+--  select  @dueDate;
+  PREPARE stmt2 FROM @startDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+
+SET @nextDate = concat(CAST("SELECT " AS CHAR CHARACTER SET utf8), CAST("DATE_ADD('" AS CHAR CHARACTER SET utf8),initialDisburseDate,CAST("'" AS CHAR CHARACTER SET utf8),CAST("," AS CHAR CHARACTER SET utf8),CAST("INTERVAL " AS CHAR CHARACTER SET utf8),timeP1,  CAST(" " AS CHAR CHARACTER SET utf8),@period,CAST(" )" AS CHAR CHARACTER SET utf8),CAST(" INTO @nextDate" AS CHAR CHARACTER SET utf8));
+--  select  @dueDate;
+  PREPARE stmt2 FROM @nextDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+
+SET @endDate = concat(CAST("SELECT " AS CHAR CHARACTER SET utf8), CAST("DATE_ADD('" AS CHAR CHARACTER SET utf8),initialDisburseDate,CAST("'" AS CHAR CHARACTER SET utf8),CAST("," AS CHAR CHARACTER SET utf8),CAST("INTERVAL " AS CHAR CHARACTER SET utf8),tenure,  CAST(" " AS CHAR CHARACTER SET utf8),@period,CAST(" )" AS CHAR CHARACTER SET utf8),CAST(" INTO @endDate" AS CHAR CHARACTER SET utf8));
+--  select  @dueDate;
+  PREPARE stmt2 FROM @endDate;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+-- SELECT @startDate,@nextDate,@endDate;
+-- OTHER CHANGES TO NOTE:
+-- OtherGroups2=Business Id
+-- OtherGroups3=Number of Renewals
+-- OtherGroups4=BatchNumber
+-- authoriser_id=DisbursedLoanId
+
+ CALL accountNma(accountNumber,@accountName);
+
+INSERT INTO  new_loan_appstore VALUES(theLoanTxnId,initialDisburseDate,theLoanId,tenure,tenure,amount,@totalInterestComputed,(amount+@totalInterestComputed),(amount+@totalInterestComputed),initialDisburseDate,@startDate,@endDate,rate,@accountName,'Disbursed',TIME(CURRENT_TIMESTAMP),'0.0',((amount+@totalInterestComputed)/tenure),tenure,accountNumber,userId,theDisId,loanOfficerId,'G0001','GROUP1','1;NA;NA',buzId,renewals+1,batchNumber,'0.0',@totalInterestComputed,'0.0',amount,'0.0','0.0','0.0','0.0','0.0','0.0');
+
+INSERT INTO loanprocessingstore VALUES(NULL,theLastTransactionDate,amount,@totalInterestComputed,@nextDate,@endDate,tenure,'Renewed',@accountName,accountNumber);
+
+INSERT INTO  new_loan_appstore1 VALUES(
+  theLoanTxnId,
+  initialDisburseDate,
+  theLoanId,
+  tenure,
+  tenure,
+  amount,
+  @totalInterestComputed,
+  (amount+@totalInterestComputed),
+  (amount+@totalInterestComputed),
+  initialDisburseDate,
+  @startDate,
+  @endDate,
+  rate,
+  @accountName,
+  'Disbursed',
+  TIME(CURRENT_TIMESTAMP),
+  '0.0',
+  ((amount+@totalInterestComputed)/tenure),
+  CONCAT(tenure," ",periodTypeString),
+  accountNumber,
+  userId,
+  theDisId,
+  loanOfficerId,
+  'G0001',
+  'GROUP1',
+  '1;NA;NA',
+  buzId,
+  renewals+1,
+  batchNumber,
+  '0.0',
+  @totalInterestComputed,
+  '0.0',
+  amount,
+  '0.0',
+  '0.0',
+  '0.0',
+  '0.0',
+  '0.0',
+  '0.0',
+  'Existing Borrower',
+   'Individual',
+   'Group 1',
+    'Group 1',
+    'Cycle1',
+    'Salary Loan',
+    'Friends',
+    'Single Instalment Loan',
+    'Business Financing',
+    'No History',
+    'Cant Tell',
+    'NO',
+    0,
+    'Level 1',
+     'Monthly Income',
+     '100,000-200,000',
+     'Very Low',
+      'Self Employment',
+      'Agriculture',
+      'Male',
+      'Single',
+      'Minor',
+      'No Education',
+      'Email',
+      'augbazi@mail.com',
+      'Excellent',
+      'Excellent',
+       '1;General Comments;Not Specified:2;Payment promptness;Not Specified:3;Self Reminding;',
+        'NA',
+         'NA',
+          'NA',
+           'NA'
+  );
+
+
+INSERT INTO  pmms.loandisburserepaystatement VALUES(NULL,initialDisburseDate,MONTH(initialDisburseDate),YEAR(initialDisburseDate),theLoanTxnId,theLoanId,accountNumber,batchNumber,amount,@totalInterestComputed,(amount+@totalInterestComputed),rate,'0.0','0.0','0.0','0.0','0.0',amount,@totalInterestComputed,'0.0','0.0',(amount+@totalInterestComputed),'Disbursed',userId,loanOfficerId,'NA','NA');
+
+
+
+-- SELECT previousLoanTrnId;
+
+-- IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
+
+--     -- Insert guarantors for the new loan
+--          INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
+
+-- END IF;
+
+/* ==========================================================
+       Carry forward the MOST RECENT guarantor BY ACCOUNT NUMBER
+       Priority 1: latest active guarantor in `gaurantors` (id DESC)
+       Priority 2: latest archived guarantor in `gaurantors_archive`
+                   (archived_at DESC, archive_id DESC)
+    =========================================================== */
+
+    IF v_account_num IS NOT NULL THEN
+        -- Try latest active guarantor for this account
+        SELECT g.id
+          INTO v_active_g_id
+          FROM gaurantors g
+         WHERE g.accountNumber = v_account_num
+         ORDER BY g.id DESC
+         LIMIT 1;
+
+        IF v_active_g_id IS NOT NULL THEN
+            INSERT INTO gaurantors (
+                gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,
+                gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness,
+                accountNumber, loanTrnId
+            )
+            SELECT
+                g.gaurantorsName, g.gaurantorsContact1, g.gaurantorsContact2, g.gaurantorsIdNumber,
+                g.gaurantorsRelationWithBorrower, g.gaurantorsHomeArea, g.gaurantorsBusiness,
+                v_account_num, theLoanTxnId
+            FROM gaurantors g
+            WHERE g.id = v_active_g_id;
+
+            SET v_new_guarantor_id = LAST_INSERT_ID();
+            SET v_carried_from = 'ACTIVE';
+
+        ELSE
+            -- Fallback: latest archived guarantor for this account
+            SELECT ga.archive_id
+              INTO v_arch_g_archive_id
+              FROM gaurantors_archive ga
+             WHERE ga.accountNumber = v_account_num
+             ORDER BY ga.archived_at DESC, ga.archive_id DESC
+             LIMIT 1;
+
+            IF v_arch_g_archive_id IS NOT NULL THEN
+                INSERT INTO gaurantors (
+                    gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,
+                    gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness,
+                    accountNumber, loanTrnId
+                )
+                SELECT
+                    ga.gaurantorsName, ga.gaurantorsContact1, ga.gaurantorsContact2, ga.gaurantorsIdNumber,
+                    ga.gaurantorsRelationWithBorrower, ga.gaurantorsHomeArea, ga.gaurantorsBusiness,
+                    v_account_num, theLoanTxnId
+                FROM gaurantors_archive ga
+                WHERE ga.archive_id = v_arch_g_archive_id;
+
+                SET v_new_guarantor_id = LAST_INSERT_ID();
+                SET v_carried_from = 'ARCHIVE';
+            END IF;
+        END IF;
+    END IF;
 
 COMMIT;
 
@@ -355,12 +672,12 @@ END IF;
 
 
 
-IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
+-- IF EXISTS(SELECT * FROM gaurantors WHERE loanTrnId=previousLoanTrnId) THEN
 
-    -- Insert guarantors for the new loan
-        INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
+--     -- Insert guarantors for the new loan
+--         INSERT INTO gaurantors (gaurantorsName, gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber,gaurantorsRelationWithBorrower, gaurantorsHomeArea, gaurantorsBusiness, loanTrnId) SELECT gaurantorsName,gaurantorsContact1, gaurantorsContact2, gaurantorsIdNumber, gaurantorsRelationWithBorrower,gaurantorsHomeArea, gaurantorsBusiness, theLoanTxnId FROM gaurantors WHERE loanTrnId = previousLoanTrnId;
 
-END IF;
+-- END IF;
 
 
 COMMIT;
@@ -1983,6 +2300,392 @@ END//
 
 
 
+-- DROP PROCEDURE IF EXISTS RepayTheLoanNow;
+-- DELIMITER //
+-- CREATE PROCEDURE RepayTheLoanNow(
+--   IN accountNumber VARCHAR(60),
+--   IN AmountPaid DOUBLE,
+--   IN batchNumber VARCHAR(30),
+--   IN userId INT,
+--   IN instalmentPaidDate DATE,
+--   IN loanOfficerId INT) READS SQL DATA 
+-- BEGIN
+
+-- DECLARE runningInstalmentId,theLoanTxnId,theLoanId,remainingCinstalments,cycles,completionStatus INT;
+-- DECLARE loanCycleStatus,theExistingLoanId VARCHAR(60);
+-- DECLARE amountTxed,currentIntestX,totalInsterestX, currentPenaltyX,totalPenaltyX,currentAccumulatedInterestX,totalAccumulatedInterestX,currentPrincipalX,totalPrincipalX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,balanceCdue,balanceCdue2,instalmentsCpaid,TotalInterestCPaid,TotalInterestCRemaining,TotalPrincipalCPaid,TotalPrincipalCRemaining,TotalAccumulatedInterestCPaid,TotalAccumulatedInterestCRemaining,TotalLoanPenaltyCPaid,TotalLoanPenaltyCRemaining,TotalAccruedInterestCRemaining,TotalAccruedInterestCPaid,amountRemain,amountRemain2,amountDiff DOUBLE;
+
+-- --   DECLARE EXIT HANDLER FOR SQLEXCEPTION
+-- --   BEGIN
+-- --   ROLLBACK;
+  
+-- -- END;
+
+-- -- START TRANSACTION;
+-- SET amountTxed=AmountPaid;
+
+--  /* SELECT accountNumber,"1"; */
+-- SELECT theLoanTxnId(CONCAT("newloan",accountNumber)) INTO theLoanId;
+--  /* SELECT theLoanId,"2"; */
+
+-- IF EXISTS(SELECT * FROM  new_loan_appstoreamort WHERE master1_id=theLoanId AND NOT instalment_status='P') THEN
+-- /* SELECT "in"; */
+-- -- SELECT loan_cycle_status INTO loanCycleStatus from new_loan_appstore where trn_id=theLoanId;
+-- SELECT balance_due,loan_cycle_status INTO amountRemain2,loanCycleStatus from new_loan_appstore where trn_id=theLoanId;
+-- /* SELECT amountRemain2,loanCycleStatus,"1X"; */
+-- SELECT SUM(InstalmentRemaining) INTO amountRemain from new_loan_appstoreamort WHERE master1_id=theLoanId AND NOT instalment_status='P';
+
+--  /* SELECT amountRemain,"3"; */
+-- SET amountDiff=AmountPaid-amountRemain;
+
+-- IF amountDiff>0 THEN
+-- SET amountTxed=AmountPaid-amountDiff;
+-- END IF;
+
+-- label1:REPEAT
+-- /* SELECT theLoanId,"4"; */
+-- SELECT currentInstalmentNow(theLoanId) INTO runningInstalmentId;
+--  /* SELECT runningInstalmentId,"5"; */
+
+-- SELECT  InterestRemaing INTO currentIntestX FROM new_loan_appstoreamort WHERE master1_id=theLoanId AND instalment_no=runningInstalmentId;
+--  /* SELECT currentIntestX,"6";  */
+-- IF ISNULL(currentIntestX) THEN
+-- SET currentIntestX=0;
+-- END IF;
+
+--  /* SELECT currentIntestX,"7";  */
+
+-- IF ISNULL(totalInsterestX) THEN
+-- SET totalInsterestX=0;
+-- END IF;
+
+-- IF currentIntestX>0 THEN
+-- /* SELECT amountTxed,"8"; */
+-- IF currentIntestX>=amountTxed THEN
+-- SET currentIntestX=amountTxed;
+-- END IF;
+
+-- /* SELECT runningInstalmentId,"9"; */
+-- /* SELECT runningInstalmentId,currentIntestX,theLoanId,instalmentPaidDate,"1"; */
+-- CALL updateTheInterestComponent(runningInstalmentId,currentIntestX,theLoanId,instalmentPaidDate);
+
+-- SET totalInsterestX=totalInsterestX+currentIntestX;
+
+-- SET amountTxed=amountTxed-currentIntestX;
+
+-- IF amountTxed<9 THEN
+-- LEAVE label1;
+-- END IF;
+
+-- END IF;
+
+
+
+--  SELECT PrincipalRemaining INTO currentPrincipalX FROM new_loan_appstoreamort  WHERE master1_id=theLoanId AND instalment_no=runningInstalmentId;
+
+
+--   /* SELECT currentPrincipalX,"10";  */
+
+-- IF ISNULL(currentPrincipalX) THEN
+-- SET currentPrincipalX=0;
+-- END IF;
+ 
+-- IF currentPrincipalX>0 THEN
+-- -- SELECT currentPrincipalX;
+-- IF currentPrincipalX>=amountTxed THEN
+-- SET currentPrincipalX=amountTxed;
+-- END IF;
+
+-- CALL updateThePrincipalComponent(runningInstalmentId,currentPrincipalX,theLoanId,instalmentPaidDate);
+-- IF ISNULL(totalPrincipalX) THEN
+-- SET totalPrincipalX=0;
+-- END IF;
+-- SET totalPrincipalX=totalPrincipalX+currentPrincipalX;
+-- SET amountTxed=amountTxed-currentPrincipalX;
+-- -- SELECT amountTxed; 
+-- IF amountTxed<9 THEN
+-- LEAVE label1;
+-- END IF;
+
+-- END IF;
+
+
+
+--  SELECT LoanPenaltyRemaining INTO currentPenaltyX FROM new_loan_appstoreamort  WHERE master1_id=theLoanId AND instalment_no=runningInstalmentId;
+
+-- IF ISNULL(currentPenaltyX) THEN
+-- SET currentPenaltyX=0;
+-- END IF;
+
+-- IF currentPenaltyX>0 THEN
+
+-- IF currentPenaltyX>=amountTxed THEN
+-- SET currentPenaltyX=amountTxed;
+-- END IF;
+
+-- CALL updateThePenaltyComponent(runningInstalmentId,currentPenaltyX,theLoanId,instalmentPaidDate);
+-- IF ISNULL(totalPenaltyX) THEN
+-- SET totalPenaltyX=0;
+-- END IF;
+-- SET totalPenaltyX=totalPenaltyX+currentPenaltyX;
+-- SET amountTxed=amountTxed-currentPenaltyX;
+
+-- IF amountTxed<2 THEN
+-- LEAVE label1;
+-- END IF;
+
+-- END IF;
+
+-- -- 07/10/2022	07/10/2022	Regular Savings for Fuel1s Savings Processed on 07/10/2022
+--   -- From Fuel1	-	20000.0	96000.0	BTN88666
+
+--  SELECT AccumulatedInterestRemaining INTO currentAccumulatedInterestX FROM new_loan_appstoreamort  WHERE master1_id=theLoanId AND instalment_no=runningInstalmentId;
+
+-- IF ISNULL(currentAccumulatedInterestX) THEN
+-- SET currentAccumulatedInterestX=0;
+-- END IF;
+
+
+-- IF currentAccumulatedInterestX>0 THEN
+-- -- SELECT currentAccumulatedInterestX,amountTxed;
+-- IF currentAccumulatedInterestX>=amountTxed THEN
+-- SET currentAccumulatedInterestX=amountTxed;
+-- END IF;
+
+-- CALL updateTheAccumulatedInterestComponent(runningInstalmentId,currentAccumulatedInterestX,theLoanId,instalmentPaidDate);
+-- IF ISNULL(totalAccumulatedInterestX) THEN
+-- SET totalAccumulatedInterestX=0;
+-- END IF;
+-- SET totalAccumulatedInterestX=totalAccumulatedInterestX+currentAccumulatedInterestX;
+-- SET amountTxed=amountTxed-currentAccumulatedInterestX;
+
+-- IF amountTxed<2 THEN
+-- LEAVE label1;
+-- END IF;
+
+-- END IF;
+
+
+
+-- UNTIL amountTxed<=9  END REPEAT label1;
+-- ELSE
+-- SET balanceCdue=0,@balanceCdue=0,AmountPaid=0;
+
+-- END IF;
+
+-- SET @theTotalLoan = concat(CAST("SELECT balance_due,instalments_paid,TotalInterestPaid,TotalInterestRemaining,TotalPrincipalPaid,TotalPrincipalRemaining,TotalAccumulatedInterestPaid,TotalAccumulatedInterestRemaining,TotalLoanPenaltyPaid,TotalLoanPenaltyRemaining,TotalAccruedInterestRemaining,TotalAccruedInterestPaid INTO @balanceCdue,@instalmentsCpaid,@TotalInterestCPaid,@TotalInterestCRemaining,@TotalPrincipalCPaid,@TotalPrincipalCRemaining,@TotalAccumulatedInterestCPaid,@TotalAccumulatedInterestCRemaining,@TotalLoanPenaltyCPaid,@TotalLoanPenaltyCRemaining,@TotalAccruedInterestCRemaining,@TotalAccruedInterestCPaid FROM new_loan_appstore  WHERE trn_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+-- --  select  @theTotalLoan;
+--   PREPARE stmt2 FROM @theTotalLoan;
+--   EXECUTE stmt2;
+-- DROP PREPARE stmt2;
+
+-- -- SET @theTotalLoan = concat(CAST("SELECT instalments_paid,TotalInterestPaid,TotalInterestRemaining,TotalPrincipalPaid,TotalPrincipalRemaining,TotalAccumulatedInterestPaid,TotalAccumulatedInterestRemaining,TotalLoanPenaltyPaid,TotalLoanPenaltyRemaining,TotalAccruedInterestRemaining,TotalAccruedInterestPaid INTO @instalmentsCpaid,@TotalInterestCPaid,@TotalInterestCRemaining,@TotalPrincipalCPaid,@TotalPrincipalCRemaining,@TotalAccumulatedInterestCPaid,@TotalAccumulatedInterestCRemaining,@TotalLoanPenaltyCPaid,@TotalLoanPenaltyCRemaining,@TotalAccruedInterestCRemaining,@TotalAccruedInterestCPaid FROM new_loan_appstore  WHERE trn_id=" AS CHAR CHARACTER SET utf8),theLoanId);
+-- -- --  select  @theTotalLoan;
+-- --   PREPARE stmt2 FROM @theTotalLoan;
+-- --   EXECUTE stmt2;
+-- -- DROP PREPARE stmt2;
+
+
+
+-- -- SET @theTotalLoan2 = concat(CAST("SELECT SUM(InstalmentRemaining) INTO @balanceCdue from new_loan_appstoreamort WHERE master1_id=" AS CHAR CHARACTER SET utf8),theLoanId,CAST(" AND NOT instalment_status='P'" AS CHAR CHARACTER SET utf8));
+-- -- --  select  @theTotalLoan;
+-- --   PREPARE stmt2 FROM @theTotalLoan2;
+-- --   EXECUTE stmt2;
+-- -- DROP PREPARE stmt2;
+
+
+-- -- SELECT balanceCdue,instalmentsCpaid,TotalInterestCPaid,TotalInterestCRemaining,TotalPrincipalCPaid,TotalPrincipalCRemaining,TotalAccumulatedInterestCPaid,TotalAccumulatedInterestCRemaining,TotalLoanPenaltyCPaid,TotalLoanPenaltyCRemaining,TotalAccruedInterestCRemaining,TotalAccruedInterestCPaid;
+
+
+
+
+-- IF ISNULL(balanceCdue) THEN
+-- SET balanceCdue=0.0;
+-- END IF;
+
+
+-- IF ISNULL(instalmentsCpaid) THEN
+-- SET instalmentsCpaid=0.0;
+-- END IF;
+
+
+-- IF ISNULL(TotalInterestCPaid) THEN
+-- SET TotalInterestCPaid=0.0;
+-- END IF;
+
+-- IF ISNULL(TotalInterestCRemaining) THEN
+-- SET TotalInterestCRemaining=0.0;
+-- END IF;
+
+
+-- IF ISNULL(TotalPrincipalCPaid) THEN
+-- SET TotalPrincipalCPaid=0.0;
+-- END IF;
+
+
+-- IF ISNULL(TotalPrincipalCRemaining) THEN
+-- SET TotalPrincipalCRemaining=0.0;
+-- END IF;
+
+
+-- IF ISNULL(TotalAccumulatedInterestCRemaining) THEN
+-- SET TotalAccumulatedInterestCRemaining=0.0;
+-- END IF;
+
+-- IF ISNULL(TotalLoanPenaltyCPaid) THEN
+-- SET TotalLoanPenaltyCPaid=0.0;
+-- END IF;
+
+-- IF ISNULL(TotalLoanPenaltyCRemaining) THEN
+-- SET TotalLoanPenaltyCRemaining=0.0;
+-- END IF;
+
+
+-- IF ISNULL(totalPrincipalX) THEN
+-- SET totalPrincipalX=0.0;
+-- END IF;
+
+
+-- IF ISNULL(totalInsterestX) THEN
+-- SET totalInsterestX=0.0;
+-- END IF;
+
+
+-- IF ISNULL(totalAccumulatedInterestX) THEN
+-- SET totalAccumulatedInterestX=0.0;
+-- END IF;
+
+-- IF ISNULL(totalPenaltyX) THEN
+-- SET totalPenaltyX=0.0;
+-- END IF;
+
+
+-- -- SELECT totalPrincipalX;
+-- SET balanceCdue=@balanceCdue-AmountPaid,instalmentsCpaid=@instalmentsCpaid+AmountPaid,TotalInterestCPaid=@TotalInterestCPaid+totalInsterestX,TotalInterestCRemaining=@TotalInterestCRemaining-totalInsterestX,TotalPrincipalCPaid=@TotalPrincipalCPaid+totalPrincipalX,TotalPrincipalCRemaining=@TotalPrincipalCRemaining-totalPrincipalX,TotalAccumulatedInterestCPaid=@TotalAccumulatedInterestCPaid+totalAccumulatedInterestX,TotalAccumulatedInterestCRemaining=@TotalAccumulatedInterestCRemaining-totalAccumulatedInterestX,TotalLoanPenaltyCPaid=@TotalLoanPenaltyCPaid+totalPenaltyX,TotalLoanPenaltyCRemaining=@TotalLoanPenaltyCRemaining-totalPenaltyX;
+
+-- -- SELECT totalPrincipalX;
+-- SET balanceCdue=@balanceCdue-AmountPaid,instalmentsCpaid=@instalmentsCpaid+AmountPaid,TotalInterestCPaid=@TotalInterestCPaid+totalInsterestX,TotalInterestCRemaining=@TotalInterestCRemaining-totalInsterestX,TotalPrincipalCPaid=@TotalPrincipalCPaid+totalPrincipalX,TotalPrincipalCRemaining=@TotalPrincipalCRemaining-totalPrincipalX,TotalAccumulatedInterestCPaid=@TotalAccumulatedInterestCPaid+totalAccumulatedInterestX,TotalAccumulatedInterestCRemaining=@TotalAccumulatedInterestCRemaining-totalAccumulatedInterestX,TotalLoanPenaltyCPaid=@TotalLoanPenaltyCPaid+totalPenaltyX,TotalLoanPenaltyCRemaining=@TotalLoanPenaltyCRemaining-totalPenaltyX;
+
+-- /* 71395	Kembabazi Annet 0778001111	BODA BODA	0	1500000	1080000	200000	0	1280000	1.0 MONTHS	20/10/2022	10002	Disbursed */
+
+-- -- SELECT balanceCdue,instalmentsCpaid,TotalInterestCPaid,TotalInterestCRemaining,TotalPrincipalCPaid,TotalPrincipalCRemaining,TotalAccumulatedInterestCPaid,TotalAccumulatedInterestCRemaining,TotalLoanPenaltyCPaid,TotalLoanPenaltyCRemaining,TotalAccruedInterestCRemaining,TotalAccruedInterestCPaid;
+
+
+-- UPDATE new_loan_appstore SET balance_due=balanceCdue,instalments_paid=instalmentsCpaid,TotalInterestPaid=TotalInterestCPaid,TotalInterestRemaining=TotalInterestCRemaining,TotalPrincipalPaid=TotalPrincipalCPaid,TotalPrincipalRemaining=TotalPrincipalCRemaining,TotalAccumulatedInterestPaid=TotalAccumulatedInterestCPaid,TotalAccumulatedInterestRemaining=TotalAccumulatedInterestCRemaining,TotalLoanPenaltyPaid=TotalLoanPenaltyCPaid,TotalLoanPenaltyRemaining=TotalLoanPenaltyCRemaining WHERE trn_id=theLoanId;
+
+
+-- UPDATE new_loan_appstore1 SET balance_due=balanceCdue,instalments_paid=instalmentsCpaid,TotalInterestPaid=TotalInterestCPaid,TotalInterestRemaining=TotalInterestCRemaining,TotalPrincipalPaid=TotalPrincipalCPaid,TotalPrincipalRemaining=TotalPrincipalCRemaining,TotalAccumulatedInterestPaid=TotalAccumulatedInterestCPaid,TotalAccumulatedInterestRemaining=TotalAccumulatedInterestCRemaining,TotalLoanPenaltyPaid=TotalLoanPenaltyCPaid,TotalLoanPenaltyRemaining=TotalLoanPenaltyCRemaining WHERE trn_id=theLoanId;
+
+-- SET @theLoansNow = concat(CAST("SELECT PrincipalBalance,InterestBalance,AccumulatedInterestBalance,LoanPenaltyBalance,LoanBalance INTO @theCPrincipalBalance,@theCInterestBalance,@theCAccumulatedInterestBalance,@theCLoanPenaltyBalance,@theCLoanBalance FROM pmms.loandisburserepaystatement WHERE loanTrnId=" AS CHAR CHARACTER SET utf8),theLoanId,CAST(" ORDER BY trnId DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+-- --  select  @theLoansNow;
+--   PREPARE stmt2 FROM @theLoansNow;
+--   EXECUTE stmt2;
+-- DROP PREPARE stmt2;
+
+
+-- -- SELECT PrincipalBalance,InterestBalance,AccumulatedInterestBalance,LoanPenaltyBalance,LoanBalance INTO theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance FROM pmms.loandisburserepaystatement WHERE loanTrnId=theLoanId ORDER BY trnId DESC LIMIT 1;
+
+-- SET theCPrincipalBalance=@theCPrincipalBalance-totalPrincipalX,theCInterestBalance=@theCInterestBalance-totalInsterestX,theCAccumulatedInterestBalance=@theCAccumulatedInterestBalance-totalAccumulatedInterestX,theCLoanPenaltyBalance=@theCLoanPenaltyBalance-totalPenaltyX,theCLoanBalance=@theCLoanBalance-AmountPaid;
+
+-- -- SELECT totalAccumulatedInterestX,totalPenaltyX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,theLoanId;
+
+-- INSERT INTO pmms.loandisburserepaystatement VALUES(NULL,instalmentPaidDate,MONTH(instalmentPaidDate),YEAR(instalmentPaidDate),theLoanId,CONCAT("newloan",accountNumber),accountNumber,batchNumber,0.0,0.0,0.0,0.0,AmountPaid,totalPrincipalX,totalInsterestX,totalAccumulatedInterestX,totalPenaltyX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,loanCycleStatus,userId,loanOfficerId,'NA','NA');
+
+-- -- SELECT totalAccumulatedInterestX,totalPenaltyX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,theLoanId;
+-- -- SELECT ;
+-- IF ISNULL(balanceCdue) THEN
+-- SET balanceCdue=0;
+-- END IF;
+
+-- IF balanceCdue<=9 THEN
+
+-- SELECT loan_id INTO theExistingLoanId FROM new_loan_appstore where applicant_account_number=accountNumber AND loan_cycle_status='Completed' ORDER BY trn_id DESC LIMIT 1;
+
+-- IF ISNULL(theExistingLoanId) THEN
+-- SET cycles=1;
+-- ELSEIF CHAR_LENGTH(theExistingLoanId)=22 THEN
+
+-- SELECT SUBSTRING(theExistingLoanId, 11, 1) INTO cycles;
+
+
+-- ELSEIF CHAR_LENGTH(theExistingLoanId)=23 THEN
+
+-- SELECT SUBSTRING(theExistingLoanId, 11, 2) INTO cycles;
+
+-- ELSEIF CHAR_LENGTH(theExistingLoanId)=24 THEN
+
+-- SELECT SUBSTRING(theExistingLoanId, 11, 3) INTO cycles;
+
+-- END IF;
+
+-- SET @closedAccount=CONCAT('closedloan',cycles+1,accountNumber);
+
+
+-- IF EXISTS(SELECT * FROM new_loan_appstore WHERE loan_id=@closedAccount) THEN
+-- SET @closedAccount=CONCAT('closedloan',cycles+10,accountNumber);
+-- END IF;
+
+-- IF EXISTS(SELECT * FROM new_loan_appstore1 WHERE loan_id=@closedAccount) THEN
+-- SET @closedAccount=CONCAT('closedloan',cycles+10,accountNumber);
+-- END IF;
+
+
+
+-- IF EXISTS(SELECT * FROM new_loan_appstore WHERE loan_id=@closedAccount) THEN
+
+-- SELECT SUBSTRING(@closedAccount, 11, 2) INTO cycles;
+-- -- SELECT cycles;
+-- SET @closedAccount=CONCAT('closedloan',cycles+1,accountNumber);
+-- END IF;
+
+-- IF EXISTS(SELECT * FROM new_loan_appstore1 WHERE loan_id=@closedAccount) THEN
+-- SELECT SUBSTRING(@closedAccount, 11, 2) INTO cycles;
+-- -- SELECT cycles;
+-- SET @closedAccount=CONCAT('closedloan',cycles+1,accountNumber);
+-- END IF;
+
+
+-- UPDATE new_loan_appstore SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=theLoanId;
+-- UPDATE new_loan_appstore1 SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=theLoanId;
+-- UPDATE new_loan_appstoreamort SET instalment_status='P',master2_id=@closedAccount,instalment_paid_date=instalmentPaidDate WHERE master1_id=theLoanId;
+
+-- UPDATE interestcomputed SET loanId=@closedAccount WHERE loanId=CONCAT("newloan",accountNumber);
+
+
+-- UPDATE pmms.loandisburserepaystatement SET LoanStatusReport='Completed',LoanId=@closedAccount WHERE loanTrnId=theLoanId;
+
+-- SET completionStatus=2;
+
+-- END IF;
+
+-- IF ISNULL(completionStatus) THEN
+-- SET completionStatus=1;
+-- END IF;
+
+-- IF amountDiff>0 THEN
+-- SET totalAccumulatedInterestX=totalAccumulatedInterestX+amountDiff;
+
+-- CALL updateTheAccumulatedInterestComponentSpecial(runningInstalmentId,amountDiff,theLoanId,instalmentPaidDate);
+-- END IF;
+
+
+-- -- SELECT totalAccumulatedInterestX,totalPenaltyX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,theLoanId;
+
+-- SELECT totalPrincipalX,totalInsterestX,totalAccumulatedInterestX,totalPenaltyX,completionStatus,loanCycleStatus,theLoanId;
+
+-- -- COMMIT;
+
+-- END//
+
+--  DELIMITER ;
+
+
+
+
+-- CALL RepayTheLoanNow('05502099510',190000.0,'BTN146889',10000,'2025-05-01',10000);
+
+
+
 DROP PROCEDURE IF EXISTS RepayTheLoanNow;
 DELIMITER //
 CREATE PROCEDURE RepayTheLoanNow(
@@ -1997,7 +2700,7 @@ BEGIN
 DECLARE runningInstalmentId,theLoanTxnId,theLoanId,remainingCinstalments,cycles,completionStatus INT;
 DECLARE loanCycleStatus,theExistingLoanId VARCHAR(60);
 DECLARE amountTxed,currentIntestX,totalInsterestX, currentPenaltyX,totalPenaltyX,currentAccumulatedInterestX,totalAccumulatedInterestX,currentPrincipalX,totalPrincipalX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,balanceCdue,balanceCdue2,instalmentsCpaid,TotalInterestCPaid,TotalInterestCRemaining,TotalPrincipalCPaid,TotalPrincipalCRemaining,TotalAccumulatedInterestCPaid,TotalAccumulatedInterestCRemaining,TotalLoanPenaltyCPaid,TotalLoanPenaltyCRemaining,TotalAccruedInterestCRemaining,TotalAccruedInterestCPaid,amountRemain,amountRemain2,amountDiff DOUBLE;
-
+  DECLARE continueProcessing,loanExists INT DEFAULT 1;
 --   DECLARE EXIT HANDLER FOR SQLEXCEPTION
 --   BEGIN
 --   ROLLBACK;
@@ -2010,6 +2713,18 @@ SET amountTxed=AmountPaid;
 -- SELECT accountNumber;
 SELECT theLoanTxnId(CONCAT("newloan",accountNumber)) INTO theLoanId;
 -- SELECT theLoanId;
+
+-- Check if the loanId exists
+  SELECT COUNT(*) INTO loanExists
+  FROM new_loan_appstore
+  WHERE trn_id = theLoanId;
+
+  -- If the loan ID does not exist, exit the procedure
+  IF loanExists <> 0 THEN
+
+
+
+
 
 IF EXISTS(SELECT * FROM  new_loan_appstoreamort WHERE master1_id=theLoanId AND NOT instalment_status='P') THEN
 
@@ -2056,7 +2771,7 @@ SET totalInsterestX=totalInsterestX+currentIntestX;
 
 SET amountTxed=amountTxed-currentIntestX;
 
-IF amountTxed<9 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
@@ -2086,7 +2801,7 @@ END IF;
 SET totalPrincipalX=totalPrincipalX+currentPrincipalX;
 SET amountTxed=amountTxed-currentPrincipalX;
 -- SELECT amountTxed; 
-IF amountTxed<9 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
@@ -2113,7 +2828,7 @@ END IF;
 SET totalPenaltyX=totalPenaltyX+currentPenaltyX;
 SET amountTxed=amountTxed-currentPenaltyX;
 
-IF amountTxed<2 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
@@ -2142,15 +2857,37 @@ END IF;
 SET totalAccumulatedInterestX=totalAccumulatedInterestX+currentAccumulatedInterestX;
 SET amountTxed=amountTxed-currentAccumulatedInterestX;
 
-IF amountTxed<2 THEN
+IF amountTxed<1 THEN
 LEAVE label1;
 END IF;
 
 END IF;
 
+IF (currentIntestX + currentPenaltyX + currentAccumulatedInterestX + currentPrincipalX) = 0 THEN
+    -- Mark the instalment as fully paid
+
+    SELECT currentIntestX + currentPenaltyX + currentAccumulatedInterestX + currentPrincipalX;
+    UPDATE new_loan_appstoreamort
+    SET
+        instalment_status = 'P',
+        instalment_paid_date = instalmentPaidDate,
+        instalment_paid = instalment_amount,  -- or however you track "fully paid"
+        InstalmentRemaining = 0
+    WHERE instalment_no = runningInstalmentId
+      AND master1_id = theLoanId;
+
+    -- Optionally decrement remaining_instalments in new_loan_appstore if needed:
+    UPDATE new_loan_appstore
+    SET remaining_instalments = remaining_instalments - 1
+    WHERE trn_id = theLoanId;
+
+    -- Now set the leftover amount to 0 and exit
+    -- SET amountTxed = 0;
+    -- LEAVE label1;
+END IF;
 
 
-UNTIL amountTxed<=9  END REPEAT label1;
+UNTIL amountTxed<=1 END REPEAT label1;
 ELSE
 SET balanceCdue=0,@balanceCdue=0,AmountPaid=0;
 
@@ -2266,7 +3003,7 @@ SET @theLoansNow = concat(CAST("SELECT PrincipalBalance,InterestBalance,Accumula
 DROP PREPARE stmt2;
 
 
--- SELECT PrincipalBalance,InterestBalance,AccumulatedInterestBalance,LoanPenaltyBalance,LoanBalance INTO theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance FROM pmms.loandisburserepaystatement WHERE loanTrnId=theLoanId ORDER BY trnId DESC LIMIT 1;
+-- SELECT PrincipalBalance,InterestBalance,AccumulatedInterestBalance,LoanPenaltyBalance,LoanBalance INTO theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance FROM loandisburserepaystatement WHERE loanTrnId=theLoanId ORDER BY trnId DESC LIMIT 1;
 
 SET theCPrincipalBalance=@theCPrincipalBalance-totalPrincipalX,theCInterestBalance=@theCInterestBalance-totalInsterestX,theCAccumulatedInterestBalance=@theCAccumulatedInterestBalance-totalAccumulatedInterestX,theCLoanPenaltyBalance=@theCLoanPenaltyBalance-totalPenaltyX,theCLoanBalance=@theCLoanBalance-AmountPaid;
 
@@ -2280,9 +3017,9 @@ IF ISNULL(balanceCdue) THEN
 SET balanceCdue=0;
 END IF;
 
-IF balanceCdue<=9 THEN
+IF balanceCdue<=1 THEN
 
-SELECT loan_id INTO theExistingLoanId FROM new_loan_appstore where applicant_account_number=accountNumber AND loan_cycle_status='Completed' ORDER BY trn_id DESC LIMIT 1;
+SELECT loan_id INTO theExistingLoanId FROM arch_new_loan_appstore where applicant_account_number=accountNumber AND loan_cycle_status='Completed' ORDER BY trn_id DESC LIMIT 1;
 
 IF ISNULL(theExistingLoanId) THEN
 SET cycles=1;
@@ -2304,38 +3041,54 @@ END IF;
 SET @closedAccount=CONCAT('closedloan',cycles+1,accountNumber);
 
 
-IF EXISTS(SELECT * FROM new_loan_appstore WHERE loan_id=@closedAccount) THEN
+IF EXISTS(SELECT * FROM arch_new_loan_appstore WHERE loan_id=@closedAccount) THEN
 SET @closedAccount=CONCAT('closedloan',cycles+10,accountNumber);
 END IF;
 
-IF EXISTS(SELECT * FROM new_loan_appstore1 WHERE loan_id=@closedAccount) THEN
+IF EXISTS(SELECT * FROM arch_new_loan_appstore1 WHERE loan_id=@closedAccount) THEN
 SET @closedAccount=CONCAT('closedloan',cycles+10,accountNumber);
 END IF;
 
 
 
-IF EXISTS(SELECT * FROM new_loan_appstore WHERE loan_id=@closedAccount) THEN
+IF EXISTS(SELECT * FROM arch_new_loan_appstore WHERE loan_id=@closedAccount) THEN
 
 SELECT SUBSTRING(@closedAccount, 11, 2) INTO cycles;
 -- SELECT cycles;
 SET @closedAccount=CONCAT('closedloan',cycles+1,accountNumber);
 END IF;
 
-IF EXISTS(SELECT * FROM new_loan_appstore1 WHERE loan_id=@closedAccount) THEN
+IF EXISTS(SELECT * FROM arch_new_loan_appstore1 WHERE loan_id=@closedAccount) THEN
 SELECT SUBSTRING(@closedAccount, 11, 2) INTO cycles;
 -- SELECT cycles;
 SET @closedAccount=CONCAT('closedloan',cycles+1,accountNumber);
 END IF;
 
 
-UPDATE new_loan_appstore SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=theLoanId;
-UPDATE new_loan_appstore1 SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=theLoanId;
-UPDATE new_loan_appstoreamort SET instalment_status='P',master2_id=@closedAccount,instalment_paid_date=instalmentPaidDate WHERE master1_id=theLoanId;
+-- SELECT theLoanId;
+-- CALL MoveLoanFileAttach(theLoanId);
+
+
+
+-- SELECT theLoanId;
+CALL MoveClosedLoan(theLoanId);
+
+-- SELECT theLoanId;
+
+
+/* NEW – archive the guarantors of this loan */
+CALL archive_guarantors_by_loan_proc(theLoanId);
+
+
+
+UPDATE arch_new_loan_appstore SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=theLoanId;
+UPDATE arch_new_loan_appstore1 SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=theLoanId;
+UPDATE arch_new_loan_appstoreamort SET instalment_status='P',master2_id=@closedAccount,instalment_paid_date=instalmentPaidDate WHERE master1_id=theLoanId;
 
 UPDATE interestcomputed SET loanId=@closedAccount WHERE loanId=CONCAT("newloan",accountNumber);
 
 
-UPDATE pmms.loandisburserepaystatement SET LoanStatusReport='Completed',LoanId=@closedAccount WHERE loanTrnId=theLoanId;
+UPDATE pmms.arch_loandisburserepaystatement SET LoanStatusReport='Completed',LoanId=@closedAccount WHERE loanTrnId=theLoanId;
 
 SET completionStatus=2;
 
@@ -2352,6 +3105,9 @@ CALL updateTheAccumulatedInterestComponentSpecial(runningInstalmentId,amountDiff
 END IF;
 
 
+  END IF;
+
+
 -- SELECT totalAccumulatedInterestX,totalPenaltyX,theCPrincipalBalance,theCInterestBalance,theCAccumulatedInterestBalance,theCLoanPenaltyBalance,theCLoanBalance,theLoanId;
 
 SELECT totalPrincipalX,totalInsterestX,totalAccumulatedInterestX,totalPenaltyX,completionStatus,loanCycleStatus,theLoanId;
@@ -2364,11 +3120,87 @@ END//
 
 
 
+ 
+-- -- SELECT theLoanId;
+-- CALL MoveClosedLoan(70040);
 
--- Credits	Kyomuhendo Morine 0785264462	05502008810	Customer Deposits	0
--- Credits	Tumwebaze Peter 0775215732	05502039810	Customer Deposits	0
+-- -- SELECT theLoanId;
 
--- CALL RepayTheLoanNow('05502039810',1050000.0,'BTN39158',10001,'2023-02-15',10001);
+
+-- /* NEW – archive the guarantors of this loan */
+-- CALL archive_guarantors_by_loan_proc(70040);
+
+
+
+-- UPDATE arch_new_loan_appstore SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=70040;
+-- UPDATE arch_new_loan_appstore1 SET loan_id=@closedAccount,loan_cycle_status='Completed',trn_date=instalmentPaidDate WHERE trn_id=70040;
+-- UPDATE arch_new_loan_appstoreamort SET instalment_status='P',master2_id=@closedAccount,instalment_paid_date=instalmentPaidDate WHERE master1_id=70040;
+
+
+
+
+-- UPDATE pmms.arch_loandisburserepaystatement SET LoanStatusReport='Completed',LoanId=@closedAccount WHERE loanTrnId=70040;
+
+
+
+-- CALL RepayTheLoanNow('05502001210',232000.0,'BTN84782',10001,'2025-05-01',10001);
+
+ /* ONE-TIME build – MySQL 5.5.6 compatible */
+DROP PROCEDURE IF EXISTS archive_guarantors_by_loan_proc;
+DELIMITER $$
+
+CREATE PROCEDURE archive_guarantors_by_loan_proc(IN p_trn_id INT)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    /* copy --· */
+    INSERT IGNORE INTO gaurantors_archive
+            (original_id,
+             gaurantorsName, gaurantorsContact1, gaurantorsContact2,
+             gaurantorsIdNumber, gaurantorsRelationWithBorrower,
+             gaurantorsHomeArea, gaurantorsBusiness,
+             accountNumber, loanTrnId, archived_at)
+    SELECT  id,
+            gaurantorsName, gaurantorsContact1, gaurantorsContact2,
+            gaurantorsIdNumber, gaurantorsRelationWithBorrower,
+            gaurantorsHomeArea, gaurantorsBusiness,
+            accountNumber, loanTrnId, NOW()
+    FROM gaurantors
+    WHERE loanTrnId = p_trn_id;
+-- SELECT ROW_COUNT() AS rows_inserted;
+    /* …then delete */
+    DELETE FROM gaurantors
+    WHERE loanTrnId = p_trn_id;
+
+    -- /* show what moved (optional; remove if you do not need the set) */
+    -- SELECT 'archived' AS action,
+    --        original_id AS id,
+    --        loanTrnId,
+    --        accountNumber,
+    --        archived_at
+    -- FROM gaurantors_archive
+    -- WHERE loanTrnId = p_trn_id;
+
+    COMMIT;
+END$$
+DELIMITER ;
+
+
+
+-- CALL RepayTheLoanNow('05502006510',30012.0,'BTN146889',10001,'2025-03-16',10001);
+
+
+CREATE TABLE error_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  error_message TEXT NOT NULL,
+  created_at DATETIME NOT NULL
+);
 
 
 DROP PROCEDURE IF EXISTS updateThePrincipalComponent;
@@ -2709,6 +3541,8 @@ END//
 
 
 
+
+
 DROP PROCEDURE IF EXISTS createTheIndividualMethod;
 
 DELIMITER //
@@ -2783,28 +3617,21 @@ DELIMITER ;
 
 
 
-
-
 DROP PROCEDURE IF EXISTS createTheRenewalDetails;
 DELIMITER //
 CREATE PROCEDURE createTheRenewalDetails(IN theRenewalStatus INT,IN theRenewalDeadline INT,theDeadlineMeasure VARCHAR(30),IN theRenewalRate DOUBLE,IN thePeriodUsed INT,IN theRenewalTimes INT,IN theRateTypeUsedNow INT) READS SQL DATA 
 BEGIN
 
-
 IF EXISTS(SELECT * FROM autoRenewalSettings) THEN
 UPDATE autoRenewalSettings SET renewalStatus=theRenewalStatus,renewalDeadline=theRenewalDeadline,renewalMeasure=theDeadlineMeasure,renewalRate=theRenewalRate,periodUsed=thePeriodUsed,renewalTimes=theRenewalTimes,rateTypeUsed=theRateTypeUsedNow;
 ELSE
-INSERT INTO autoRenewalSettings VALUES("",theRenewalStatus,theRenewalDeadline,theDeadlineMeasure,theRenewalRate,thePeriodUsed,theRenewalTimes,theRateTypeUsedNow);
+INSERT INTO autoRenewalSettings (id,renewalStatus,renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed) VALUES("",theRenewalStatus,theRenewalDeadline,theDeadlineMeasure,theRenewalRate,thePeriodUsed,theRenewalTimes,theRateTypeUsedNow);
 
 END IF;
 
-
-
 END//
 
- DELIMITER ;
-
-
+DELIMITER ;
 
 
 -- SELECT SloanTrnId;
@@ -2812,24 +3639,24 @@ END//
 -- DROP TABLE IF EXISTS autoRenewalSettings;
 
 CREATE  TABLE autoRenewalSettings(
-id INTEGER NOT NULL, -- 0
-renewalStatus INT,-- 4
-renewalDeadline INT,-- 4
-renewalMeasure VARCHAR(30),-- 4
-renewalRate DOUBLE,-- 4
-periodUsed INT,
-renewalTimes INT,-- 4
-rateTypeUsed INT,
- PRIMARY KEY (`id`))
+  id INTEGER NOT NULL, -- 0
+  renewalStatus INT,-- 4
+  renewalDeadline INT,-- 4
+  renewalMeasure VARCHAR(30),-- 4
+  renewalRate DOUBLE,-- 4
+  periodUsed INT,
+  renewalTimes INT,-- 4
+  rateTypeUsed INT,
+  renew_only_active INT DEFAULT 0,
+  PRIMARY KEY (`id`)
+)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
+ALTER TABLE autoRenewalSettings modify column  id enum('1') NOT NULL;
 
- ALTER TABLE autoRenewalSettings modify column  id enum('1') NOT NULL;
+ ALTER TABLE autoRenewalSettings ADD COLUMN renew_only_active INT DEFAULT 0;
 
- 
-
- 
 DROP PROCEDURE IF EXISTS getTheRenewalDetails;
 DELIMITER //
 CREATE PROCEDURE getTheRenewalDetails() READS SQL DATA 
@@ -2837,29 +3664,19 @@ BEGIN
 
 IF EXISTS(SELECT * FROM autoRenewalSettings) THEN
 
-SELECT renewalStatus,renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed FROM  autoRenewalSettings;
+SELECT renewalStatus,renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed,renew_only_active FROM  autoRenewalSettings;
 
 ELSE
-INSERT INTO autoRenewalSettings VALUES("",0,2,'DAYS',240.0,0,3,1);
+INSERT INTO autoRenewalSettings (id,renewalStatus,renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed) VALUES("",0,2,'DAYS',240.0,0,3,1);
 
-SELECT renewalStatus,renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed FROM  autoRenewalSettings;
-
+SELECT renewalStatus,renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed,renew_only_active FROM  autoRenewalSettings;
 
 END IF;
 
-
-
 END//
 
- DELIMITER ;
+-- ... (unchanged code)
 
-
-
-
-
-
-
- 
 DROP PROCEDURE IF EXISTS theLoansForRenewal;
 DELIMITER //
 CREATE PROCEDURE theLoansForRenewal() READS SQL DATA 
@@ -2867,16 +3684,15 @@ BEGIN
 DECLARE theRenewalRate DOUBLE;
 DECLARE theDeadline,numberOfRenewals,theRateTypeUsed,periodSet,l_done,loanId INT;
 DECLARE theDealineMeeasure,theLoanTenurez VARCHAR(30);
+DECLARE v_renew_only_active INT DEFAULT 0;
    
 DECLARE forloanId CURSOR FOR SELECT new_loan_appstore.trn_id   FROM pmms_loans.new_loan_appstore INNER JOIN pmms_loans.new_loan_appstore1 ON new_loan_appstore.trn_id=new_loan_appstore1.trn_id where (new_loan_appstore.loan_cycle_status='Disbursed' OR new_loan_appstore.loan_cycle_status='Renewed') AND NOT (new_loan_appstore1.loan_tenure='1 MONTHS' OR new_loan_appstore1.loan_tenure='1.0 MONTHS' );
  
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done=1;
 
-
-
 DROP TABLE IF EXISTS theRenewalLoanDetailsN;
 
-CREATE TEMPORARY  TABLE theRenewalLoanDetailsN(
+CREATE TEMPORARY TABLE theRenewalLoanDetailsN(
   accountNumberN VARCHAR(60),
   officerIdN INT,
   balanceDueN DOUBLE,
@@ -2884,37 +3700,100 @@ CREATE TEMPORARY  TABLE theRenewalLoanDetailsN(
   trnDateUsed DATE,
   initialDisDateUsed DATE,
   tenureUsed INT,
-   periodUsed INT,
+  periodUsed INT,
   theBusinessId INT,
   theNumberOfRenewals INT,
-   theDidId INT,
+  theDidId INT,
   theNRateTypeUsed INT,
-   thePeriodTypeInt INT,
-      thePeriodTypeString VARCHAR(60)
-  );
+  thePeriodTypeInt INT,
+  thePeriodTypeString VARCHAR(60)
+);
 
+OPEN forloanId;
 
- 
- OPEN forloanId;
-
-SELECT renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed INTO theDeadline,theDealineMeeasure,theRenewalRate,periodSet,numberOfRenewals,theRateTypeUsed FROM 
+SELECT renewalDeadline,renewalMeasure,renewalRate,periodUsed,renewalTimes,rateTypeUsed,renew_only_active INTO theDeadline,theDealineMeeasure,theRenewalRate,periodSet,numberOfRenewals,theRateTypeUsed,v_renew_only_active FROM 
 autoRenewalSettings;
 loanId_loop: LOOP 
 
- SET loanId=NULL, @accountNumber=NULL,@loansOfficer=NULL, @balanceDueN=NULL,@trnDate=NULL,@initialDisDate=NULL,@loanTenure=NULL,@theBuzId=NULL,@numberRenewals=NULL,@previousId =NULL ;
- FETCH forloanId into loanId;
---  SELECT loanId;
- SELECT loan_tenure INTO theLoanTenurez FROM new_loan_appstore1 WHERE trn_id=loanId;
- IF l_done=1 THEN
-
+SET loanId=NULL, @accountNumber=NULL,@loansOfficer=NULL, @balanceDueN=NULL,@trnDate=NULL,@initialDisDate=NULL,@loanTenure=NULL,@theBuzId=NULL,@numberRenewals=NULL,@previousId =NULL ;
+FETCH forloanId into loanId;
+SELECT loan_tenure INTO theLoanTenurez FROM new_loan_appstore1 WHERE trn_id=loanId;
+IF l_done=1 THEN
 LEAVE loanId_loop;
+END IF;
 
- END IF;
- 
- 
-IF theLoanTenurez<>'1 MONTHS' OR theLoanTenurez<>'1.0 MONTHS' THEN
+IF theLoanTenurez<>'1 MONTHS' AND theLoanTenurez<>'1.0 MONTHS' THEN
 
 SET @dueDateX = concat(CAST("SELECT new_loan_appstore.applicant_account_number,new_loan_appstore.gruop_id, new_loan_appstore.balance_due,new_loan_appstore.trn_date,new_loan_appstore.instalment_start_date,new_loan_appstore.loan_tenure,new_loan_appstore.OtherGroups2,new_loan_appstore.OtherGroups3,new_loan_appstore.authoriser_id,new_loan_appstore.interest_rate,new_loan_appstore1.loan_tenure INTO @accountNumber,@loansOfficer, @balanceDueN,@trnDate,@initialDisDate,@loanTenure,@theBuzId,@numberRenewals,@previousId,@originalRate,@originalTenure  FROM new_loan_appstore INNER JOIN new_loan_appstore1 ON new_loan_appstore.trn_id=new_loan_appstore1.trn_id WHERE DATE(NOW())>=" AS CHAR CHARACTER SET utf8),CAST("(SELECT DATE_ADD(instalment_end_date, INTERVAL " AS CHAR CHARACTER SET utf8),theDeadline, CAST(" " AS CHAR CHARACTER SET utf8),theDeadilineReturn(theDealineMeeasure),CAST(" ) FROM new_loan_appstore WHERE trn_id=" AS CHAR CHARACTER SET utf8),loanId,CAST(")  AND new_loan_appstore.OtherGroups3<" AS CHAR CHARACTER SET utf8),numberOfRenewals,CAST(" AND new_loan_appstore.trn_id=" AS CHAR CHARACTER SET utf8),loanId);
+IF v_renew_only_active=1 THEN
+SET @dueDateX = concat(@dueDateX, CAST(" AND NOT EXISTS (SELECT 1 FROM new_loan_appstoreamort a WHERE a.master1_id = new_loan_appstore.trn_id AND a.instalment_status <> 'P' AND a.instalment_due_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY))" AS CHAR CHARACTER SET utf8));
+END IF;
+PREPARE stmt2 FROM @dueDateX;
+EXECUTE stmt2;
+DROP PREPARE stmt2;
+IF NOT ISNULL(@accountNumber) THEN
+IF theRateTypeUsed=1 THEN
+INSERT INTO theRenewalLoanDetailsN VALUES(@accountNumber,@loansOfficer,@balanceDueN,theRenewalRate,@trnDate,@initialDisDate,@loanTenure,periodSet,@theBuzId,@numberRenewals,@previousId,theRateTypeUsed,thePeriodDecoded(TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1))),TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1)));
+ELSE
+INSERT INTO theRenewalLoanDetailsN VALUES(@accountNumber,@loansOfficer,@balanceDueN,@originalRate,@trnDate,@initialDisDate,@loanTenure,periodSet,@theBuzId,@numberRenewals,@previousId,theRateTypeUsed,thePeriodDecoded(TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1))),TRIM(SUBSTRING_INDEX(@originalTenure,' ',-1)));
+END IF;
+END IF;
+END IF;
+SET l_done=0;
+END LOOP loanId_loop;
+CLOSE forloanId;
+SELECT * FROM theRenewalLoanDetailsN;
+END//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS theLoansForRenewalByTrnId;
+DELIMITER //
+CREATE PROCEDURE theLoansForRenewalByTrnId(IN input_trn_id INT) READS SQL DATA 
+BEGIN
+DECLARE theRenewalRate DOUBLE;
+DECLARE theDeadline, numberOfRenewals, theRateTypeUsed, periodSet, loanId INT;
+DECLARE theDealineMeeasure, theLoanTenurez VARCHAR(30);
+DECLARE v_renew_only_active INT DEFAULT 0;
+   
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET loanId = NULL;
+
+    DROP TABLE IF EXISTS theRenewalLoanDetailsN;
+
+    
+    CREATE TEMPORARY TABLE theRenewalLoanDetailsN(
+        accountNumberN VARCHAR(60),
+        officerIdN INT,
+        balanceDueN DOUBLE,
+        interestRateUsed DOUBLE,
+        trnDateUsed DATE,
+        initialDisDateUsed DATE,
+        tenureUsed INT,
+        periodUsed INT,
+        theBusinessId INT,
+        theNumberOfRenewals INT,
+        theDidId INT,
+        theNRateTypeUsed INT,
+        thePeriodTypeInt INT,
+        thePeriodTypeString VARCHAR(60)
+    );
+
+    SET loanId = input_trn_id;
+
+    SELECT renewalDeadline, renewalMeasure, renewalRate, periodUsed, renewalTimes, rateTypeUsed, renew_only_active 
+    INTO theDeadline, theDealineMeeasure, theRenewalRate, periodSet, numberOfRenewals, theRateTypeUsed, v_renew_only_active 
+    FROM autoRenewalSettings;
+    
+    IF loanId IS NOT NULL THEN
+        SELECT loan_tenure INTO theLoanTenurez 
+        FROM new_loan_appstore1 
+        WHERE trn_id = loanId;
+
+      IF theLoanTenurez<>'1 MONTHS' AND theLoanTenurez<>'1.0 MONTHS' THEN
+
+ SET @dueDateX = concat(CAST("SELECT new_loan_appstore.applicant_account_number,new_loan_appstore.gruop_id, new_loan_appstore.balance_due,new_loan_appstore.trn_date,new_loan_appstore.instalment_start_date,new_loan_appstore.loan_tenure,new_loan_appstore.OtherGroups2,new_loan_appstore.OtherGroups3,new_loan_appstore.authoriser_id,new_loan_appstore.interest_rate,new_loan_appstore1.loan_tenure INTO @accountNumber,@loansOfficer, @balanceDueN,@trnDate,@initialDisDate,@loanTenure,@theBuzId,@numberRenewals,@previousId,@originalRate,@originalTenure  FROM new_loan_appstore INNER JOIN new_loan_appstore1 ON new_loan_appstore.trn_id=new_loan_appstore1.trn_id WHERE DATE(NOW())>=" AS CHAR CHARACTER SET utf8),CAST("(SELECT DATE_ADD(instalment_end_date, INTERVAL " AS CHAR CHARACTER SET utf8),theDeadline, CAST(" " AS CHAR CHARACTER SET utf8),theDeadilineReturn(theDealineMeeasure),CAST(" ) FROM new_loan_appstore WHERE trn_id=" AS CHAR CHARACTER SET utf8),loanId,CAST(")  AND new_loan_appstore.OtherGroups3<" AS CHAR CHARACTER SET utf8),numberOfRenewals,CAST(" AND new_loan_appstore.trn_id=" AS CHAR CHARACTER SET utf8),loanId);
+ IF v_renew_only_active=1 THEN
+ SET @dueDateX = concat(@dueDateX, CAST(" AND NOT EXISTS (SELECT 1 FROM new_loan_appstoreamort a WHERE a.master1_id = new_loan_appstore.trn_id AND a.instalment_status <> 'P' AND a.instalment_due_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY))" AS CHAR CHARACTER SET utf8));
+ END IF;
   -- select  @dueDateX;
   PREPARE stmt2 FROM @dueDateX;
   EXECUTE stmt2;
@@ -2933,19 +3812,11 @@ END IF;
 
 
 END IF;
+    END IF;
 
-    SET l_done=0;
- END LOOP loanId_loop;
- CLOSE forloanId;
-
-SELECT * FROM theRenewalLoanDetailsN;
-
+    SELECT * FROM theRenewalLoanDetailsN;
 END//
-
- DELIMITER ;
-
-
-
+DELIMITER ;
 
 
 
@@ -3066,7 +3937,7 @@ autoRenewalSettings;
 --  END IF;
  
 
-IF theLoanTenurez<>'1 MONTHS' OR theLoanTenurez<>'1.0 MONTHS' THEN
+IF theLoanTenurez<>'1 MONTHS' AND theLoanTenurez<>'1.0 MONTHS' THEN
 
 SET @dueDateX = concat(CAST("SELECT new_loan_appstore.applicant_account_number,new_loan_appstore.gruop_id, new_loan_appstore.balance_due,new_loan_appstore.trn_date,new_loan_appstore.instalment_start_date,new_loan_appstore.loan_tenure,new_loan_appstore.OtherGroups2,new_loan_appstore.OtherGroups3,new_loan_appstore.authoriser_id,new_loan_appstore.interest_rate,new_loan_appstore1.loan_tenure INTO @accountNumber,@loansOfficer, @balanceDueN,@trnDate,@initialDisDate,@loanTenure,@theBuzId,@numberRenewals,@previousId,@originalRate,@originalTenure  FROM new_loan_appstore INNER JOIN new_loan_appstore1 ON new_loan_appstore.trn_id=new_loan_appstore1.trn_id WHERE  new_loan_appstore.trn_id=" AS CHAR CHARACTER SET utf8),theLoanTrnId);
 
@@ -3090,26 +3961,6 @@ END IF;
 END IF;
 
 
-
-
--- IF theLoanTenurez<>'1 MONTHS' OR theLoanTenurez<>'1.0 MONTHS' THEN
-
--- SET @dueDateX = concat(CAST("SELECT applicant_account_number,gruop_id, balance_due,trn_date,instalment_start_date,loan_tenure,OtherGroups2,OtherGroups3,authoriser_id INTO @accountNumber,@loansOfficer, @balanceDueN,@trnDate,@initialDisDate,@loanTenure,@theBuzId,@numberRenewals,@previousId  FROM new_loan_appstore WHERE trn_id=" AS CHAR CHARACTER SET utf8),theLoanTrnId);
---   -- select  @dueDateX;
---   PREPARE stmt2 FROM @dueDateX;
---   EXECUTE stmt2;
--- DROP PREPARE stmt2;
--- -- SELECT "ssssssssssssssssss",@accountNumber;
--- IF NOT ISNULL(@accountNumber) THEN
--- INSERT INTO theRenewalLoanDetailsN VALUES(@accountNumber,@loansOfficer,@balanceDueN,theRenewalRate,@trnDate,@initialDisDate,@loanTenure,periodSet,@theBuzId,@numberRenewals,@previousId,theRateTypeUsed);
--- END IF;
-
-
--- END IF;
-
---     SET l_done=0;
---  END LOOP loanId_loop;
---  CLOSE forloanId;
 
 SELECT * FROM theRenewalLoanDetailsN;
 
@@ -3998,102 +4849,179 @@ DELIMITER ;
 
 
 
+-- DROP PROCEDURE IF EXISTS DateManagementForLenders;
+
+-- DELIMITER //
+
+-- CREATE PROCEDURE DateManagementForLenders(IN InterestPaid Double,IN loanIdUsed VARCHAR(30)) READS SQL DATA BEGIN /*One of the most important idea to note is that when a payment interest instalment is made, the interest due date has to be shifted one date ahead*/
+
+-- DECLARE numberOfIds INTEGER;
+
+
+--  SELECT loan_tenure INTO @theTenure FROM new_loan_appstore1 WHERE loan_id=loanIdUsed;
+
+-- IF @theTenure= '1.0 MONTHS' OR @theTenure= '1 MONTHS' THEN
+
+-- SELECT interest_rate,TotalPrincipalRemaining INTO @InterestRate,@princinpalRemaining FROM new_loan_appstore WHERE loan_id=loanIdUsed;
+
+-- SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE master2_id=loanIdUsed;
+
+
+-- interestPayment_Loop: LOOP
+
+
+-- SELECT TrnId,InterestInvoRemaining, InterestPaidIn,InterestInvolved INTO 
+-- @theId,
+-- @interestRemaining,
+-- @interestPaidnow,
+-- @InterestInveo 
+-- FROM interestcomputed WHERE loanId=loanIdUsed AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1;
+
+
+--  SET @inteDiff=InterestPaid-@interestRemaining;
+ 
+--  IF @inteDiff<=0 THEN 
+ 
+
+ 
+ 
+--  IF @inteDiff=0 THEN
+ 
+-- /*  SET @A=10;
+--   SELECT @A; */
+--  CALL newDateConverted(@originalDueDate);
+ 
+--  UPDATE interestComputed SET InterestInvoRemaining=0.0,InterestPaidIn=@InterestInveo,loanStatusI='Paid' WHERE TrnId=@theId;
+
+--  SET InterestPaid=0.0;
+ 
+--  ELSEIF @inteDiff<0 THEN
+-- /*  SET @B=10;
+--   SELECT @B; */
+--  SET @IntRemai=@interestRemaining-InterestPaid;
+--  SET @intPai=@interestPaidnow+InterestPaid;
+  
+--  UPDATE interestComputed SET InterestInvoRemaining=@IntRemai,InterestPaidIn=@intPai WHERE TrnId=@theId;
+
+--  SET InterestPaid=0.0;
+ 
+--  END IF;
+ 
+--  ELSEIF @inteDiff>0 THEN
+--  /* SET @C=10;
+--   SELECT @C; */
+--  SET  @IntRemai=@interestRemaining-InterestPaid;
+--  SET @intPai=@interestPaidnow+InterestPaid;
+  
+--  UPDATE interestComputed SET InterestInvoRemaining=0.0,InterestPaidIn=@InterestInveo,loanStatusI='Paid' WHERE TrnId=@theId;
+
+--  SET InterestPaid=InterestPaid-@interestRemaining;
+--  CALL newDateConverted(@originalDueDate);
+ 
+--  END IF;
+
+
+
+
+
+
+-- IF InterestPaid<=0.0 THEN
+
+-- /* 
+--   SELECT @originalDueDate; */
+-- UPDATE new_loan_appstoreamort SET instalment_due_date=@originalDueDate WHERE master2_id=loanIdUsed;
+
+-- LEAVE interestPayment_Loop;
+
+-- END IF;
+
+
+-- END LOOP interestPayment_Loop;
+
+-- END IF;
+
+-- END //
+
+-- DELIMITER ;
+
+
+
 DROP PROCEDURE IF EXISTS DateManagementForLenders;
 
 DELIMITER //
 
-CREATE PROCEDURE DateManagementForLenders(IN InterestPaid Double,IN loanIdUsed VARCHAR(30)) READS SQL DATA BEGIN /*One of the most important idea to note is that when a payment interest instalment is made, the interest due date has to be shifted one date ahead*/
+CREATE PROCEDURE DateManagementForLenders(IN InterestPaid DOUBLE, IN loanIdUsed VARCHAR(30))
+READS SQL DATA
+BEGIN
+    DECLARE numberOfIds INT;
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE loop_counter INT DEFAULT 0;
 
-DECLARE numberOfIds INTEGER;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
+    SELECT loan_tenure INTO @theTenure FROM new_loan_appstore1 WHERE loan_id = loanIdUsed;
 
- SELECT loan_tenure INTO @theTenure FROM new_loan_appstore1 WHERE loan_id=loanIdUsed;
+    IF @theTenure = '1.0 MONTHS' OR @theTenure = '1 MONTHS' THEN
+        SELECT interest_rate, TotalPrincipalRemaining INTO @InterestRate, @princinpalRemaining 
+        FROM new_loan_appstore WHERE loan_id = loanIdUsed;
 
-IF @theTenure= '1.0 MONTHS' OR @theTenure= '1 MONTHS' THEN
+        SELECT instalment_due_date INTO @originalDueDate 
+        FROM new_loan_appstoreamort WHERE master2_id = loanIdUsed;
 
-SELECT interest_rate,TotalPrincipalRemaining INTO @InterestRate,@princinpalRemaining FROM new_loan_appstore WHERE loan_id=loanIdUsed;
+        interestPayment_Loop: LOOP
+            SET loop_counter = loop_counter + 1;
+            IF loop_counter > 1000 THEN
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Infinite loop detected in DateManagementForLenders';
+            END IF;
 
-SELECT instalment_due_date INTO @originalDueDate FROM new_loan_appstoreamort WHERE master2_id=loanIdUsed;
+            SELECT TrnId, InterestInvoRemaining, InterestPaidIn, InterestInvolved
+            INTO @theId, @interestRemaining, @interestPaidnow, @InterestInveo
+            FROM interestcomputed
+            WHERE loanId = loanIdUsed AND loanStatusI = 'Pending'
+            ORDER BY TrnId ASC LIMIT 1;
 
+            IF done THEN
+                LEAVE interestPayment_Loop;
+            END IF;
 
-interestPayment_Loop: LOOP
+            SET @inteDiff = InterestPaid - @interestRemaining;
 
+            IF @inteDiff <= 0 THEN
+                IF @inteDiff = 0 THEN
+                    CALL newDateConverted(@originalDueDate);
+                    UPDATE interestComputed 
+                    SET InterestInvoRemaining = 0.0, InterestPaidIn = @InterestInveo, loanStatusI = 'Paid' 
+                    WHERE TrnId = @theId;
+                    SET InterestPaid = 0.0;
+                ELSEIF @inteDiff < 0 THEN
+                    SET @IntRemai = @interestRemaining - InterestPaid;
+                    SET @intPai = @interestPaidnow + InterestPaid;
+                    UPDATE interestComputed 
+                    SET InterestInvoRemaining = @IntRemai, InterestPaidIn = @intPai 
+                    WHERE TrnId = @theId;
+                    SET InterestPaid = 0.0;
+                END IF;
+            ELSE
+                SET @IntRemai = @interestRemaining - InterestPaid;
+                SET @intPai = @interestPaidnow + InterestPaid;
+                UPDATE interestComputed 
+                SET InterestInvoRemaining = 0.0, InterestPaidIn = @InterestInveo, loanStatusI = 'Paid' 
+                WHERE TrnId = @theId;
+                SET InterestPaid = InterestPaid - @interestRemaining;
+                CALL newDateConverted(@originalDueDate);
+            END IF;
 
-SELECT TrnId,InterestInvoRemaining, InterestPaidIn,InterestInvolved INTO 
-@theId,
-@interestRemaining,
-@interestPaidnow,
-@InterestInveo 
-FROM interestcomputed WHERE loanId=loanIdUsed AND loanStatusI='Pending' ORDER BY TrnId ASC Limit 1;
-
-
- SET @inteDiff=InterestPaid-@interestRemaining;
- 
- IF @inteDiff<=0 THEN 
- 
-
- 
- 
- IF @inteDiff=0 THEN
- 
-/*  SET @A=10;
-  SELECT @A; */
- CALL newDateConverted(@originalDueDate);
- 
- UPDATE interestComputed SET InterestInvoRemaining=0.0,InterestPaidIn=@InterestInveo,loanStatusI='Paid' WHERE TrnId=@theId;
-
- SET InterestPaid=0.0;
- 
- ELSEIF @inteDiff<0 THEN
-/*  SET @B=10;
-  SELECT @B; */
- SET @IntRemai=@interestRemaining-InterestPaid;
- SET @intPai=@interestPaidnow+InterestPaid;
-  
- UPDATE interestComputed SET InterestInvoRemaining=@IntRemai,InterestPaidIn=@intPai WHERE TrnId=@theId;
-
- SET InterestPaid=0.0;
- 
- END IF;
- 
- ELSEIF @inteDiff>0 THEN
- /* SET @C=10;
-  SELECT @C; */
- SET  @IntRemai=@interestRemaining-InterestPaid;
- SET @intPai=@interestPaidnow+InterestPaid;
-  
- UPDATE interestComputed SET InterestInvoRemaining=0.0,InterestPaidIn=@InterestInveo,loanStatusI='Paid' WHERE TrnId=@theId;
-
- SET InterestPaid=InterestPaid-@interestRemaining;
- CALL newDateConverted(@originalDueDate);
- 
- END IF;
-
-
-
-
-
-
-IF InterestPaid<=0.0 THEN
-
-/* 
-  SELECT @originalDueDate; */
-UPDATE new_loan_appstoreamort SET instalment_due_date=@originalDueDate WHERE master2_id=loanIdUsed;
-
-LEAVE interestPayment_Loop;
-
-END IF;
-
-
-END LOOP interestPayment_Loop;
-
-END IF;
-
+            IF InterestPaid <= 0.0 THEN
+                UPDATE new_loan_appstoreamort 
+                SET instalment_due_date = @originalDueDate 
+                WHERE master2_id = loanIdUsed;
+                LEAVE interestPayment_Loop;
+            END IF;
+        END LOOP interestPayment_Loop;
+    END IF;
 END //
 
 DELIMITER ;
-
-
 
 
 
@@ -4139,17 +5067,18 @@ INSERT INTO businessDetails VALUES(null,"BODA BODA","CUSTOMERS INVOLVED IN RIDIN
 
 
 
--- DROP TABLE IF EXISTS oneTimeUpdate;
+DROP TABLE IF EXISTS oneTimeUpdate;
 CREATE  TABLE  IF NOT EXISTS   oneTimeUpdate(
 id INTEGER NOT NULL,
  PRIMARY KEY (id))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;  
 
--- INSERT INTO oneTimeUpdate VALUES(1);
+INSERT INTO oneTimeUpdate VALUES(2);
 
 
-
+-- 1	LoanPyt	P&I	05502003910	01128000110	ASASIRA MICHEAL 0700802107's Loan Payment	4,000	0	0	09/04/2025
+-- 2	Savings	P&I	01123000110	05502001810	MUKIMBIRI GODFREY's Savings	10,000	0	0	0
 
 
 DROP PROCEDURE IF EXISTS grossLoanPortfolio;
@@ -8692,6 +9621,7 @@ accounts_loop: LOOP
 LEAVE accounts_loop;
 
  END IF;
+ 
 SELECT pl.applicant_account_name,m.mobile1,pl.instalment_start_date,pl.princimpal_amount,pl.TotalPrincipalRemaining,pl.TotalInterestRemaining,(pl.TotalPrincipalRemaining+pl.TotalInterestRemaining),pl.trn_id INTO customerName, customerContactNumber,TrnDate,remainport,princeremain,interestRem,p_remain,theTrnId FROM pmms.master m INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number=m.account_number WHERE  pl.loan_id=loanId;
 -- SELECT customerContactNumber,loanPort,paidport,remainport,prince,princepaid,princeremain;
 SELECT (SUM(PrincipalRemaining)+SUM(InterestRemaing)),numberOfDayInArrears(loanId) INTO i_remain,arrears FROM new_loan_appstoreamort WHERE master2_id=loanId AND instalment_due_date<=DATE(NOW()) AND NOT instalment_status='P';
@@ -11177,6 +12107,81 @@ DELIMITER ;
 
 
 
+-- DROP PROCEDURE IF EXISTS totalNumberOfActiveCustomersOnly;
+-- DELIMITER $$
+-- CREATE PROCEDURE totalNumberOfActiveCustomersOnly(OUT activeCustomersOnly INT)
+-- BEGIN
+--   SELECT COUNT(trn_id)
+--     INTO activeCustomersOnly
+--     FROM new_loan_appstore
+--     WHERE (loan_cycle_status = 'Disbursed' OR loan_cycle_status = 'Renewed')
+--       AND ABS(DATEDIFF(instalment_end_date, CURDATE())) <= 30;
+-- END $$
+-- DELIMITER ;
+
+-- DROP PROCEDURE IF EXISTS totalNumberOfActiveCustomersOnly;
+-- DELIMITER $$
+-- CREATE PROCEDURE totalNumberOfActiveCustomersOnly(OUT activeCustomersOnly INT)
+-- BEGIN
+--   SELECT COUNT(trn_id)
+--     INTO activeCustomersOnly
+--     FROM new_loan_appstore
+--     WHERE loan_cycle_status = 'Disbursed'
+--       AND ABS(DATEDIFF(instalment_end_date, CURDATE())) <=30;
+-- END $$
+-- DELIMITER ;
+
+
+-- DROP PROCEDURE IF EXISTS totalNumberOfActiveCustomersOnly;
+-- DELIMITER $$
+-- CREATE PROCEDURE totalNumberOfActiveCustomersOnly(OUT activeCustomersOnly INT)
+-- BEGIN
+--   -- start a transaction boundary (even though this is a read, for consistency)
+--   START TRANSACTION;
+
+--   SELECT
+--     COUNT(*) 
+--     INTO activeCustomersOnly
+--   FROM
+--     new_loan_appstore AS nla
+--     JOIN (
+--       -- derive the last instalment_due_date per loan
+--       SELECT
+--         master1_id,
+--         MAX(instalment_due_date) AS last_due_date
+--       FROM
+--         new_loan_appstoreamort
+--       GROUP BY master1_id
+--     ) AS amort
+--       ON amort.master1_id = nla.trn_id
+--   WHERE
+--     nla.loan_cycle_status = 'Disbursed'
+--     AND ABS(DATEDIFF(amort.last_due_date, CURDATE())) <= 30;
+
+--   COMMIT;
+-- END $$
+-- DELIMITER ;
+
+DROP PROCEDURE IF EXISTS totalNumberOfActiveCustomersOnly;
+DELIMITER $$
+CREATE PROCEDURE totalNumberOfActiveCustomersOnly(OUT activeCustomersOnly INT)
+BEGIN
+  START TRANSACTION;
+  
+  SELECT
+    COUNT(*) 
+    INTO activeCustomersOnly
+  FROM
+    new_loan_appstore AS nla
+  WHERE
+    nla.loan_cycle_status = 'Disbursed'
+    AND numberOfDayInArrears(nla.loan_id) <= 30;
+  
+  COMMIT;
+END $$
+DELIMITER ;
+
+
 DROP PROCEDURE IF EXISTS totalNumberOfActiveNewCustomers;
 DELIMITER $$
 CREATE  PROCEDURE totalNumberOfActiveNewCustomers(OUT activeCustomers INT)
@@ -11187,22 +12192,71 @@ END $$
 DELIMITER ;
 
 
+-- DROP PROCEDURE IF EXISTS totalNumberOfCustomersPaid;
+-- DELIMITER $$
+-- CREATE  PROCEDURE totalNumberOfCustomersPaid(OUT activeCustomersPaid INT)
+-- BEGIN
+
+-- SELECT COUNT(trn_id) INTO @numberRenewed FROM new_loan_appstore WHERE loan_cycle_status='Renewed' AND trn_date=DATE(NOW()) AND (balance_due=(princimpal_amount+total_interest));
+
+
+-- SELECT  COUNT( DISTINCT master1_id) INTO @totalPaidRenewed from new_loan_appstoreamort WHERE (instalment_status='P' OR instalment_status='PP')  AND instalment_paid_date=DATE(NOW());
+
+
+-- SELECT (@totalPaidRenewed-@numberRenewed) INTO activeCustomersPaid;
+
+-- END $$
+-- DELIMITER ;
+
 DROP PROCEDURE IF EXISTS totalNumberOfCustomersPaid;
 DELIMITER $$
-CREATE  PROCEDURE totalNumberOfCustomersPaid(OUT activeCustomersPaid INT)
+
+CREATE PROCEDURE totalNumberOfCustomersPaid(OUT activeCustomersPaid INT)
 BEGIN
+    DECLARE numberRenewed INT DEFAULT 0;
+    DECLARE totalPaidRenewed INT DEFAULT 0;
 
-SELECT COUNT(trn_id) INTO @numberRenewed FROM new_loan_appstore WHERE loan_cycle_status='Renewed' AND trn_date=DATE(NOW()) AND (balance_due=(princimpal_amount+total_interest));
+    -- Calculate the number of renewed loans paid today from main and archived tables
+    SELECT COUNT(trn_id) 
+    INTO numberRenewed
+    FROM (
+        SELECT trn_id, princimpal_amount, total_interest, balance_due, loan_cycle_status, trn_date
+        FROM new_loan_appstore
+        WHERE loan_cycle_status = 'Renewed' 
+          AND trn_date = DATE(NOW()) 
+          AND balance_due = (princimpal_amount + total_interest)
+        
+        UNION ALL
+        
+        SELECT trn_id, princimpal_amount, total_interest, balance_due, loan_cycle_status, trn_date
+        FROM arch_new_loan_appstore
+        WHERE loan_cycle_status = 'Renewed' 
+          AND trn_date = DATE(NOW()) 
+          AND balance_due = (princimpal_amount + total_interest)
+    ) AS combined_renewed;
 
+    -- Calculate the total number of distinct customers with payments made today from main and archived tables
+    SELECT COUNT(DISTINCT master1_id) 
+    INTO totalPaidRenewed
+    FROM (
+        SELECT master1_id, instalment_status, instalment_paid_date
+        FROM new_loan_appstoreamort
+        WHERE (instalment_status = 'P' OR instalment_status = 'PP')  
+          AND instalment_paid_date = DATE(NOW())
+        
+        UNION ALL
+        
+        SELECT master1_id, instalment_status, instalment_paid_date
+        FROM arch_new_loan_appstoreamort
+        WHERE (instalment_status = 'P' OR instalment_status = 'PP')  
+          AND instalment_paid_date = DATE(NOW())
+    ) AS combined_paid;
 
-SELECT  COUNT( DISTINCT master1_id) INTO @totalPaidRenewed from new_loan_appstoreamort WHERE (instalment_status='P' OR instalment_status='PP')  AND instalment_paid_date=DATE(NOW());
-
-
-SELECT (@totalPaidRenewed-@numberRenewed) INTO activeCustomersPaid;
-
+    -- Calculate active customers paid
+    SET activeCustomersPaid = totalPaidRenewed - numberRenewed;
 END $$
-DELIMITER ;
 
+DELIMITER ;
 
 
 
@@ -11262,6 +12316,60 @@ END IF;
 
 END $$
 DELIMITER ;
+
+
+
+--  DROP PROCEDURE IF EXISTS merchantBalance;   
+-- DELIMITER $$
+-- CREATE  PROCEDURE merchantBalance(OUT TheMerchantBalance INT)
+-- BEGIN
+
+-- SELECT master_balance INTO TheMerchantBalance from pmms.bsanca01117000010 where trn_date<=DATE(NOW()) ORDER BY trn_id DESC LIMIT 1;
+
+-- IF ISNULL(TheMerchantBalance) THEN
+-- SET TheMerchantBalance=0.0;
+
+-- END IF;
+
+-- END $$
+-- DELIMITER ;
+
+DROP PROCEDURE IF EXISTS merchantBalance;
+DELIMITER $$
+CREATE PROCEDURE merchantBalance(OUT TheMerchantBalance DECIMAL(10,2))
+BEGIN
+    DECLARE table_exists INT DEFAULT 0;
+
+    -- Check if the table exists
+    SELECT COUNT(*)
+    INTO table_exists
+    FROM information_schema.tables 
+    WHERE table_schema = 'pmms'
+    AND table_name = 'bsanca01117000010';
+
+    IF table_exists = 0 THEN
+        -- If the table does not exist, set TheMerchantBalance to 0.0
+        SET TheMerchantBalance = 0.0;
+    ELSE
+        -- If the table exists, get the master balance
+        SELECT master_balance 
+        INTO TheMerchantBalance 
+        FROM pmms.bsanca01117000010 
+        WHERE trn_date <= DATE(NOW()) 
+        ORDER BY trn_id DESC 
+        LIMIT 1;
+
+        -- If the balance is NULL, set TheMerchantBalance to 0.0
+        IF ISNULL(TheMerchantBalance) THEN
+            SET TheMerchantBalance = 0.0;
+        END IF;
+    END IF;
+END $$
+DELIMITER ;
+
+
+
+
 
 
  DROP PROCEDURE IF EXISTS countNumberOfRenewals;   
@@ -11497,7 +12605,29 @@ CREATE PROCEDURE InterestRecover(IN theDate DATE,OUT InterestR VARCHAR(100)) REA
 BEGIN
 -- SELECT  SUM(credit) INTO InterestR FROM pmms.general_ledger WHERE  trn_date=theDate AND (debit_account_no LIKE '03301%' OR debit_account_no LIKE '03322%');
 
-SELECT SUM(InterestPaid) INTO InterestR FROM pmms.loandisburserepaystatement WHERE TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+-- SELECT SUM(InterestPaid) INTO InterestR FROM pmms.loandisburserepaystatement WHERE TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+
+
+SELECT SUM(InterestPaid)
+INTO InterestR
+FROM (
+    SELECT InterestPaid
+    FROM pmms.loandisburserepaystatement
+    WHERE TrnDate = theDate
+      AND AmountPaid > 0.0
+      AND NOT LoanStatusReport = 'RenewedClosed'
+    UNION ALL
+    SELECT InterestPaid
+    FROM pmms.arch_loandisburserepaystatement
+    WHERE TrnDate = theDate
+      AND AmountPaid > 0.0
+      AND NOT LoanStatusReport = 'RenewedClosed'
+) AS combined;
+
+
+-- IF ISNULL(princimpalRepaymentsMade) THEN
+-- SET princimpalRepaymentsMade=0.0;
+-- END IF;
 
 
 IF ISNULL(InterestR) THEN
@@ -11821,12 +12951,27 @@ CREATE PROCEDURE princimpalLoanRepaymentsMade(IN theDate DATE,OUT princimpalRepa
 
 
 BEGIN
--- SELECT  SUM(credit) INTO princimpalRepaymentsMade FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01128%';
-SELECT SUM(PrincipalPaid) INTO princimpalRepaymentsMade FROM pmms.loandisburserepaystatement WHERE TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+
+SELECT SUM(PrincipalPaid)
+INTO princimpalRepaymentsMade
+FROM (
+    SELECT PrincipalPaid
+    FROM pmms.loandisburserepaystatement
+    WHERE TrnDate = theDate
+      AND AmountPaid > 0.0
+      AND NOT LoanStatusReport = 'RenewedClosed'
+    UNION ALL
+    SELECT PrincipalPaid
+    FROM pmms.arch_loandisburserepaystatement
+    WHERE TrnDate = theDate
+      AND AmountPaid > 0.0
+      AND NOT LoanStatusReport = 'RenewedClosed'
+) AS combined;
+
+
 IF ISNULL(princimpalRepaymentsMade) THEN
 SET princimpalRepaymentsMade=0.0;
 END IF;
-
 
 END //
 DELIMITER ;
@@ -11842,11 +12987,30 @@ CREATE PROCEDURE collectionsMade(IN theDate DATE,OUT theCollectionsMade VARCHAR(
 
 
 BEGIN
--- SELECT  SUM(credit) INTO princimpalRepaymentsMade FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01128%';
-SELECT SUM(AmountPaid) INTO theCollectionsMade FROM pmms.loandisburserepaystatement WHERE TrnDate=theDate AND  loandisburserepaystatement.AmountPaid > 0.0  AND NOT loandisburserepaystatement.LoanStatusReport='RenewedClosed';
+
+
+
+SELECT SUM(AmountPaid)
+INTO theCollectionsMade
+FROM (
+    SELECT AmountPaid
+    FROM pmms.loandisburserepaystatement
+    WHERE TrnDate = theDate
+      AND AmountPaid > 0.0
+      AND NOT LoanStatusReport = 'RenewedClosed'
+    UNION ALL
+    SELECT AmountPaid
+    FROM pmms.arch_loandisburserepaystatement
+    WHERE TrnDate = theDate
+      AND AmountPaid > 0.0
+      AND NOT LoanStatusReport = 'RenewedClosed'
+) AS combined;
+
+
 IF ISNULL(theCollectionsMade) THEN
 SET theCollectionsMade=0.0;
 END IF;
+
 
 
 END //
@@ -11863,6 +13027,23 @@ DELIMITER ;
 SELECT @princimpalRepaymentsMade; */
 
 
+DROP PROCEDURE IF EXISTS merchantWithdrawReport;
+
+DELIMITER //
+
+CREATE PROCEDURE merchantWithdrawReport(IN theDate DATE,OUT merchantWithdraw VARCHAR(100)) READS SQL DATA 
+
+
+BEGIN
+SELECT  SUM(credit) INTO merchantWithdraw FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01117%';
+IF ISNULL(merchantWithdraw) THEN
+SET merchantWithdraw=0.0;
+END IF;
+
+
+
+END //
+DELIMITER ;
 
 
 
@@ -11885,9 +13066,6 @@ END //
 DELIMITER ;
 
 
-/* CALL refundFromMobileMoneyPayableMade('2019-06-23',@mobileMoneyRefund);
-
-SELECT @mobileMoneyRefund; */
 
 
 
@@ -11909,166 +13087,6 @@ SET fixedAssetsAndInvestmentDisp=0.0;
 END IF;
 
 
--- OUTER_BLOCK: BEGIN
--- DECLARE processindFeesAccountRep VARCHAR(30); 
--- DECLARE outer_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingProcessingFeesAccounts CURSOR FOR SELECT account_number  FROM pmms.account_created_store WHERE (account_number LIKE '01100%' OR account_number LIKE '01101%'
--- OR account_number LIKE '01102%' OR account_number LIKE '01103%' OR account_number LIKE '01104%' OR account_number LIKE '01105%' OR account_number LIKE '01106%'  OR account_number LIKE '01108%' OR account_number LIKE '01109%'
--- OR account_number LIKE '01110%' OR account_number LIKE '01111%'  OR account_number LIKE '01112%'  OR account_number LIKE '01136%');
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET outer_done=1;
-
-
--- OPEN cursor_forSelectingProcessingFeesAccounts; 
---  SET @cash=0;
---  SET @cashCredit=0;
--- SET @cashDebit=0;
- 
--- ACCOUNTS_LOOP: LOOP 
--- FETCH cursor_forSelectingProcessingFeesAccounts into processindFeesAccountRep;
-
--- IF processindFeesAccountRep IS NULL THEN
--- SET processindFeesAccountRep=0;
--- END IF;
---  IF outer_done=1 THEN
--- LEAVE ACCOUNTS_LOOP;
---  END IF;
- 
-
--- INNER_BLOCK: BEGIN
-
--- DECLARE batchNumbersReps VARCHAR(30); 
--- DECLARE inner_done INTEGER DEFAULT 0; 
--- DECLARE cursor_forSelectingBatchNumbers CURSOR FOR SELECT * FROM account_view;
--- DECLARE CONTINUE HANDLER FOR NOT FOUND SET inner_done=1;
-
-
--- SET @qr=CONCAT(CAST("CREATE TEMPORARY TABLE account_view AS SELECT trn_id FROM  pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_date='" AS CHAR CHARACTER SET utf8),theDate,CAST("'" AS CHAR CHARACTER SET utf8));
--- /* SELECT @qr; */
--- PREPARE stmt FROM @qr;
--- EXECUTE stmt;
--- DROP PREPARE stmt;
-
--- OPEN cursor_forSelectingBatchNumbers; 
- 
--- BATCH_LOOP:LOOP
-
--- FETCH cursor_forSelectingBatchNumbers INTO batchNumbersReps;
-
--- IF batchNumbersReps IS NULL THEN
--- SET batchNumbersReps=0;
--- END IF;
-
-
--- /* SELECT batchNumbersReps; */
---  IF inner_done=1 THEN
--- LEAVE BATCH_LOOP;
---  END IF;
- 
- 
---  SET @quary=CONCAT(CAST("SELECT chq_number INTO @batch FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
---  CALL cashAccountWasDebited(@batch,@cashDebited);
- 
- 
- 
- 
---  IF @cashDebited IS NULL THEN
--- SET @cashDebited=0;
--- END IF;
-
- 
--- IF @cashDebited>0 THEN
-
--- SET @quary=CONCAT(CAST("SELECT credit INTO @amountCredit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
-
--- PREPARE stm FROM @quary;
-
--- EXECUTE stm;
-
--- DEALLOCATE PREPARE stm;
-
-
-
--- IF @amountCredit<>'-' OR @amountCredit<>0 THEN
--- SET @cashCredit=@cashCredit+@amountCredit;
-
--- END IF;
-
--- END IF;
-
-
-
-
--- /* IF @cashCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountDebit,@cashDebit; */
-
--- /* END IF;
-
--- IF @amountCredit>0 THEN
-
--- /* SELECT processindFeesAccountRep,@amountCredit,@cashCredit; */
-
--- /* END IF; */
-
--- SET @quary=CONCAT(CAST("SELECT debit INTO @amountDebit FROM pmms.bsanca" AS CHAR CHARACTER SET utf8),processindFeesAccountRep,CAST("  WHERE trn_id='" AS CHAR CHARACTER SET utf8),batchNumbersReps,CAST("'" AS CHAR CHARACTER SET utf8));
--- PREPARE stm FROM @quary;
--- EXECUTE stm;
--- DEALLOCATE PREPARE stm;
-
--- /* SELECT batchNumbersReps; */
-
--- IF @amountDebit<>'-' OR @amountDebit<>0 THEN
-
--- SET @cashDebit=@cashDebit+@amountDebit;
-
--- END IF;
--- END LOOP BATCH_LOOP; 
-
--- SET inner_done=0;
-
--- CLOSE cursor_forSelectingBatchNumbers; 
-
--- END INNER_BLOCK;
-
-
--- DROP TABLE account_view;
---  IF @amountCredit IS NULL THEN
--- SET @amountCredit=0;
--- END IF;
-
---  IF @amountDebit IS NULL THEN
--- SET @amountDebit=0;
--- END IF;
-
---  END LOOP ACCOUNTS_LOOP;
- 
- 
--- SET outer_done=0;
- 
--- CLOSE cursor_forSelectingProcessingFeesAccounts;
--- /* SELECT @cashCredit,@cashDebit; */
--- SET @cash =@cashCredit;
-
-
---  IF @cash IS NULL THEN
--- SET fixedAssetsAndInvestmentDisp='0';
--- ELSE
-
--- SET fixedAssetsAndInvestmentDisp=@cash;
-
-
--- END IF;
-
-
--- END OUTER_BLOCK//
 END //
 DELIMITER ;
 
@@ -13153,17 +14171,28 @@ IF ISNULL(mobileMoneyc) THEN
 SET mobileMoneyc=0.0;
 END IF;
 
-
-
-
 END //
 DELIMITER ;
 
 
-/* CALL MobileMoneyReceivableCreated('2019-06-24',@mobileMoneyc);
 
-SELECT @mobileMoneyc; */
 
+
+
+DROP PROCEDURE IF EXISTS merchantDepositsReport;
+
+DELIMITER //
+
+CREATE PROCEDURE merchantDepositsReport(IN theDate DATE,OUT merchantDeposit VARCHAR(100)) READS SQL DATA 
+
+BEGIN
+SELECT  SUM(debit) INTO merchantDeposit FROM pmms.general_ledger WHERE  trn_date=theDate AND debit_account_no LIKE '01117%';
+IF ISNULL(merchantDeposit) THEN
+SET merchantDeposit=0.0;
+END IF;
+
+END //
+DELIMITER ;
 
 
 
@@ -13178,7 +14207,7 @@ CREATE PROCEDURE OtherReceivablesAndPrepaymentsCreated(IN theDate DATE,OUT other
 
 
 BEGIN
-SELECT  SUM(debit) INTO otherRecePreMade FROM pmms.general_ledger WHERE  trn_date=theDate AND  (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+SELECT  SUM(debit) INTO otherRecePreMade FROM pmms.general_ledger WHERE  trn_date=theDate AND  ( debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
  OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%');
 IF ISNULL(otherRecePreMade) THEN
 SET otherRecePreMade=0.0;
@@ -13474,7 +14503,19 @@ CALL totalNumberOfActiveCustomers(@activeCustomers);
 -- SELECT @activeCustomers;
 IF @activeCustomers>0 THEN
 -- SELECT @activeCustomers;
-INSERT INTO smsSummury VALUES("No.OfActiveLoans:",FORMAT(@activeCustomers,0));
+INSERT INTO smsSummury VALUES("Total No.OfCustomers:",FORMAT(@activeCustomers,0));
+
+  END IF;
+
+
+
+
+
+  CALL totalNumberOfActiveCustomersOnly(@activeCustomersOnly);
+-- SELECT @activeCustomers;
+IF @activeCustomers>0 THEN
+-- SELECT @activeCustomers;
+INSERT INTO smsSummury VALUES("No.OfActiveCustomers:",FORMAT(@activeCustomersOnly,0));
 
   END IF;
 
@@ -13908,7 +14949,7 @@ IF @Refundreceiavale>0 THEN
 INSERT INTO smsSummury VALUES("ReceivablesRefunded:",FORMAT(@Refundreceiavale,0));
 END IF;
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND   (debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
  OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%')) THEN
 CALL OtherReceivablesAndPrepaymentsRefunded(DATE(NOW()),@otherReceiAndPrepaymentRend);
 END IF;
@@ -13954,6 +14995,66 @@ IF @BankWithdrws>0 THEN
 INSERT INTO smsSummury VALUES("BankWithdraws:",FORMAT(@BankWithdrws,0));
 END IF;
 
+
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01117%') THEN
+CALL merchantDepositsReport(DATE(NOW()),@merchantDeposits);
+END IF;
+
+IF ISNULL(@merchantDeposits) THEN
+SET @merchantDeposits=0;
+END IF;
+
+SET @OpeningCahdBala=@OpeningCahdBala-@merchantDeposits;
+
+IF @merchantDeposits>0 THEN 
+INSERT INTO smsSummury VALUES("MerchantDeposits:",FORMAT(@merchantDeposits,0));
+END IF;
+
+
+
+
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01117%') THEN
+CALL merchantWithdrawReport(DATE(NOW()),@merchantWithdraw);
+END IF;
+
+
+IF ISNULL(@merchantWithdraw) THEN
+SET @merchantWithdraw=0;
+END IF;
+-- SELECT CONCAT("MomoWithdraws:=",@mobileMoneyRefund);
+SET @OpeningCahdBala=@OpeningCahdBala+@merchantWithdraw;
+
+IF @merchantWithdraw>0 THEN 
+INSERT INTO smsSummury VALUES("MerchantWithdraws:",FORMAT(@merchantWithdraw,0));
+END IF;
+
+
+
+
+
+
+
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
+CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
+END IF;
+
+IF ISNULL(@mobileMoney) THEN
+SET @mobileMoney=0;
+END IF;
+
+SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
+
+IF @mobileMoney>0 THEN 
+INSERT INTO smsSummury VALUES("MomoDeposits:",FORMAT(@mobileMoney,0));
+END IF;
+
+
+
+
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
 CALL refundFromMobileMoneyPayableMade(DATE(NOW()),@mobileMoneyRefund);
 END IF;
@@ -13970,19 +15071,6 @@ INSERT INTO smsSummury VALUES("MomoWithdraws:",FORMAT(@mobileMoneyRefund,0));
 END IF;
 
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  debit_account_no LIKE '01121%') THEN
-CALL MobileMoneyReceivableCreated(DATE(NOW()),@mobileMoney);
-END IF;
-
-IF ISNULL(@mobileMoney) THEN
-SET @mobileMoney=0;
-END IF;
-
-SET @OpeningCahdBala=@OpeningCahdBala-@mobileMoney;
-
-IF @mobileMoney>0 THEN 
-INSERT INTO smsSummury VALUES("MomoDeposits:",FORMAT(@mobileMoney,0));
-END IF;
 
 
 IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01100%' OR debit_account_no LIKE '01101%'
@@ -14103,7 +15191,7 @@ INSERT INTO smsSummury VALUES("ReceivablesCreated:",FORMAT(@receiavale,0));
 END IF;
 
 
-IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01117%' OR debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
+IF EXISTS(SELECT DISTINCT debit_account_no from pmms.general_ledger  where trn_date=DATE(NOW()) AND  (debit_account_no LIKE '01118%' OR debit_account_no LIKE '01119%'
  OR debit_account_no LIKE '01132%'  OR debit_account_no LIKE '01133%'  OR debit_account_no LIKE '01134%'  OR debit_account_no LIKE '01135%'  OR debit_account_no LIKE '01120%')) THEN
 CALL OtherReceivablesAndPrepaymentsCreated(DATE(NOW()),@otherRecePreMade);
 END IF;
@@ -14247,12 +15335,31 @@ INSERT INTO smsSummury VALUES("ClosingCash:",FORMAT( @closingCashBal,0) );
 
 CALL momoBalance(@TheMomoBalance);
 
+
+IF ISNULL(@TheMomoBalance) THEN 
+SET @TheMomoBalance=0;
+END IF;
+
  IF @TheMomoBalance>0 THEN 
 INSERT INTO smsSummury VALUES("MoMoBalance:",FORMAT(@TheMomoBalance,0) );
 END IF;
 
- IF @TheMomoBalance>0 THEN 
-INSERT INTO smsSummury VALUES("TotalCashAndMoMo:",FORMAT((@TheMomoBalance+@closingCashBal),0));
+
+CALL merchantBalance(@TheMerchantBalance);
+
+IF ISNULL(@TheMerchantBalance) THEN 
+SET @TheMerchantBalance=0;
+END IF;
+
+ IF @TheMerchantBalance>0 THEN 
+INSERT INTO smsSummury VALUES("MerchantBalance:",FORMAT(@TheMerchantBalance,0) );
+END IF;
+
+
+
+
+ IF @TheMomoBalance>0 OR @TheMerchantBalance>0  THEN 
+INSERT INTO smsSummury VALUES("TotalCashMomoAndMerchant:",FORMAT((@TheMomoBalance+@closingCashBal+@TheMerchantBalance),0));
 END IF;
 
 --   INSERT INTO  aging_loan_analysis2x( 
@@ -14292,43 +15399,414 @@ DELIMITER ;
 
 
 
+DROP FUNCTION IF EXISTS NumberOfCustomersPerOfficer;
 
-DROP PROCEDURE smsSummuryLoansOfficerReport;
 DELIMITER $$
-CREATE  PROCEDURE smsSummuryLoansOfficerReport()
-    READS SQL DATA
+CREATE FUNCTION NumberOfCustomersPerOfficer(loanOfficeId INT) RETURNS INT
 BEGIN
- 
-    
+    DECLARE activeCustomers INT;
+
+    SELECT COUNT(trn_id) INTO activeCustomers 
+    FROM new_loan_appstore 
+    WHERE (loan_cycle_status='Disbursed' OR loan_cycle_status='Renewed') AND gruop_id=loanOfficeId;
+
+    RETURN activeCustomers;
+END$$
+DELIMITER ;
 
 
-DROP TABLE IF EXISTS smsSummuryOfficer;
 
-CREATE  TEMPORARY TABLE smsSummuryOfficer(officerId INT,noOfCustomer  VARCHAR(200), paidC VARCHAR(200), percentPaid VARCHAR(200), amountPaid VARCHAR(200), itemName VARCHAR(200),itemValue VARCHAR(200));
+DROP FUNCTION IF EXISTS PaidCustomersPerOfficer;
+
+DELIMITER $$
+
+CREATE FUNCTION PaidCustomersPerOfficer(loanOfficerId INT) RETURNS INT
+BEGIN
+    DECLARE totalPaidRenewed INT;
+
+    -- Calculate the distinct count of paid or partially paid installments today for the specified loan officer
+    SELECT COUNT(DISTINCT master1_id) INTO totalPaidRenewed 
+    FROM (
+        -- Current loan records
+        SELECT 
+            master1_id
+        FROM new_loan_appstoreamort
+        WHERE (instalment_status = 'P' OR instalment_status = 'PP') 
+          AND instalment_paid_date = DATE(NOW())
+          AND master1_id IN (
+              SELECT trn_id 
+              FROM new_loan_appstore 
+              WHERE NOT loan_cycle_status = 'RenewedClosed' 
+                AND gruop_id = loanOfficerId
+          )
+        
+        UNION ALL
+        
+        -- Archived loan records
+        SELECT 
+            master1_id
+        FROM arch_new_loan_appstoreamort
+        WHERE (instalment_status = 'P' OR instalment_status = 'PP') 
+          AND instalment_paid_date = DATE(NOW())
+          AND master1_id IN (
+              SELECT trn_id 
+              FROM arch_new_loan_appstore 
+              WHERE NOT loan_cycle_status = 'RenewedClosed' 
+                AND gruop_id = loanOfficerId
+          )
+    ) AS PaidCustomers;
+
+    RETURN totalPaidRenewed;
+END$$
+
+DELIMITER ;
 
 
 
+-- DROP FUNCTION IF EXISTS PaidCustomersPerOfficer;
+
+-- DELIMITER $$
+-- CREATE FUNCTION PaidCustomersPerOfficer(loanOfficerId INT) RETURNS INT
+-- BEGIN
+--     DECLARE numberRenewed INT;
+--     DECLARE totalPaidRenewed INT;
+--     DECLARE activeCustomersPaid INT;
+
+
+--     -- Calculate the distinct count of paid or partially paid instalments today for the specified loan office
+--     SELECT COUNT(DISTINCT master1_id) INTO totalPaidRenewed 
+--     FROM new_loan_appstoreamort 
+--     WHERE (instalment_status = 'P' OR instalment_status = 'PP') 
+--       AND instalment_paid_date = DATE(NOW())
+--       AND master1_id IN (SELECT trn_id FROM new_loan_appstore WHERE NOT loan_cycle_status='RenewedClosed' AND  gruop_id = loanOfficerId);
+
+--     -- Calculate the difference to get active paid customers for the specified loan office
+--     -- SET activeCustomersPaid = totalPaidRenewed - numberRenewed;
+
+--     RETURN totalPaidRenewed;
+-- END$$
+-- DELIMITER ;
 
 
 
-SELECT itemName,itemValue  AS itemValue FROM smsSummury;
+DROP FUNCTION IF EXISTS PercentPaidCustomersPerOfficer;
 
+DELIMITER $$
+CREATE FUNCTION PercentPaidCustomersPerOfficer(loanOfficerId INT) RETURNS DECIMAL(5,2)
+BEGIN
+    DECLARE totalCustomers INT;
+    DECLARE paidCustomers INT;
+    DECLARE percentPaid DECIMAL(5,2);
 
-DROP TABLE smsSummury;
+    -- Get the total number of customers for the loan officer
+    SET totalCustomers = NumberOfCustomersPerOfficer(loanOfficerId);
 
-END $$
+    -- Get the number of paid customers for the loan officer
+    SET paidCustomers = PaidCustomersPerOfficer(loanOfficerId);
+
+    -- Calculate the percentage of paid customers
+    IF totalCustomers > 0 THEN
+        SET percentPaid = (paidCustomers / totalCustomers) * 100;
+    ELSE
+        SET percentPaid = 0;
+    END IF;
+
+    RETURN percentPaid;
+END$$
 DELIMITER ;
 
 
 
 
 
+-- DROP PROCEDURE IF EXISTS totalPrincimpalBalancePerOfficer;
+-- DELIMITER $$
+-- CREATE  PROCEDURE totalPrincimpalBalancePerOfficer(loanOfficerId INT)
+-- BEGIN
+
+-- SELECT SUM(TotalPrincipalRemaining) INTO princimpalBalance FROM new_loan_appstore WHERE loan_cycle_status='Renewed' OR loan_cycle_status='Disbursed' ;
+
+-- END $$
+-- DELIMITER ;
+
+
+
+
+-- DROP PROCEDURE IF EXISTS totalInterestBalancePerOfficer;
+-- DELIMITER $$
+-- CREATE  PROCEDURE totalInterestBalancePerOfficer(loanOfficerId INT)
+-- BEGIN
+
+-- SELECT SUM(TotalInterestRemaining) INTO interestBalance FROM new_loan_appstore WHERE loan_cycle_status='Renewed' OR loan_cycle_status='Disbursed' ;
+
+-- END $$
+-- DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS TotalPrincipalBalancePerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION TotalPrincipalBalancePerOfficer(loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE principalBalance DECIMAL(20,2);
+
+    SELECT SUM(CAST(TotalPrincipalRemaining AS DECIMAL(20,2))) INTO principalBalance
+    FROM new_loan_appstore 
+    WHERE (loan_cycle_status = 'Renewed' OR loan_cycle_status = 'Disbursed') 
+      AND gruop_id = loanOfficerId;
+
+    RETURN principalBalance;
+END$$
+DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS TotalInterestBalancePerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION TotalInterestBalancePerOfficer(loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE interestBalance DECIMAL(20,2);
+
+    SELECT SUM(CAST(TotalInterestRemaining AS DECIMAL(20,2))) INTO interestBalance
+    FROM new_loan_appstore 
+    WHERE (loan_cycle_status = 'Renewed' OR loan_cycle_status = 'Disbursed') 
+      AND gruop_id = loanOfficerId;
+
+    RETURN interestBalance;
+END$$
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS PortfolioAmountPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION PortfolioAmountPerOfficer(loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE principalBalance DECIMAL(20,2);
+    DECLARE interestBalance DECIMAL(20,2);
+    DECLARE portfolioAmount DECIMAL(20,2);
+
+    -- Get the total principal balance for the loan officer
+    SET principalBalance = TotalPrincipalBalancePerOfficer(loanOfficerId);
+
+    -- Get the total interest balance for the loan officer
+    SET interestBalance = TotalInterestBalancePerOfficer(loanOfficerId);
+
+    -- Calculate the total portfolio amount
+    SET portfolioAmount = principalBalance + interestBalance;
+
+    RETURN portfolioAmount;
+END$$
+DELIMITER ;
+
+
+
+
+
+DROP FUNCTION IF EXISTS CollectionsMadePerOfficer;
+
+DELIMITER $$
+
+CREATE FUNCTION CollectionsMadePerOfficer(theDate DATE, loanOfficerId INT) RETURNS DECIMAL(20,2)
+BEGIN
+    DECLARE theCollectionsMade DECIMAL(20,2);
+
+    -- Calculate the total collections made for the specified loan officer on the given date
+    SELECT SUM(CAST(AmountPaid AS DECIMAL(20,2))) INTO theCollectionsMade
+    FROM (
+        -- Current loan records
+        SELECT 
+            lrs.AmountPaid
+        FROM pmms.loandisburserepaystatement lrs
+        JOIN pmms_loans.new_loan_appstore nls 
+            ON lrs.loanTrnId = nls.trn_id
+        WHERE lrs.TrnDate = theDate 
+          AND CAST(lrs.AmountPaid AS DECIMAL(20,2)) > 0.0
+          AND lrs.LoanStatusReport <> 'RenewedClosed'
+          AND nls.gruop_id = loanOfficerId
+
+        UNION ALL
+
+        -- Archived loan records
+        SELECT 
+            alrs.AmountPaid
+        FROM pmms.arch_loandisburserepaystatement alrs
+        JOIN pmms_loans.arch_new_loan_appstore anls 
+            ON alrs.loanTrnId = anls.trn_id
+        WHERE alrs.TrnDate = theDate 
+          AND CAST(alrs.AmountPaid AS DECIMAL(20,2)) > 0.0
+          AND alrs.LoanStatusReport <> 'RenewedClosed'
+          AND anls.gruop_id = loanOfficerId
+    ) AS CombinedCollections;
+
+    -- Handle NULL case
+    IF ISNULL(theCollectionsMade) THEN
+        SET theCollectionsMade = 0.0;
+    END IF;
+
+    RETURN theCollectionsMade;
+END$$
+
+DELIMITER ;
+
+
+
+
+DROP FUNCTION IF EXISTS NewCustomersPerOfficer;
+
+DELIMITER $$
+CREATE FUNCTION NewCustomersPerOfficer(loanOfficerId INT) RETURNS INT
+BEGIN
+    DECLARE activeCustomers INT;
+
+    -- Calculate the number of new customers for the specified loan officer for today
+    SELECT COUNT(DISTINCT nls.trn_id) INTO activeCustomers
+    FROM pmms_loans.new_loan_appstore nls
+    INNER JOIN pmms.account_created_store acs ON nls.applicant_account_number = acs.account_number
+    WHERE nls.loan_cycle_status = 'Disbursed'
+      AND acs.creation_date = DATE(NOW())
+      AND nls.gruop_id = loanOfficerId;
+
+    RETURN activeCustomers;
+END$$
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS `staffName`;
+DELIMITER $$
+CREATE  FUNCTION `staffName`(staffId INT) RETURNS varchar(40) CHARSET latin1
+    DETERMINISTIC
+BEGIN
+DECLARE staffNameNow VARCHAR(40);
+
+SELECT account_name INTO staffNameNow FROM pmms.log_in WHERE  user_id=staffId;
+ IF ISNULL(staffNameNow) THEN
+ SET staffNameNow='MISSING';
+ END IF;
+RETURN staffNameNow;
+END $$
+DELIMITER ;
+
+
+
+DROP FUNCTION IF EXISTS CountNumberOfDisbursementsByOfficer;
+
+DELIMITER $$
+CREATE FUNCTION CountNumberOfDisbursementsByOfficer(loanOfficerId INT) RETURNS INT
+BEGIN
+    DECLARE numberOfDisbursements INT;
+
+    -- Calculate the number of disbursements for the specified loan officer for today
+    SELECT COUNT(trn_id) INTO numberOfDisbursements
+    FROM new_loan_appstore 
+    WHERE trn_date = DATE(NOW()) 
+      AND loan_cycle_status = 'Disbursed'
+      AND gruop_id = loanOfficerId;
+
+    RETURN numberOfDisbursements;
+END$$
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS SumDisbursementsByOfficer;
+
+DELIMITER $$
+CREATE FUNCTION SumDisbursementsByOfficer(loanOfficerId INT) RETURNS DOUBLE
+BEGIN
+    DECLARE totalDisbursement DOUBLE;
+
+    -- Calculate the sum of disbursements for the specified loan officer for today
+    SELECT SUM(CAST(princimpal_amount AS DECIMAL(20,2))) INTO totalDisbursement
+    FROM new_loan_appstore 
+    WHERE trn_date = DATE(NOW()) 
+      AND loan_cycle_status = 'Disbursed'
+      AND gruop_id = loanOfficerId;
+
+    -- Handle NULL case
+    IF ISNULL(totalDisbursement) THEN
+        SET totalDisbursement = 0.0;
+    END IF;
+
+    RETURN totalDisbursement;
+END$$
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS smsSummuryLoansOfficerReport;
+DELIMITER $$
+CREATE PROCEDURE smsSummuryLoansOfficerReport()
+    READS SQL DATA
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE loanOfficerId INT;
+    DECLARE theNoOfCustomer INT;
+    DECLARE curLoanOfficer CURSOR FOR 
+        SELECT DISTINCT user_id FROM pmms.log_in; -- Replace loansTable with the actual table name containing loanOfficerId
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    DROP TABLE IF EXISTS smsSummuryOfficer;
+
+    CREATE TEMPORARY TABLE smsSummuryOfficer(
+        officerId INT,
+        officerName VARCHAR(200), 
+        noOfCustomer VARCHAR(200), 
+        paidC VARCHAR(200), 
+        percentPaid VARCHAR(200), 
+        portfolioAmount VARCHAR(200), 
+        amountPaid VARCHAR(200),
+        noOfLoansDisbursed VARCHAR(200),
+        amountLoanDisbursed VARCHAR(200),
+        newCustomers VARCHAR(200)
+    );
+
+    OPEN curLoanOfficer;
+    
+    read_loop: LOOP
+        FETCH curLoanOfficer INTO loanOfficerId;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+-- SELECT loanOfficerId;
+        -- Get the number of customers for the current loan officer
+        SET theNoOfCustomer = NumberOfCustomersPerOfficer(loanOfficerId);
+        
+        -- Insert only if noOfCustomer is greater than 0
+        IF theNoOfCustomer > 0 THEN
+            INSERT INTO smsSummuryOfficer (officerId, officerName, noOfCustomer, paidC, percentPaid, portfolioAmount, amountPaid,noOfLoansDisbursed, amountLoanDisbursed,newCustomers)
+            SELECT 
+                loanOfficerId AS officerId,
+                 CONCAT('OfficerName: ', staffName(loanOfficerId)) AS officerName,
+                CONCAT('NoOfCustomers: ', theNoOfCustomer) AS noOfCustomer,
+                CONCAT('NoOfCustomersPaid: ', IFNULL(PaidCustomersPerOfficer(loanOfficerId), '0')) AS paidC,
+                CONCAT('PercentPaid: ', IFNULL(CONCAT(ROUND(PercentPaidCustomersPerOfficer(loanOfficerId),0), '%'), '0%')) AS percentPaid,
+                CONCAT('PortfolioAmount: ', FORMAT(IFNULL(PortfolioAmountPerOfficer(loanOfficerId), '0'),0)) AS portfolioAmount,
+                CONCAT('CollectionsMade: ', FORMAT(IFNULL(CollectionsMadePerOfficer(DATE(NOW()), loanOfficerId), '0'),0)) AS amountPaid,
+                CONCAT('NoOfLoansDisbursed: ', CountNumberOfDisbursementsByOfficer(loanOfficerId)) AS noOfDisbursements,
+                  CONCAT('TotalamountDisbursed: ', FORMAT(IFNULL(SumDisbursementsByOfficer(loanOfficerId), '0'),0)) AS amountDisbursed,
+                CONCAT('NewCustomers: ', IFNULL(NewCustomersPerOfficer(loanOfficerId), '0')) AS newCustomers;
+        END IF;
+    END LOOP;
+
+    CLOSE curLoanOfficer;
+
+    -- Fetch and display the summary data
+    SELECT officerName, noOfCustomer, paidC, percentPaid, portfolioAmount, amountPaid, noOfLoansDisbursed, amountLoanDisbursed,newCustomers FROM smsSummuryOfficer;
+
+    DROP TABLE IF EXISTS smsSummuryOfficer;
+END $$
+DELIMITER ;
+
+
+
 
 -- CALL  smsSummuryReport() ;
 
-update new_Loan_appstore SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
+-- update new_Loan_appstore SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
 
-update new_Loan_appstore1 SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
+-- update new_Loan_appstore1 SET TotalPrincipalRemaining=( princimpal_amount-TotalPrincipalPaid);
 
 
 DROP PROCEDURE IF EXISTS runSMSReportFirst;
@@ -14381,21 +15859,67 @@ DROP PROCEDURE IF EXISTS collectionStatement;
 DELIMITER //
 CREATE PROCEDURE collectionStatement(IN startDate DATE, IN endDate DATE) READS SQL DATA
 BEGIN
-    -- First part of the union: detailed transaction records
-    SELECT TrnId, loanTrnId, TrnDate, accountNma(AccountNumber) AS AccountName, AmountPaid
-    FROM loandisburserepaystatement
-    WHERE (TrnDate >= startDate AND TrnDate <= endDate)
-      AND ExpectedTotalAmount = 0.0
-      AND NOT LoanStatusReport = 'RenewedClosed'
 
-    UNION ALL
+    SELECT
+        TrnId,
+        loanTrnId,
+        TrnDate,
+        AccountName,
+        AmountPaid
+    FROM (
 
-    -- Second part of the union: overall total
-    SELECT "-", 'OVERALL TOTAL', '-', '-', SUM(AmountPaid)
-    FROM loandisburserepaystatement
-    WHERE (TrnDate >= startDate AND TrnDate <= endDate)
-      AND ExpectedTotalAmount = 0.0
-      AND NOT LoanStatusReport = 'RenewedClosed';
+        SELECT
+            TrnId,
+            loanTrnId,
+            TrnDate,
+            accountNma(AccountNumber) AS AccountName,
+            AmountPaid
+        FROM pmms.loandisburserepaystatement
+        WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+          AND ExpectedTotalAmount = 0.0
+          AND NOT LoanStatusReport = 'RenewedClosed'
+
+        UNION ALL
+
+        SELECT
+            TrnId,
+            loanTrnId,
+            TrnDate,
+            accountNma(AccountNumber) AS AccountName,
+            AmountPaid
+        FROM pmms.arch_loandisburserepaystatement
+        WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+          AND ExpectedTotalAmount = 0.0
+          AND NOT LoanStatusReport = 'RenewedClosed'
+
+        UNION ALL
+
+
+        SELECT
+            '-' AS TrnId,
+            '-' AS loanTrnId,
+            '-' AS TrnDate,
+            'OVERALL TOTAL' AS AccountName,
+            SUM(AmountPaid) AS AmountPaid
+        FROM (
+            SELECT AmountPaid
+            FROM pmms.loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = 0.0
+              AND NOT LoanStatusReport = 'RenewedClosed'
+
+            UNION ALL
+
+            SELECT AmountPaid
+            FROM pmms.arch_loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = 0.0
+              AND NOT LoanStatusReport = 'RenewedClosed'
+        ) AS total_combined
+    ) AS final_combined
+    ORDER BY
+        CASE WHEN TrnId = '-' THEN 1 ELSE 0 END,
+        TrnDate;
 END //
 DELIMITER ;
 
@@ -14405,22 +15929,53 @@ DROP PROCEDURE IF EXISTS collectionStatementPerDay;
 DELIMITER //
 CREATE PROCEDURE collectionStatementPerDay(IN startDate DATE, IN endDate DATE) READS SQL DATA
 BEGIN
-    -- Aggregate transactions by date, with a unique ID for each day formatted as YYYYMMDD
-    SELECT REPLACE(DATE_FORMAT(TrnDate, '%Y%m%d'), '-', '') AS TrnId,TrnDate, SUM(AmountPaid) AS AmountPaid
-    FROM loandisburserepaystatement
-    WHERE (TrnDate >= startDate AND TrnDate <= endDate)
-      AND ExpectedTotalAmount = 0.0
-      AND NOT LoanStatusReport = 'RenewedClosed'
-    GROUP BY DATE(TrnDate)
+ 
 
-    UNION ALL
+    SELECT TrnId, TrnDate, AmountPaid
+    FROM (
 
-    -- Calculate overall total for the specified range, with a unique identifier
-    SELECT '-' AS TrnId,"-", SUM(AmountPaid) AS AmountPaid -- Use a fixed ID for the overall total
-    FROM loandisburserepaystatement
-    WHERE (TrnDate >= startDate AND TrnDate <= endDate)
-      AND ExpectedTotalAmount = 0.0
-      AND NOT LoanStatusReport = 'RenewedClosed';
+        SELECT
+            REPLACE(DATE_FORMAT(TrnDate, '%Y%m%d'), '-', '') AS TrnId,
+            TrnDate,
+            SUM(AmountPaid) AS AmountPaid
+        FROM (
+            SELECT TrnDate, AmountPaid
+            FROM pmms.loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = 0.0
+              AND  LoanStatusReport <>'RenewedClosed'
+            UNION ALL
+            SELECT TrnDate, AmountPaid
+            FROM pmms.arch_loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = 0.0
+              AND  LoanStatusReport <> 'RenewedClosed'
+        ) AS daily_combined
+        GROUP BY DATE(TrnDate)
+
+        UNION ALL
+
+
+        SELECT
+            '-' AS TrnId,
+            '-' AS TrnDate,
+            SUM(AmountPaid) AS AmountPaid
+        FROM (
+            SELECT AmountPaid
+            FROM pmms.loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = 0.0
+              AND  LoanStatusReport <> 'RenewedClosed'
+            UNION ALL
+            SELECT AmountPaid
+            FROM pmms.arch_loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = 0.0
+              AND  LoanStatusReport <> 'RenewedClosed'
+        ) AS total_combined
+    ) AS results
+    ORDER BY TrnDate;
+
 END //
 DELIMITER ;
 
@@ -14434,18 +15989,19 @@ DROP PROCEDURE IF EXISTS collectionStatementPerMonth;
 DELIMITER //
 CREATE PROCEDURE collectionStatementPerMonth(IN startDate DATE, IN endDate DATE) READS SQL DATA
 BEGIN
-    -- Initialize the counter variable
+  
+
     SET @rownum := 0;
 
-    -- Select statement for the months and total row, with specific ordering and unique ID
-    SELECT 
-        @rownum := @rownum + 1 AS UniqueID,  -- Increment and return the row number
+
+    SELECT
+        @rownum := @rownum + 1 AS UniqueID,
         results.StandardMonth,
         results.YearPaid,
         results.TotalAmountPaid
     FROM (
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN MonthPaid IN ('1', '01') THEN 'JANUARY'
                 WHEN MonthPaid IN ('2', '02') THEN 'FEBRUARY'
                 WHEN MonthPaid IN ('3', '03') THEN 'MARCH'
@@ -14458,27 +16014,49 @@ BEGIN
                 WHEN MonthPaid = '10' THEN 'OCTOBER'
                 WHEN MonthPaid = '11' THEN 'NOVEMBER'
                 WHEN MonthPaid = '12' THEN 'DECEMBER'
-                ELSE UPPER(MonthPaid)  -- Assumes MonthPaid is a valid month name if not a digit
+                ELSE UPPER(MonthPaid)
             END AS StandardMonth,
             YearPaid,
             SUM(CAST(AmountPaid AS DECIMAL(10,2))) AS TotalAmountPaid
-        FROM loandisburserepaystatement
-        WHERE (TrnDate >= startDate AND TrnDate <= endDate)
-          AND ExpectedTotalAmount = '0.0'
-          AND NOT LoanStatusReport = 'RenewedClosed'
+        FROM (
+            SELECT MonthPaid, YearPaid, AmountPaid
+            FROM pmms.loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = '0.0'
+              AND NOT LoanStatusReport = 'RenewedClosed'
+
+            UNION ALL
+
+            SELECT MonthPaid, YearPaid, AmountPaid
+            FROM pmms.arch_loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = '0.0'
+              AND NOT LoanStatusReport = 'RenewedClosed'
+        ) AS combined
         GROUP BY StandardMonth, YearPaid
 
         UNION ALL
 
-        SELECT '-', '-', SUM(CAST(AmountPaid AS DECIMAL(10,2))) -- Use a fixed ID for the overall total
-        FROM loandisburserepaystatement
-        WHERE (TrnDate >= startDate AND TrnDate <= endDate)
-          AND ExpectedTotalAmount = '0.0'
-          AND NOT LoanStatusReport = 'RenewedClosed'
+        SELECT '-', '-', SUM(CAST(AmountPaid AS DECIMAL(10,2)))
+        FROM (
+            SELECT AmountPaid
+            FROM pmms.loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = '0.0'
+              AND NOT LoanStatusReport = 'RenewedClosed'
+
+            UNION ALL
+
+            SELECT AmountPaid
+            FROM pmms.arch_loandisburserepaystatement
+            WHERE (TrnDate >= startDate AND TrnDate <= endDate)
+              AND ExpectedTotalAmount = '0.0'
+              AND NOT LoanStatusReport = 'RenewedClosed'
+        ) AS total_combined
     ) AS results
-    ORDER BY 
-        CASE WHEN results.StandardMonth = '-' THEN 1 ELSE 0 END,  -- This ensures '-' appears last
-        CASE 
+    ORDER BY
+        CASE WHEN results.StandardMonth = '-' THEN 1 ELSE 0 END,
+        CASE
             WHEN results.StandardMonth = 'JANUARY' THEN 1
             WHEN results.StandardMonth = 'FEBRUARY' THEN 2
             WHEN results.StandardMonth = 'MARCH' THEN 3
@@ -14779,7 +16357,110 @@ END //
 
 
 
--- 1	71137	newloan05502062210	Disbursed
+
+-- /* LOAN RECEIPT PRINTING */
+
+-- DROP PROCEDURE IF EXISTS loanStatementDetails;
+
+-- DELIMITER ##
+
+-- CREATE PROCEDURE   loanStatementDetails(IN SloanTrnId VARCHAR(45))
+-- BEGIN
+
+-- DROP TABLE IF EXISTS loanStatementtDetailsTable;
+
+-- CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
+-- `id` INTEGER NOT NULL AUTO_INCREMENT, 
+-- `trn_date` DATE,
+-- `amount_paid` VARCHAR(60),
+-- `princimpal_paid` VARCHAR(60),
+-- `interest_paid` VARCHAR(60),
+-- `amount_remaining` VARCHAR(60),
+-- `princimpal_remaining`  VARCHAR(60),
+-- `interest_remaining`  VARCHAR(60),
+--  PRIMARY KEY (`id`))
+-- ENGINE = InnoDB
+-- AUTO_INCREMENT =0
+-- DEFAULT CHARACTER SET = utf8;
+
+  
+
+-- INSERT INTO  loanStatementtDetailsTable( 
+--   `id` ,
+--   `trn_date` ,
+--       `amount_paid`,
+--      `princimpal_paid`,
+--   `interest_paid`,
+--         `amount_remaining`,
+--           `princimpal_remaining`,
+--           `interest_remaining`
+--   ) SELECT  null,`TrnDate` ,FORMAT(`AmountPaid`,0) ,  FORMAT(`PrincipalPaid`,0) ,  FORMAT(`InterestPaid`,0) ,  FORMAT(`LoanBalance`,0) ,  FORMAT(`PrincipalBalance`,0) ,  FORMAT(`InterestBalance`,0)  FROM loandisburserepaystatement WHERE loanTrnId=SloanTrnId LIMIT 1,20000;
+
+
+--    SELECT * FROM loanStatementtDetailsTable;
+
+-- END  ##
+
+--  DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS loanStatementDetails;
+DELIMITER ##
+CREATE PROCEDURE loanStatementDetails(IN SloanTrnId VARCHAR(45))
+BEGIN
+
+    DROP TABLE IF EXISTS loanStatementtDetailsTable;
+
+    CREATE TEMPORARY TABLE loanStatementtDetailsTable (
+      id                    INTEGER NOT NULL AUTO_INCREMENT, 
+      trn_date              DATE,
+      amount_paid           VARCHAR(60),
+      princimpal_paid       VARCHAR(60),
+      interest_paid         VARCHAR(60),
+      amount_remaining      VARCHAR(60),
+      princimpal_remaining  VARCHAR(60),
+      interest_remaining    VARCHAR(60),
+      PRIMARY KEY (id)
+    )
+    ENGINE = InnoDB
+    AUTO_INCREMENT = 0
+    DEFAULT CHARACTER SET = utf8;
+
+    INSERT INTO loanStatementtDetailsTable (
+      id,
+      trn_date,
+      amount_paid,
+      princimpal_paid,
+      interest_paid,
+      amount_remaining,
+      princimpal_remaining,
+      interest_remaining
+    )
+    SELECT 
+      null,
+      TrnDate,
+      FORMAT(AmountPaid, 0),
+      FORMAT(PrincipalPaid, 0),
+      FORMAT(InterestPaid, 0),
+      FORMAT(LoanBalance, 0),
+      FORMAT(PrincipalBalance, 0),
+      FORMAT(InterestBalance, 0)
+    FROM (
+      SELECT TrnDate, AmountPaid, PrincipalPaid, InterestPaid, LoanBalance, PrincipalBalance, InterestBalance
+      FROM loandisburserepaystatement
+      WHERE loanTrnId = SloanTrnId
+      UNION ALL
+      SELECT TrnDate, AmountPaid, PrincipalPaid, InterestPaid, LoanBalance, PrincipalBalance, InterestBalance
+      FROM arch_loandisburserepaystatement
+      WHERE loanTrnId = SloanTrnId
+    ) AS combined
+    LIMIT 1, 20000;
+
+    SELECT * FROM loanStatementtDetailsTable;
+
+END ##
+DELIMITER ;
 
 
 DROP PROCEDURE IF EXISTS loanStatementDetailsExpected;
@@ -14875,18 +16556,111 @@ CALL penaltyStatementDetails('05502062210')\G
 
 
        
+-- DROP PROCEDURE IF EXISTS theGaurantorDetails;
+-- DELIMITER //
+-- CREATE PROCEDURE theGaurantorDetails(IN theLoanTrnId INT) READS SQL DATA 
+-- BEGIN
+
+
+-- SELECT * FROM gaurantors WHERE loanTrnId=theLoanTrnId;
+
+-- END//
+
+--  DELIMITER ;
+
+/* rebuild safely */
 DROP PROCEDURE IF EXISTS theGaurantorDetails;
-DELIMITER //
-CREATE PROCEDURE theGaurantorDetails(IN theLoanTrnId INT) READS SQL DATA 
+DELIMITER $$
+
+CREATE PROCEDURE theGaurantorDetails (IN pLoanTrnId INT)
+READS SQL DATA
 BEGIN
+    /* ----------------------------------------------------------
+       1.  Get the borrower’s account number for that loan
+    ---------------------------------------------------------- */
+    DECLARE vAccountNumber VARCHAR(200);
+
+    /* live loan first … */
+    SELECT applicant_account_number
+      INTO vAccountNumber
+      FROM new_loan_appstore
+     WHERE trn_id = pLoanTrnId
+     LIMIT 1;
+
+    /* … if not found, try the archive loan table */
+    IF vAccountNumber IS NULL THEN
+        SELECT applicant_account_number
+          INTO vAccountNumber
+          FROM arch_new_loan_appstore
+         WHERE trn_id = pLoanTrnId
+         LIMIT 1;
+    END IF;
+
+    /* ----------------------------------------------------------
+       2.  Return all guarantors for this borrower
+           • live table + archive table
+           • no accountNumber column in the result
+    ---------------------------------------------------------- */
+    SELECT
+        id                                 AS id,
+        gaurantorsName                     AS gaurantorsName,
+        gaurantorsContact1                 AS gaurantorsContact1,
+        gaurantorsContact2                 AS gaurantorsContact2,
+        gaurantorsIdNumber                 AS gaurantorsIdNumber,
+        gaurantorsRelationWithBorrower     AS gaurantorsRelationWithBorrower,
+        gaurantorsHomeArea                 AS gaurantorsHomeArea,
+        gaurantorsBusiness                 AS gaurantorsBusiness,
+        loanTrnId                          AS loanTrnId
+    FROM gaurantors
+    WHERE accountNumber = vAccountNumber
+
+    UNION ALL
+
+    SELECT
+        original_id                        AS id,
+        gaurantorsName,
+        gaurantorsContact1,
+        gaurantorsContact2,
+        gaurantorsIdNumber,
+        gaurantorsRelationWithBorrower,
+        gaurantorsHomeArea,
+        gaurantorsBusiness,
+        loanTrnId
+    FROM gaurantors_archive
+    WHERE accountNumber = vAccountNumber;
+END$$
+DELIMITER ;
 
 
-SELECT * FROM gaurantors WHERE loanTrnId=theLoanTrnId;
+--  SELECT applicant_account_number FROM new_loan_appstore WHERE trn_id = 79928 LIMIT 1;
 
-END//
+--  SELECT
+--         id                                 AS id,
+--         gaurantorsName                     AS gaurantorsName,
+--         gaurantorsContact1                 AS gaurantorsContact1,
+--         gaurantorsContact2                 AS gaurantorsContact2,
+--         gaurantorsIdNumber                 AS gaurantorsIdNumber,
+--         gaurantorsRelationWithBorrower     AS gaurantorsRelationWithBorrower,
+--         gaurantorsHomeArea                 AS gaurantorsHomeArea,
+--         gaurantorsBusiness                 AS gaurantorsBusiness,
+--         loanTrnId                          AS loanTrnId
+--     FROM gaurantors
+--     WHERE accountNumber = '05502024110'
 
- DELIMITER ;
+--     UNION ALL
 
+--     SELECT
+--         original_id                        AS id,
+--         gaurantorsName,
+--         gaurantorsContact1,
+--         gaurantorsContact2,
+--         gaurantorsIdNumber,
+--         gaurantorsRelationWithBorrower,
+--         gaurantorsHomeArea,
+--         gaurantorsBusiness,
+--         loanTrnId
+--     FROM gaurantors_archive
+--     WHERE accountNumber ='05502024110';
 
 -- Debits	Return on Investment Expense	02277000110	Return On Investment Expense	0.1290310025215149
 
@@ -15120,13 +16894,13 @@ DELIMITER $$
 CREATE PROCEDURE theClosedRenewedLoan( IN theLoanId INT) BEGIN
 
   
-UPDATE pmms_loans.new_loan_appstore SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
-UPDATE pmms_loans.new_loan_appstore1 SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
-UPDATE pmms.loandisburserepaystatement SET LoanStatusReport='RenewedClosed' WHERE loanTrnId=theLoanId;
+UPDATE pmms_loans.arch_new_loan_appstore SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
+UPDATE pmms_loans.arch_new_loan_appstore1 SET loan_cycle_status='RenewedClosed' WHERE trn_id=theLoanId;
+UPDATE pmms.arch_loandisburserepaystatement SET LoanStatusReport='RenewedClosed' WHERE loanTrnId=theLoanId;
+
 END $$
 
 DELIMITER ;
-
 
 
 
@@ -15344,10 +17118,9 @@ BEGIN
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
 
   prepare_daily_report: BEGIN
-
-    IF EXISTS (SELECT 1 FROM DailyCollection WHERE CollectionDate = CURDATE()) THEN
-      LEAVE prepare_daily_report;
-    END IF;
+    -- Purge DailyCollection records that are 8 months old or older
+    DELETE FROM DailyCollection
+    WHERE CollectionDate <= DATE_SUB(CURDATE(), INTERVAL 8 MONTH);
 
     OPEN select_trn_ids;
 
@@ -15358,6 +17131,16 @@ BEGIN
 
       IF l_done = 1 THEN
         LEAVE LedgerIds_loop;
+      END IF;
+
+      -- Skip this trnId if it already has any DailyCollection row for today
+      IF EXISTS (
+        SELECT 1
+        FROM DailyCollection
+        WHERE CollectionDate = CURDATE()
+          AND trnId = ledger_id
+      ) THEN
+        ITERATE LedgerIds_loop;
       END IF;
 
       -- Select main details from new_loan_appstore
@@ -15623,6 +17406,9 @@ END //
 DELIMITER ;
 
 CALL prepareDailyReport();
+
+
+
 
 
  DROP PROCEDURE IF EXISTS CollectionOnDisbursement;
@@ -16612,7 +18398,7 @@ END //
 
 DELIMITER ;
 
-CALL dailyCollectionAllUnpaidCustomers('2024-05-22')\G
+CALL dailyCollectionAllUnpaidCustomers('2025-05-19')\G
 
 
 
@@ -17546,14 +19332,1920 @@ CALL dailyCollectionARenewedUnpaidAtRiskCustomers('2024-05-23')\G
 
 
 
+DELIMITER $$
+
+CREATE PROCEDURE updateGaurantor(
+    IN p_gaurantorsName VARCHAR(255),
+    IN p_gaurantorsContact1 VARCHAR(255),
+    IN p_gaurantorsContact2 VARCHAR(255),
+    IN p_gaurantorsIdNumber VARCHAR(255),
+    IN p_gaurantorsRelationWithBorrower VARCHAR(255),
+    IN p_gaurantorsHomeArea VARCHAR(255),
+    IN p_gaurantorsBusiness VARCHAR(255),
+    IN p_loanTrnId INT,
+    IN p_gourantorPhone VARCHAR(255)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Rollback on any error
+        ROLLBACK;
+    END;
+
+    START TRANSACTION;
+
+    -- Update gaurantors table
+    UPDATE gaurantors 
+    SET
+        gaurantorsName = p_gaurantorsName,
+        gaurantorsContact1 = p_gaurantorsContact1,
+        gaurantorsContact2 = p_gaurantorsContact2,
+        gaurantorsIdNumber = p_gaurantorsIdNumber,
+        gaurantorsRelationWithBorrower = p_gaurantorsRelationWithBorrower,
+        gaurantorsHomeArea = p_gaurantorsHomeArea,
+        gaurantorsBusiness = p_gaurantorsBusiness
+    WHERE
+        loanTrnId = p_loanTrnId;
+
+    -- Update dailycollection table
+    UPDATE dailycollection
+    SET
+        gourantorName = p_gaurantorsName,
+        gourantorPhone = p_gourantorPhone
+    WHERE
+        trnId = p_loanTrnId;
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+
+
+
+DROP PROCEDURE IF EXISTS agingAnalysisXXK;
+
+DELIMITER $$
+
+CREATE PROCEDURE agingAnalysisXXK()
+BEGIN
+    DECLARE l_done INT DEFAULT 0;
+    DECLARE loanId VARCHAR(45);
+    DECLARE customerName VARCHAR(60);
+    DECLARE customerContactNumber VARCHAR(60);
+    DECLARE TrnDate DATE;
+    DECLARE princeremain DOUBLE DEFAULT 0;
+    DECLARE interestRem DOUBLE DEFAULT 0;
+    DECLARE arrears DOUBLE DEFAULT 0;
+    DECLARE loanCycleStatus VARCHAR(45);
+    DECLARE numberOfGaurantors INT DEFAULT 0;
+    DECLARE gaurantorName1 VARCHAR(60) DEFAULT '-';
+    DECLARE gaurantorContact1 VARCHAR(60) DEFAULT '-';
+    DECLARE gaurantorName2 VARCHAR(60) DEFAULT '-';
+    DECLARE gaurantorContact2 VARCHAR(60) DEFAULT '-';
+
+    -- Cursor Declaration
+    DECLARE loan_cursor CURSOR FOR
+        SELECT loan_id 
+        FROM new_loan_appstore 
+        WHERE loan_cycle_status IN ('Disbursed', 'Renewed');
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
+
+    -- Temporary Table Creation
+    DROP TEMPORARY TABLE IF EXISTS aging_loan_analysis;
+    CREATE TEMPORARY TABLE aging_loan_analysis (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        customer_name VARCHAR(60),
+        customer_contact VARCHAR(60),
+        date_taken DATE,
+        loans_remaining DOUBLE,
+        principal_remaining DOUBLE,
+        interest_remaining DOUBLE,
+        principal_inarrears DOUBLE DEFAULT 0,
+        interest_inarrears DOUBLE DEFAULT 0,
+        number_of_days_in_arrears INT,
+        loan_deadline DATE,
+        gaurantor_name1 VARCHAR(60),
+        gaurantor_contact1 VARCHAR(60),
+        gaurantor_name2 VARCHAR(60),
+        gaurantor_contact2 VARCHAR(60),
+        loan_status VARCHAR(45)
+    );
+
+    -- Open Cursor
+    OPEN loan_cursor;
+
+    loan_loop: LOOP
+        FETCH loan_cursor INTO loanId;
+        IF l_done THEN
+            LEAVE loan_loop;
+        END IF;
+
+        -- Fetch Loan Details
+        SELECT 
+            pl.applicant_account_name, 
+            m.mobile1, 
+            pl.instalment_start_date, 
+            pl.TotalPrincipalRemaining, 
+            pl.TotalInterestRemaining, 
+            pl.loan_cycle_status
+        INTO 
+            customerName, 
+            customerContactNumber, 
+            TrnDate, 
+            princeremain, 
+            interestRem, 
+            loanCycleStatus
+        FROM pmms.master m
+        INNER JOIN pmms_loans.new_loan_appstore pl
+            ON m.account_number = pl.applicant_account_number
+        WHERE pl.loan_id = loanId;
+
+        -- Calculate Arrears
+        SELECT 
+            SUM(PrincipalRemaining) + SUM(InterestRemaing),
+            COUNT(*)
+        INTO 
+            arrears, numberOfGaurantors
+        FROM new_loan_appstoreamort 
+        WHERE master2_id = loanId 
+          AND instalment_due_date <= CURDATE() 
+          AND instalment_status != 'P';
+
+        -- Fetch Gaurantor Details
+        SELECT COUNT(*) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId = loanId;
+
+        IF numberOfGaurantors = 1 THEN
+            SELECT gaurantorsName, gaurantorsContact1 
+            INTO gaurantorName1, gaurantorContact1 
+            FROM gaurantors 
+            WHERE loanTrnId = loanId 
+            LIMIT 1;
+        ELSEIF numberOfGaurantors = 2 THEN
+            SELECT gaurantorsName, gaurantorsContact1 
+            INTO gaurantorName1, gaurantorContact1 
+            FROM gaurantors 
+            WHERE loanTrnId = loanId 
+            ORDER BY id ASC 
+            LIMIT 1;
+
+            SELECT gaurantorsName, gaurantorsContact1 
+            INTO gaurantorName2, gaurantorContact2 
+            FROM gaurantors 
+            WHERE loanTrnId = loanId 
+            ORDER BY id DESC 
+            LIMIT 1;
+        ELSE
+            SET gaurantorName1 = '-', gaurantorContact1 = '-', gaurantorName2 = '-', gaurantorContact2 = '-';
+        END IF;
+
+        -- Insert into Temporary Table
+        INSERT INTO aging_loan_analysis (
+            customer_name,
+            customer_contact,
+            date_taken,
+            loans_remaining,
+            principal_remaining,
+            interest_remaining,
+            principal_inarrears,
+            interest_inarrears,
+            number_of_days_in_arrears,
+            loan_deadline,
+            gaurantor_name1,
+            gaurantor_contact1,
+            gaurantor_name2,
+            gaurantor_contact2,
+            loan_status
+        )
+        VALUES (
+            customerName,
+            customerContactNumber,
+            TrnDate,
+            princeremain + interestRem,
+            princeremain,
+            interestRem,
+            0, -- principal_inarrears (calculated later)
+            0, -- interest_inarrears (calculated later)
+            arrears,
+            DATE_ADD(TrnDate, INTERVAL 30 DAY), -- loan_deadline
+            gaurantorName1,
+            gaurantorContact1,
+            gaurantorName2,
+            gaurantorContact2,
+            loanCycleStatus
+        );
+    END LOOP;
+
+    CLOSE loan_cursor;
+
+    -- Categorization and Final Output
+    SELECT 
+        id,
+        customer_name,
+        customer_contact,
+        date_taken,
+        loans_remaining,
+        principal_remaining,
+        interest_remaining,
+        principal_inarrears,
+        interest_inarrears,
+        number_of_days_in_arrears,
+        loan_deadline,
+        gaurantor_name1,
+        gaurantor_contact1,
+        gaurantor_name2,
+        gaurantor_contact2,
+        CASE
+            WHEN number_of_days_in_arrears < 30 THEN 'Performing Portfolio'
+            WHEN number_of_days_in_arrears BETWEEN 30 AND 59 THEN 'Portfolio at Risk (30-60 days)'
+            WHEN number_of_days_in_arrears BETWEEN 60 AND 89 THEN 'Portfolio at Risk (60-90 days)'
+            WHEN number_of_days_in_arrears BETWEEN 90 AND 359 THEN 'Non-Performing Portfolio'
+            ELSE 'Portfolio Due for Write-Off'
+        END AS classification
+    FROM aging_loan_analysis
+    ORDER BY number_of_days_in_arrears ASC;
+END$$
+
+DELIMITER ;
+
+
+-- DROP PROCEDURE IF EXISTS agingAnalysisSimple;
+
+-- DELIMITER ##
+
+-- CREATE PROCEDURE agingAnalysisSimple()
+-- BEGIN
+--     DECLARE l_done INT;
+--     DECLARE TrnId INT;
+--     DECLARE LoanId VARCHAR(20);
+--     DECLARE customerName VARCHAR(60);
+--     DECLARE customerContactNumber VARCHAR(60);
+--     DECLARE theLoanStatus VARCHAR(20);
+--     DECLARE gaurantorName1 VARCHAR(100);
+--     DECLARE gaurantorContact1 VARCHAR(100);
+--     DECLARE gaurantorName2 VARCHAR(100);
+--     DECLARE gaurantorContact2 VARCHAR(100);
+--     DECLARE remainport DOUBLE;
+--     DECLARE princeremain DOUBLE;
+--     DECLARE interestRem DOUBLE;
+--     DECLARE p_remain,loanTaken,totalRem,amount_arrears,P,I DOUBLE;
+--     DECLARE i_remain DOUBLE;
+--     DECLARE arrears INT;
+--     DECLARE TrnDate DATE;
+
+--     -- Cursor for loan IDs with status 'Disbursed' or 'Renewed'
+--     DECLARE forSelectingLoanIds CURSOR FOR
+--         SELECT DISTINCT trn_id
+--         FROM new_loan_appstore
+--         WHERE loan_cycle_status IN ('Disbursed', 'Renewed');
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
+
+--     -- Temporary table for aging analysis
+--     DROP TABLE IF EXISTS aging_loan_analysis;
+--     CREATE TEMPORARY TABLE aging_loan_analysis (
+--         id INT NOT NULL AUTO_INCREMENT,
+--         trn_id INT,
+--         loan_id VARCHAR(20),
+--         customer_name VARCHAR(60),
+--         customer_contact VARCHAR(60),
+--         gaurantor1_name VARCHAR(100),
+--         gaurantor1_contact VARCHAR(100),
+--         gaurantor2_name VARCHAR(100),
+--         gaurantor2_contact VARCHAR(100),
+--         date_taken DATE,
+--         due_date DATE,
+--         loan_taken DOUBLE,
+--         principal_remaining DOUBLE,
+--         interest_remaining DOUBLE,
+--         total_remaining DOUBLE,
+--         total_inarrears DOUBLE,
+--         number_of_days_in_arrears INT,
+--         loan_status VARCHAR(20),
+--         PRIMARY KEY (id)
+--     ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+--     -- Open cursor and start loop
+--     OPEN forSelectingLoanIds;
+--     accounts_loop: LOOP
+--         FETCH forSelectingLoanIds INTO TrnId;
+--         IF l_done THEN
+--             LEAVE accounts_loop;
+--         END IF;
+
+--         -- Reset variables for each loan
+--         SET customerName = NULL, customerContactNumber = NULL, theLoanStatus = NULL;
+--         SET gaurantorName1 = NULL, gaurantorContact1 = NULL, gaurantorName2 = NULL, gaurantorContact2 = NULL;
+--         SET remainport = 0, princeremain = 0, interestRem = 0, p_remain = 0, i_remain = 0, arrears = 0;
+
+--         -- Fetch main loan details
+--         SELECT pl.loan_id, applicant_account_name, m.mobile1, pl.trn_date,
+--                pl.princimpal_amount, pl.TotalPrincipalRemaining, pl.TotalInterestRemaining,
+--               pl.balance_due, pl.loan_cycle_status
+--         INTO LoanId, customerName, customerContactNumber, TrnDate, loanTaken,
+--              princeremain, interestRem, totalRem, theLoanStatus
+--         FROM pmms.master m
+--         INNER JOIN pmms_loans.new_loan_appstore pl ON pl.applicant_account_number = m.account_number
+--         WHERE pl.trn_id = TrnId;
+
+--         -- Calculate remaining amounts and arrears
+--         SELECT SUM(PrincipalRemaining) ,SUM(InterestRemaing),(SUM(PrincipalRemaining) + SUM(InterestRemaing)), numberOfDayInArrears(LoanId)
+--         INTO P,I, amount_arrears, arrears
+--         FROM new_loan_appstoreamort
+--         WHERE master1_id = TrnId AND instalment_due_date <= DATE(NOW()) AND NOT instalment_status = 'P';
+-- /* SELECT P,I,  amount_arrears; */
+--         -- Fetch guarantors
+--         SELECT gaurantorsName, gaurantorsContact1 INTO gaurantorName1, gaurantorContact1
+--         FROM gaurantors
+--         WHERE loanTrnId = LoanId
+--         ORDER BY id ASC
+--         LIMIT 1;
+
+--         SELECT gaurantorsName, gaurantorsContact1 INTO gaurantorName2, gaurantorContact2
+--         FROM gaurantors
+--         WHERE loanTrnId = LoanId
+--         ORDER BY id DESC
+--         LIMIT 1;
+
+--         -- Insert data into consolidated table
+--         INSERT INTO aging_loan_analysis (
+--             trn_id,loan_id, customer_name, customer_contact, gaurantor1_name, gaurantor1_contact, 
+--             gaurantor2_name, gaurantor2_contact, date_taken, due_date, loan_taken, 
+--             principal_remaining, interest_remaining,total_remaining,total_inarrears,number_of_days_in_arrears, loan_status
+--         )
+--         VALUES (
+--             TrnId,LoanId, customerName, customerContactNumber, gaurantorName1, gaurantorContact1,
+--             gaurantorName2, gaurantorContact2, TrnDate, DATE_ADD(TrnDate, INTERVAL 30 DAY),
+--             loanTaken, princeremain, interestRem, totalRem, amount_arrears, arrears, theLoanStatus
+--         );
+
+--         SET l_done = 0;
+--     END LOOP;
+
+--     CLOSE forSelectingLoanIds;
+
+--     -- Select data categorized by aging period
+--     SELECT * FROM aging_loan_analysis ORDER BY loan_status, number_of_days_in_arrears;
+
+-- END ##
+
+-- -- 17/03/2025	17/03/2025	Twesiime Paul cleared with 12.3 Processed on 17/03/2025
+-- --   From Cash At Hand	-	2700000.0	Cash At Hand
+
+-- DELIMITER ;
+
+DROP PROCEDURE IF EXISTS agingAnalysisSimple;
+
+DELIMITER ##
+
+CREATE PROCEDURE agingAnalysisSimple()
+BEGIN
+    DECLARE l_done INT DEFAULT 0;
+    DECLARE TrnId INT;
+    DECLARE LoanId VARCHAR(20);
+    DECLARE customerName VARCHAR(60);
+    DECLARE customerContactNumber VARCHAR(60);
+    DECLARE theLoanStatus VARCHAR(20);
+    DECLARE gaurantorName1 VARCHAR(100);
+    DECLARE gaurantorContact1 VARCHAR(100);
+    DECLARE gaurantorName2 VARCHAR(100);
+    DECLARE gaurantorContact2 VARCHAR(100);
+    DECLARE remainport DOUBLE;
+    DECLARE princeremain DOUBLE;
+    DECLARE interestRem DOUBLE;
+    DECLARE p_remain DOUBLE;
+    DECLARE loanTaken DOUBLE;
+    DECLARE totalRem DOUBLE;
+    DECLARE amount_arrears DOUBLE;
+    DECLARE P DOUBLE;
+    DECLARE I DOUBLE;
+    DECLARE i_remain DOUBLE;
+    DECLARE arrears INT;
+    DECLARE TrnDate DATE;
+    DECLARE userId VARCHAR(50);
+    DECLARE comp_name VARCHAR(100);
+    DECLARE branch_name VARCHAR(100);
+
+    -- Cursor for loan IDs with status 'Disbursed' or 'Renewed'
+    DECLARE forSelectingLoanIds CURSOR FOR
+        SELECT DISTINCT trn_id
+        FROM new_loan_appstore
+        WHERE loan_cycle_status IN ('Disbursed', 'Renewed');
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
+
+    -- Temporary table for aging analysis with additional company and user details
+    DROP TABLE IF EXISTS aging_loan_analysis;
+    CREATE TEMPORARY TABLE aging_loan_analysis (
+        id INT NOT NULL AUTO_INCREMENT,
+        trn_id INT,
+        loan_id VARCHAR(20),
+        customer_name VARCHAR(60),
+        customer_contact VARCHAR(60),
+        gaurantor1_name VARCHAR(100),
+        gaurantor1_contact VARCHAR(100),
+        gaurantor2_name VARCHAR(100),
+        gaurantor2_contact VARCHAR(100),
+        date_taken DATE,
+        due_date DATE,
+        loan_taken DOUBLE,
+        principal_remaining DOUBLE,
+        interest_remaining DOUBLE,
+        total_remaining DOUBLE,
+        total_inarrears DOUBLE,
+        number_of_days_in_arrears INT,
+        loan_status VARCHAR(20),
+        company_name VARCHAR(100),
+        branch_name VARCHAR(100),
+        user_id VARCHAR(50),
+        PRIMARY KEY (id)
+    ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+    -- Retrieve company details (only one row exists)
+    SELECT the_company_name, the_company_branch
+      INTO comp_name, branch_name
+      FROM pmms.the_company_datails
+      LIMIT 1;
+
+    -- Open cursor and process each loan record
+    OPEN forSelectingLoanIds;
+    accounts_loop: LOOP
+        FETCH forSelectingLoanIds INTO TrnId;
+        IF l_done THEN
+            LEAVE accounts_loop;
+        END IF;
+
+        -- Reset variables for each iteration
+        SET customerName = NULL, customerContactNumber = NULL, theLoanStatus = NULL;
+        SET gaurantorName1 = NULL, gaurantorContact1 = NULL, gaurantorName2 = NULL, gaurantorContact2 = NULL;
+        SET remainport = 0, princeremain = 0, interestRem = 0, p_remain = 0, i_remain = 0, arrears = 0, userId = NULL;
+
+        -- Fetch main loan details including gruop_id as userId
+        SELECT pl.loan_id, applicant_account_name, m.mobile1, pl.trn_date,
+               pl.princimpal_amount, pl.TotalPrincipalRemaining, pl.TotalInterestRemaining,
+               pl.balance_due, pl.loan_cycle_status, pl.gruop_id
+          INTO LoanId, customerName, customerContactNumber, TrnDate, loanTaken,
+               princeremain, interestRem, totalRem, theLoanStatus, userId
+          FROM pmms.master m
+          INNER JOIN pmms_loans.new_loan_appstore pl 
+             ON pl.applicant_account_number = m.account_number
+         WHERE pl.trn_id = TrnId;
+
+        -- Calculate arrears details from amortization table
+        SELECT SUM(PrincipalRemaining), SUM(InterestRemaing), 
+               (SUM(PrincipalRemaining) + SUM(InterestRemaing)), numberOfDayInArrears(LoanId)
+          INTO P, I, amount_arrears, arrears
+          FROM new_loan_appstoreamort
+         WHERE master1_id = TrnId 
+           AND instalment_due_date <= DATE(NOW()) 
+           AND NOT instalment_status = 'P';
+
+        -- Fetch guarantors (first and last if available)
+        SELECT gaurantorsName, gaurantorsContact1 
+          INTO gaurantorName1, gaurantorContact1
+          FROM gaurantors
+         WHERE loanTrnId = LoanId
+         ORDER BY id ASC
+         LIMIT 1;
+
+        SELECT gaurantorsName, gaurantorsContact1 
+          INTO gaurantorName2, gaurantorContact2
+          FROM gaurantors
+         WHERE loanTrnId = LoanId
+         ORDER BY id DESC
+         LIMIT 1;
+
+        -- Insert data into temporary aging analysis table including company and user details
+        INSERT INTO aging_loan_analysis (
+            trn_id, loan_id, customer_name, customer_contact, 
+            gaurantor1_name, gaurantor1_contact, 
+            gaurantor2_name, gaurantor2_contact, 
+            date_taken, due_date, loan_taken, 
+            principal_remaining, interest_remaining, total_remaining, 
+            total_inarrears, number_of_days_in_arrears, loan_status, 
+            company_name, branch_name, user_id
+        )
+        VALUES (
+            TrnId, LoanId, customerName, customerContactNumber, 
+            gaurantorName1, gaurantorContact1,
+            gaurantorName2, gaurantorContact2, 
+            TrnDate, DATE_ADD(TrnDate, INTERVAL 30 DAY),
+            loanTaken, princeremain, interestRem, totalRem, 
+            amount_arrears, arrears, theLoanStatus,
+            comp_name, branch_name, userId
+        );
+
+        SET l_done = 0;
+    END LOOP;
+
+    CLOSE forSelectingLoanIds;
+
+    -- Return the aging analysis results ordered by loan status and days in arrears
+    SELECT * FROM aging_loan_analysis ORDER BY loan_status, number_of_days_in_arrears;
+    
+END ##
+DELIMITER ;
+
+-- DROP TABLE IF EXISTS loan_files;
+-- CREATE TABLE loan_files (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     loan_id INT NOT NULL,
+--     file_path VARCHAR(255) NOT NULL,
+--     file_name VARCHAR(255) NOT NULL,
+--     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (loan_id) REFERENCES new_loan_appstore(trn_id)
+-- );
+-- DROP TABLE IF EXISTS loan_files;
+
+CREATE TABLE loan_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  loan_id VARCHAR(50) NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_loan_files_loan
+    FOREIGN KEY (loan_id)
+    REFERENCES new_loan_appstore(trn_id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE daily_reports (
+    report_date DATE NOT NULL,
+    contact_number VARCHAR(15) NOT NULL,
+    report_text TEXT NOT NULL,
+    PRIMARY KEY (report_date, contact_number)
+);
+
+
+
+
+CREATE TABLE arch_new_loan_appstore (
+    trn_id int(11) NOT NULL,
+    trn_date date NOT NULL,
+    loan_id varchar(100) NOT NULL ,
+    total_instalments varchar(45) DEFAULT NULL,
+    remaining_instalments varchar(45) DEFAULT NULL,
+    princimpal_amount varchar(45) DEFAULT NULL,
+    total_interest varchar(45) DEFAULT NULL,
+    total_loanAmount varchar(45) DEFAULT NULL,
+    balance_due varchar(45) DEFAULT NULL,
+    instalment_start_date date NOT NULL,
+    instalment_next_due_date date NOT NULL,
+    instalment_end_date date NOT NULL,
+    interest_rate varchar(45) DEFAULT NULL,
+    applicant_account_name varchar(200) NOT NULL,
+    loan_cycle_status varchar(45) DEFAULT NULL,
+    trn_time time NOT NULL,
+    instalments_paid varchar(45) DEFAULT NULL,
+    instalment_amount varchar(45) DEFAULT NULL,
+    loan_tenure varchar(45) DEFAULT NULL,
+    applicant_account_number varchar(45) DEFAULT NULL,
+    inputter_id varchar(10) DEFAULT NULL,
+    authoriser_id varchar(10) DEFAULT NULL,
+    gruop_id varchar(30) DEFAULT NULL,
+    GroupId varchar(50) NOT NULL DEFAULT 'G0001',
+    GroupName varchar(100) NOT NULL DEFAULT 'GROUP1',
+    SecurityLoan varchar(500) DEFAULT NULL,
+    OtherGroups2 int(11) NOT NULL,
+    OtherGroups3 varchar(100) NOT NULL DEFAULT 'Other3',
+    OtherGroups4 varchar(100) NOT NULL DEFAULT 'Other4',
+    TotalInterestPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalInterestRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalPrincipalPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalPrincipalRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccumulatedInterestPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccumulatedInterestRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalLoanPenaltyPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalLoanPenaltyRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccruedInterestRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccruedInterestPaid varchar(100) NOT NULL DEFAULT '0.0'
+);
+
+
+CREATE TABLE arch_new_loan_appstore1 (
+    trn_id int(11) NOT NULL,
+    trn_date date NOT NULL,
+    loan_id varchar(100) NOT NULL,
+    total_instalments varchar(45) DEFAULT NULL,
+    remaining_instalments varchar(45) DEFAULT NULL,
+    princimpal_amount varchar(45) DEFAULT NULL,
+    total_interest varchar(45) DEFAULT NULL,
+    total_loanAmount varchar(45) DEFAULT NULL,
+    balance_due varchar(45) DEFAULT NULL,
+    instalment_start_date date NOT NULL,
+    instalment_next_due_date date NOT NULL,
+    instalment_end_date date NOT NULL,
+    interest_rate varchar(45) DEFAULT NULL,
+    applicant_account_name varchar(45) DEFAULT NULL,
+    loan_cycle_status varchar(45) DEFAULT NULL,
+    trn_time time NOT NULL,
+    instalments_paid varchar(45) DEFAULT NULL,
+    instalment_amount varchar(45) DEFAULT NULL,
+    loan_tenure varchar(45) DEFAULT NULL,
+    applicant_account_number varchar(45) DEFAULT NULL,
+    inputter_id varchar(10) DEFAULT NULL,
+    authoriser_id varchar(10) DEFAULT NULL,
+    gruop_id varchar(30) DEFAULT NULL,
+    GroupId varchar(50) NOT NULL DEFAULT 'G0001',
+    GroupName varchar(100) NOT NULL DEFAULT 'GROUP1',
+    SecurityLoan varchar(500) DEFAULT NULL,
+    OtherGroups2 int(11) NOT NULL,
+    OtherGroups3 varchar(100) NOT NULL DEFAULT 'Other3',
+    OtherGroups4 varchar(100) NOT NULL DEFAULT 'Other4',
+    TotalInterestPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalInterestRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalPrincipalPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalPrincipalRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccumulatedInterestPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccumulatedInterestRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalLoanPenaltyPaid varchar(100) NOT NULL DEFAULT '0.0',
+    TotalLoanPenaltyRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccruedInterestRemaining varchar(100) NOT NULL DEFAULT '0.0',
+    TotalAccruedInterestPaid varchar(100) NOT NULL DEFAULT '0.0',
+    ClientExistanceCat varchar(100) NOT NULL DEFAULT 'First Time Borrower',
+    BorrowingCategory varchar(100) NOT NULL DEFAULT 'Group',
+    LoanGroupId varchar(100) NOT NULL DEFAULT 'Kanama',
+    LoanGroupName varchar(100) NOT NULL DEFAULT 'Kanama',
+    LoanCycle varchar(100) NOT NULL DEFAULT 'Cycle1',
+    LoanProduct varchar(100) NOT NULL DEFAULT 'Salary Loan',
+    MarketingChannel varchar(100) NOT NULL DEFAULT 'Internet',
+    TenureType varchar(100) NOT NULL DEFAULT 'Amortized Loan',
+    LoanPurpose varchar(100) NOT NULL DEFAULT 'Personal Effect',
+    PaymentHistory varchar(100) NOT NULL DEFAULT 'No History',
+    ClientLoyalty varchar(100) NOT NULL DEFAULT 'Cant Tell',
+    SecurityUsage varchar(100) NOT NULL DEFAULT 'No',
+    NumberOfSecurity varchar(100) NOT NULL DEFAULT '0.0',
+    EconomicWelbeingLevel varchar(100) NOT NULL DEFAULT 'Level 1',
+    PaymentSource varchar(100) NOT NULL DEFAULT 'Salary',
+    AmountTakenCategory varchar(100) NOT NULL DEFAULT 'Above 100M',
+    IncomeLevel varchar(100) NOT NULL DEFAULT 'Very Low',
+    EmploymentCat varchar(100) NOT NULL DEFAULT 'Formally Employed',
+    Occupation varchar(100) NOT NULL DEFAULT 'Agriculture',
+    Sex varchar(100) NOT NULL DEFAULT 'Male',
+    MaritalStatus varchar(100) NOT NULL DEFAULT 'Single',
+    AgeGroup varchar(100) NOT NULL DEFAULT 'Between 18-25Yrs',
+    EducationLevel varchar(100) NOT NULL DEFAULT 'Not Educatted',
+    PreferedContactChannel varchar(100) NOT NULL DEFAULT 'Email',
+    Email varchar(100) NOT NULL DEFAULT 'augbazi@gmail.com',
+    BorrowerCharacter varchar(100) NOT NULL DEFAULT 'Daughtful',
+    PhoneNumber varchar(100) NOT NULL DEFAULT '0782231039',
+    commentsClosing varchar(600) NOT NULL DEFAULT '1;General Comments;Not Specified:2;Payment promptness;Not Specified:3;Self Reminding;Not Specified:4;Top Ups;Not Specified:5;Others (Please Specify);Not Specified',
+    OtherTwo varchar(100) NOT NULL DEFAULT 'NA',
+    OtherThree varchar(100) NOT NULL DEFAULT 'NA',
+    OtherFour varchar(100) NOT NULL DEFAULT 'NA',
+    OtherFive varchar(100) NOT NULL DEFAULT 'NA'
+);
+
+CREATE TABLE arch_new_loan_appstoreamort (
+    trn_id int(11) NOT NULL ,
+    instalment_no int(11) NOT NULL DEFAULT '1',
+    princimpal_amount varchar(50) NOT NULL DEFAULT '0.0',
+    princimpal_amount_run_bal varchar(50) NOT NULL DEFAULT '0.0',
+    interest_amount varchar(50) NOT NULL DEFAULT '10000.0',
+    interest_amount_run_bal varchar(50) NOT NULL DEFAULT '0.0',
+    instalment_amount varchar(50) NOT NULL DEFAULT '0.0',
+    instalment_paid varchar(50) NOT NULL DEFAULT '0.0',
+    beginning_bal varchar(50) NOT NULL DEFAULT '0.0',
+    closing_bal varchar(50) NOT NULL DEFAULT '0.0',
+    instalment_due_date date NOT NULL DEFAULT '1979-01-01',
+    instalment_status varchar(50) NOT NULL DEFAULT 'P',
+    instalment_paid_date date NOT NULL DEFAULT '1979-01-01',
+    instalment_paid_variance varchar(50) NOT NULL DEFAULT '2 Days',
+    LoanPenalty varchar(50) NOT NULL DEFAULT '0.0',
+    AccruedInterest varchar(50) NOT NULL DEFAULT '0.0',
+    InstalmentRemaining varchar(50) NOT NULL DEFAULT '0.0',
+    PrincipalPaid varchar(50) NOT NULL DEFAULT '0.0',
+    PrincipalRemaining varchar(50) NOT NULL DEFAULT '0.0',
+    InterestPaid varchar(50) NOT NULL DEFAULT '0.0',
+    InterestRemaing varchar(50) NOT NULL DEFAULT '0.0',
+    LoanPenaltyPaid varchar(50) NOT NULL DEFAULT '0.0',
+    LoanPenaltyRemaining varchar(50) NOT NULL DEFAULT '0.0',
+    AccruedInterestPaid varchar(50) NOT NULL DEFAULT '0.0',
+    AccruedInterestRemaing varchar(50) NOT NULL DEFAULT '0.0',
+    AccumulatedInterest varchar(50) NOT NULL DEFAULT '0.0',
+    AccumulatedInterestPaid varchar(50) NOT NULL DEFAULT '0.0',
+    AccumulatedInterestRemaining varchar(50) NOT NULL DEFAULT '0.0',
+    OtherOne varchar(50) NOT NULL DEFAULT 'NYA',
+    OtherTwo date NOT NULL DEFAULT '1979-01-01',
+    OtherThree date NOT NULL DEFAULT '1979-01-01',
+    master1_id int(11) NOT NULL,
+    master2_id varchar(50) NOT NULL DEFAULT '0.0'
+);
+
+CREATE TABLE pmms.arch_loandisburserepaystatement (
+    TrnId int(11) NOT NULL,
+    TrnDate date DEFAULT '1970-01-01',
+    MonthPaid varchar(100) DEFAULT 'January',
+    YearPaid varchar(100) DEFAULT '2017',
+    loanTrnId int(11) NOT NULL,
+    LoanId varchar(100) DEFAULT 'newloan05502000110',
+    AccountNumber varchar(100) DEFAULT 'newloan05502000110',
+    BatchCode varchar(100) DEFAULT 'B002',
+    AmountDisbursed varchar(100) DEFAULT '0.0',
+    ExpectedInterest varchar(100) DEFAULT '0.0',
+    ExpectedTotalAmount varchar(100) DEFAULT '0.0',
+    InterestRate varchar(100) DEFAULT '0',
+    AmountPaid varchar(100) DEFAULT '0.0',
+    PrincipalPaid varchar(100) DEFAULT '0.0',
+    InterestPaid varchar(100) DEFAULT '0.0',
+    AccumulatedInterestPaid varchar(100) DEFAULT '0.0',
+    LoanPenaltyPaid varchar(100) DEFAULT '0.0',
+    PrincipalBalance varchar(100) DEFAULT '0.0',
+    InterestBalance varchar(100) DEFAULT '0.0',
+    AccumulatedInterestBalance varchar(100) DEFAULT '0.0',
+    LoanPenaltyBalance varchar(100) DEFAULT '0.0',
+    LoanBalance varchar(100) DEFAULT '0.0',
+    LoanStatusReport varchar(100) DEFAULT 'Running',
+    OtherOne varchar(100) DEFAULT 'NA',
+    OtherTwo varchar(100) DEFAULT 'NA',
+    OtherThree varchar(100) DEFAULT 'NA',
+    OtherFour varchar(100) DEFAULT 'NA'
+);
+
+-- -- Step 1: Drop the existing primary key on trn_id
+-- ALTER TABLE arch_new_loan_appstore
+-- DROP PRIMARY KEY;
+
+-- -- Step 2: Add a new auto-increment column 'id'
+-- ALTER TABLE arch_new_loan_appstore
+-- ADD COLUMN id INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+-- -- Step 3: Add a composite primary key (auto_increment column must be the leftmost part)
+-- ALTER TABLE arch_new_loan_appstore
+-- ADD PRIMARY KEY (id, trn_id);
+
+-- -- (Optional) Step 4: Create a non-unique index on trn_id if needed for lookups
+-- ALTER TABLE arch_new_loan_appstore
+-- ADD INDEX idx_trn_id (trn_id);
+
+
+DROP PROCEDURE InitialArchiveCompletedLoans;
+ DELIMITER $$
+
+CREATE PROCEDURE InitialArchiveCompletedLoans()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE loanId VARCHAR(100);
+    DECLARE completionStatus INT;
+    DECLARE loanCursor CURSOR FOR 
+        SELECT trn_id, loan_cycle_status
+        FROM new_loan_appstore
+        WHERE loan_cycle_status = 'Completed' OR loan_cycle_status = 'RenewedClosed' OR loan_cycle_status = 'WrittenOff';
+        
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN loanCursor;
+
+    loanLoop: LOOP
+        FETCH loanCursor INTO loanId, completionStatus;
+        IF done THEN
+            LEAVE loanLoop;
+        END IF;
+
+        -- SELECT loanId, completionStatus;
+
+        -- Insert into archive tables
+        INSERT INTO arch_new_loan_appstore
+        SELECT * FROM new_loan_appstore WHERE trn_id = loanId;
+
+        INSERT INTO arch_new_loan_appstore1
+        SELECT * FROM new_loan_appstore1 WHERE trn_id = loanId;
+
+        INSERT INTO arch_new_loan_appstoreamort
+        SELECT * FROM new_loan_appstoreamort WHERE master1_id = loanId;
+
+        INSERT INTO pmms.arch_loandisburserepaystatement
+        SELECT * FROM pmms.loandisburserepaystatement WHERE loanTrnId = loanId;
+
+        -- Delete from active tables
+        DELETE FROM new_loan_appstore WHERE trn_id = loanId;
+        DELETE FROM new_loan_appstore1 WHERE trn_id = loanId;
+        DELETE FROM new_loan_appstoreamort WHERE master1_id = loanId;
+        DELETE FROM pmms.loandisburserepaystatement WHERE loanTrnId = loanId;
+
+    END LOOP;
+
+    CLOSE loanCursor;
+
+    -- Commit the transaction to make sure all changes are saved
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+
+
+CALL  InitialArchiveCompletedLoans();
+
+
+
+
+DROP PROCEDURE ReturnWrittenOffLoans;
+ DELIMITER $$
+
+CREATE PROCEDURE ReturnWrittenOffLoans()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE loanId VARCHAR(100);
+    DECLARE completionStatus INT;
+    DECLARE loanCursor CURSOR FOR 
+        SELECT trn_id, loan_cycle_status
+        FROM arch_new_loan_appstore
+        WHERE loan_cycle_status = 'WrittenOff';
+        
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN loanCursor;
+
+    loanLoop: LOOP
+        FETCH loanCursor INTO loanId, completionStatus;
+        IF done THEN
+            LEAVE loanLoop;
+        END IF;
+
+        -- SELECT loanId, completionStatus;
+
+        -- Insert into archive tables
+        INSERT INTO new_loan_appstore
+        SELECT * FROM arch_new_loan_appstore  WHERE trn_id = loanId;
+
+        INSERT INTO new_loan_appstore1
+        SELECT * FROM  arch_new_loan_appstore1 WHERE trn_id = loanId;
+
+        INSERT INTO new_loan_appstoreamort
+        SELECT * FROM  arch_new_loan_appstoreamort WHERE master1_id = loanId;
+
+        INSERT INTO pmms.loandisburserepaystatement
+        SELECT * FROM  pmms.arch_loandisburserepaystatement WHERE loanTrnId = loanId;
+
+        -- Delete from active tables
+        DELETE FROM arch_new_loan_appstore WHERE trn_id = loanId;
+        DELETE FROM arch_new_loan_appstore1 WHERE trn_id = loanId;
+        DELETE FROM arch_new_loan_appstoreamort WHERE master1_id = loanId;
+        DELETE FROM  pmms.arch_loandisburserepaystatement WHERE loanTrnId = loanId;
+
+    END LOOP;
+
+    CLOSE loanCursor;
+
+    -- Commit the transaction to make sure all changes are saved
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+
+
+CALL  ReturnWrittenOffLoans();
+
+
+
+ALTER TABLE loan_files
+  ADD CONSTRAINT fk_loan_files_to_newloan
+  FOREIGN KEY (loan_id) REFERENCES new_loan_appstore(trn_id)
+  ON DELETE CASCADE;
+
+
+DROP PROCEDURE IF EXISTS MoveClosedLoan;
+
+DELIMITER $$
+
+CREATE PROCEDURE MoveClosedLoan(IN p_loanId INT)
+BEGIN
+    -- DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    -- BEGIN
+    --     ROLLBACK;
+    -- END;
+
+    -- START TRANSACTION;
+
+    -- -----------------------------------------------------------------
+    -- Step 1: Archive Parent Records
+    -- -----------------------------------------------------------------
+    INSERT INTO arch_new_loan_appstore
+    SELECT * FROM new_loan_appstore WHERE trn_id = p_loanId;
+
+    INSERT INTO arch_new_loan_appstore1
+    SELECT * FROM new_loan_appstore1 WHERE trn_id = p_loanId;
+
+    INSERT INTO arch_new_loan_appstoreamort
+    SELECT * FROM new_loan_appstoreamort WHERE master1_id = p_loanId;
+
+    INSERT INTO pmms.arch_loandisburserepaystatement
+    SELECT * FROM pmms.loandisburserepaystatement WHERE loanTrnId = p_loanId;
+
+    -- -----------------------------------------------------------------
+    -- Step 2: Archive Child Records (after parents exist)
+    -- -----------------------------------------------------------------
+    INSERT INTO archive_loan_files
+    SELECT * FROM loan_files WHERE loan_id = p_loanId;
+
+    -- -----------------------------------------------------------------
+    -- Step 3: Delete Children from Live Tables
+    -- -----------------------------------------------------------------
+    DELETE FROM loan_files WHERE loan_id = p_loanId;
+    DELETE FROM pmms.loandisburserepaystatement WHERE loanTrnId = p_loanId;
+    DELETE FROM new_loan_appstoreamort WHERE master1_id = p_loanId;
+    DELETE FROM new_loan_appstore1 WHERE trn_id = p_loanId;
+
+    -- -----------------------------------------------------------------
+    -- Step 4: Delete Parent from Live Table
+    -- -----------------------------------------------------------------
+    DELETE FROM new_loan_appstore WHERE trn_id = p_loanId;
+
+    -- COMMIT;
+END$$
+
+DELIMITER ;
+
+    -- DELETE FROM loan_files WHERE loan_id = 70187;
+    -- DELETE FROM pmms.loandisburserepaystatement WHERE loanTrnId = 70187;
+    -- DELETE FROM new_loan_appstoreamort WHERE master1_id = 70187;
+    -- DELETE FROM new_loan_appstore1 WHERE trn_id = 70187;
+    -- DELETE FROM new_loan_appstore WHERE trn_id = 70187;
+    --     DELETE FROM archive_loan_files WHERE loan_id = 70187;
+    -- DELETE FROM pmms.arch_loandisburserepaystatement WHERE loanTrnId = 70187;
+    -- DELETE FROM arch_new_loan_appstoreamort WHERE master1_id = 70187;
+    -- DELETE FROM arch_new_loan_appstore1 WHERE trn_id = 70187;
+    -- DELETE FROM arch_new_loan_appstore WHERE trn_id = 70187;
+
+-- DROP PROCEDURE IF EXISTS MoveLoanFileAttach;
+
+-- DELIMITER $$
+
+-- CREATE PROCEDURE MoveLoanFileAttach(
+--     IN loanId VARCHAR(100)
+-- )
+-- BEGIN
+--    -- Insert into archive tables
+--         INSERT INTO archive_loan_files
+--         SELECT * FROM loan_files WHERE loan_id = loanId;
+
+
+--         -- Delete from active tables
+--         DELETE FROM loan_files WHERE loan_id = loanId;
+
+
+-- END$$
+
+-- DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS `loanRepaymentsUpdatesAll`;
+DELIMITER //
+CREATE  PROCEDURE `loanRepaymentsUpdatesAll`(IN typOfRepayment VARCHAR(30),IN loanId VARCHAR(30),IN InstalmentNo INTEGER,IN amountPAI INTEGER)
+BEGIN
+ 
+ DECLARE ItemIdu INTEGER;
+ 
+ DECLARE InstalmentDueDate DATE;
+
+ DECLARE ExistingNumber INTEGER;
+
+  DECLARE ExistingValue INTEGER;
+
+
+ SELECT instalment_due_date INTO InstalmentDueDate  FROM pmms_loans.new_loan_appstoreamort WHERE instalment_no=InstalmentNo AND master2_id=loanId;
+
+
+IF typOfRepayment='updateNewLoanPrincipalNow' THEN 
+
+
+  SELECT ItemId,TotalNumberOfAllPrincipalLoanRepayments,TotalValueOfAllPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+  SET  ExistingNumber=ExistingNumber+1;
+  SET  ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfAllPrincipalLoanRepayments=ExistingNumber,TotalValueOfAllPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+IF InstalmentDueDate=CURDATE() THEN 
+
+  SELECT ItemId,TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly,TotalValueOfPrincipalLoanRepaymentsDueLoansOnly INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+ SET ExistingNumber=ExistingNumber+1;
+ SET ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfPrincipalLoanRepaymentsDueLoansOnly=ExistingNumber,TotalValueOfPrincipalLoanRepaymentsDueLoansOnly=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+END IF;
+
+IF InstalmentDueDate<CURDATE() THEN
+
+ SELECT ItemId,TotalNumberOfArrearsPrincipalLoanRepayments,TotalValueOfArrearsPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+ SET ExistingNumber=ExistingNumber+1;
+ SET ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfArrearsPrincipalLoanRepayments=ExistingNumber,TotalValueOfArrearsPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+ SET   ExistingValue=0;
+END IF;
+
+
+IF InstalmentDueDate>CURDATE() THEN 
+
+  SELECT ItemId,TotalNumberOfEarlyPrincipalLoanRepayments,TotalValueOfEarlyPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+ SET ExistingNumber=ExistingNumber+1;
+ SET ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfEarlyPrincipalLoanRepayments=ExistingNumber,TotalValueOfEarlyPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+END IF;
+
+IF InstalmentDueDate>=CURDATE() THEN 
+
+  SELECT ItemId,TotalNumberOfLoanRepaymentsMinusArrears,TotalValueOfLoanRepaymentsMinusArrears INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+ SET ExistingNumber=ExistingNumber+1;
+ SET ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfLoanRepaymentsMinusArrears=ExistingNumber,TotalValueOfLoanRepaymentsMinusArrears=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+ SET   ExistingValue=0;
+END IF;
+
+END IF;
+
+
+
+
+IF typOfRepayment='updateNewInterestNow' THEN 
+
+
+ SELECT ItemId,TotalNumberOfAllInterestPayments,TotalValueOfInterestReceived INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+  SET  ExistingNumber=ExistingNumber+1;
+  SET  ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfAllInterestPayments=ExistingNumber,TotalValueOfInterestReceived=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+
+
+IF InstalmentDueDate=CURDATE() THEN 
+ SELECT ItemId,TotalNumberOfInterestPaymentsDueLoansOnly,TotalValueOfInterestPaymentsDueLoansOnly INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+  SET  ExistingNumber=ExistingNumber+1;
+  SET  ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfInterestPaymentsDueLoansOnly=ExistingNumber,TotalValueOfInterestPaymentsDueLoansOnly=ExistingValue WHERE ItemId=ItemIdu;
+ SET   ExistingNumber=0;
+  SET  ExistingValue=0;
+
+
+END IF;
+
+IF InstalmentDueDate<CURDATE() THEN 
+
+ SELECT ItemId,TotalNumberOfArrearsInterestPayments,TotalValueOfArrearsInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+  SET  ExistingNumber=ExistingNumber+1;
+  SET  ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfArrearsInterestPayments=ExistingNumber,TotalValueOfArrearsInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+
+END IF;
+
+IF InstalmentDueDate>CURDATE() THEN 
+ SELECT ItemId,TotalNumberOfEarlyInterestPayments,TotalValueOfEarlyInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+ SET   ExistingNumber=ExistingNumber+1;
+  SET  ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfEarlyInterestPayments=ExistingNumber,TotalValueOfEarlyInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+
+END IF;
+
+END IF;
+
+
+
+IF typOfRepayment='updateNewLoanPenaltyNow' THEN 
+
+SELECT ItemId,TotalNumberOfAllLoanPenaltyPayments,TotalValueOfAllLoanPenaltyPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+  SET  ExistingNumber=ExistingNumber+1;
+  SET  ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfAllLoanPenaltyPayments=ExistingNumber,TotalValueOfAllLoanPenaltyPayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+END IF;
+
+ 
+IF typOfRepayment='updateNewAccumulatedInterestNow' THEN 
+SELECT ItemId,TotalNumberOfAllAccumulatedInterestPayments,TotalValueOfAllAccumulatedInterestPayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+   SET ExistingNumber=ExistingNumber+1;
+   SET ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfAllAccumulatedInterestPayments=ExistingNumber,TotalValueOfAllAccumulatedInterestPayments=ExistingValue WHERE ItemId=ItemIdu;
+  SET  ExistingNumber=0;
+  SET  ExistingValue=0;
+
+END IF;
+
+SELECT ItemId,TotalNumberOfAllInterestAndPrincipalLoanRepayments,TotalValueOfAllInterestAndPrincipalLoanRepayments INTO ItemIdu,ExistingNumber,ExistingValue  FROM pmms.summurystats ORDER BY ItemId DESC Limit 1;
+
+ SET ExistingNumber=ExistingNumber+1;
+   SET ExistingValue=ExistingValue+amountPAI;
+
+UPDATE pmms.summurystats SET TotalNumberOfAllInterestAndPrincipalLoanRepayments=ExistingNumber,TotalValueOfAllInterestAndPrincipalLoanRepayments=ExistingValue WHERE ItemId=ItemIdu;
+   SET ExistingNumber=0;
+  SET  ExistingValue=0;
+
+ 
+ END //
+DELIMITER ;
+
+
+
+
+/* ──────────────────────────────────────────────────────────
+   Portfolio summary ‑ counts, amounts, % of total
+   Amount = Principal + Interest + Penalty remaining
+   MySQL 5.5 compatible
+────────────────────────────────────────────────────────── */
+DROP PROCEDURE IF EXISTS sp_portfolio_summary;
+DELIMITER $$
+
+CREATE PROCEDURE sp_portfolio_summary()
+BEGIN
+    /* 1. Working variables */
+    DECLARE v_grand_loans   INT;
+    DECLARE v_grand_amount  DECIMAL(22,2);
+
+    /* 2. Prepare temporary table */
+    DROP TEMPORARY TABLE IF EXISTS tmp_portfolio_summary;
+    CREATE TEMPORARY TABLE tmp_portfolio_summary (
+        loan_status       VARCHAR(20),
+        category          VARCHAR(100),
+        total_loans       INT,
+        amount_remaining  DECIMAL(22,2),
+        percent_of_total  DECIMAL(6,2)
+    );
+
+    START TRANSACTION;
+
+    /* ─────────────────────────────────────────────────────
+       A) DISBURSED LOANS
+    ───────────────────────────────────────────────────── */
+    --  A1) Compute grand totals
+    SELECT
+      COUNT(*) AS cnt,
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ) AS amt
+    INTO
+      v_grand_loans,
+      v_grand_amount
+    FROM new_loan_appstore
+    WHERE loan_cycle_status = 'Disbursed';
+
+    IF v_grand_amount IS NULL OR v_grand_amount = 0 THEN
+      SET v_grand_amount = 1;  /* avoid division by zero */
+    END IF;
+
+    --  A2) Aging buckets for Disbursed
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Disbursed',
+      'Active (0–30 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Disbursed'
+      AND numberOfDayInArrears(nla.loan_id) BETWEEN 0 AND 30;
+
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Disbursed',
+      'At Risk (31–90 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Disbursed'
+      AND numberOfDayInArrears(nla.loan_id) BETWEEN 31 AND 90;
+
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Disbursed',
+      'Non‑Performing (91–360 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Disbursed'
+      AND numberOfDayInArrears(nla.loan_id) BETWEEN 91 AND 360;
+
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Disbursed',
+      'Due‑For‑Write‑Off (>360 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Disbursed'
+      AND numberOfDayInArrears(nla.loan_id) > 360;
+
+    --  A3) Grand total row for Disbursed
+    INSERT INTO tmp_portfolio_summary
+    VALUES
+      ('Disbursed','Grand Total', v_grand_loans, v_grand_amount, 100.00);
+
+
+    /* ─────────────────────────────────────────────────────
+       B) RENEWED LOANS
+    ───────────────────────────────────────────────────── */
+    --  B1) Compute grand totals
+    SELECT
+      COUNT(*) AS cnt,
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ) AS amt
+    INTO
+      v_grand_loans,
+      v_grand_amount
+    FROM new_loan_appstore
+    WHERE loan_cycle_status = 'Renewed';
+
+    IF v_grand_amount IS NULL OR v_grand_amount = 0 THEN
+      SET v_grand_amount = 1;
+    END IF;
+
+    --  B2) Aging buckets for Renewed
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Renewed',
+      'Active (0–30 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Renewed'
+      AND numberOfDayInArrears(nla.loan_id) BETWEEN 0 AND 30;
+
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Renewed',
+      'At Risk (31–90 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Renewed'
+      AND numberOfDayInArrears(nla.loan_id) BETWEEN 31 AND 90;
+
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Renewed',
+      'Non‑Performing (91–360 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Renewed'
+      AND numberOfDayInArrears(nla.loan_id) BETWEEN 91 AND 360;
+
+    INSERT INTO tmp_portfolio_summary
+    SELECT
+      'Renewed',
+      'Due‑For‑Write‑Off (>360 days)',
+      COUNT(*),
+      SUM(
+        CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+        CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+      ),
+      ROUND(
+        SUM(
+          CAST(COALESCE(TotalInterestRemaining ,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalPrincipalRemaining,0)  AS DECIMAL(22,2)) +
+          CAST(COALESCE(TotalLoanPenaltyRemaining,0) AS DECIMAL(22,2))
+        ) / v_grand_amount * 100
+      ,2)
+    FROM new_loan_appstore AS nla
+    WHERE
+      nla.loan_cycle_status = 'Renewed'
+      AND numberOfDayInArrears(nla.loan_id) > 360;
+
+    --  B3) Grand total row for Renewed
+    INSERT INTO tmp_portfolio_summary
+    VALUES
+      ('Renewed','Grand Total', v_grand_loans, v_grand_amount, 100.00);
+
+    COMMIT;
+
+    /* 3. Final output */
+    SELECT
+      loan_status,
+      category,
+      total_loans,
+      FORMAT(amount_remaining,0)        AS amount_remaining,
+      CONCAT(ROUND(percent_of_total,0),'%') AS percent_of_total
+    FROM tmp_portfolio_summary
+    ORDER BY
+      loan_status,
+      FIELD(category,
+        'Active (0–30 days)',
+        'At Risk (31–90 days)',
+        'Non‑Performing (91–360 days)',
+        'Due‑For‑Write‑Off (>360 days)',
+        'Grand Total'
+      );
+END $$
+DELIMITER ;
+
+-- To execute:
+CALL sp_portfolio_summary();
+
+
+-- Run it
+CALL sp_portfolio_summary();
+
+
+
+DROP PROCEDURE IF EXISTS smsExpensesSummaryReport;
+DELIMITER $$
+
+CREATE PROCEDURE smsExpensesSummaryReport()
+    READS SQL DATA
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE vAccNo VARCHAR(100);
+    DECLARE vAccName VARCHAR(200);
+    DECLARE vTbl VARCHAR(130);
+    DECLARE vTotal DECIMAL(22,2);
+
+    DECLARE cur CURSOR FOR
+        SELECT account_number, account_name
+        FROM   pmms.account_created_store
+        WHERE  account_l2 = 'Expenses';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    DROP TEMPORARY TABLE IF EXISTS tmp_expenses;
+    CREATE TEMPORARY TABLE tmp_expenses (
+        accountName VARCHAR(200),
+        narration   VARCHAR(200),
+        amount      DECIMAL(22,2)
+    );
+
+    OPEN cur;
+    fetch_loop: LOOP
+        FETCH cur INTO vAccNo, vAccName;
+        IF done THEN LEAVE fetch_loop; END IF;
+
+        SET vTbl = CONCAT('pmms.bsanca', vAccNo);
+
+        IF EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE  table_schema = 'pmms'
+              AND  table_name   = CONCAT('bsanca', vAccNo)
+        ) THEN
+            /* embed the account name, escaping single quotes */
+            SET @sql = CONCAT(
+              'INSERT INTO tmp_expenses (accountName,narration,amount) ',
+              'SELECT ''',
+              REPLACE(vAccName, '''', ''''''),
+              ''', ',
+              'TRIM(TRAILING '' '' FROM SUBSTRING_INDEX(narration,''Processed on'',1)), ',
+              'CAST(debit AS DECIMAL(22,2)) ',
+              'FROM ', vTbl,
+              ' WHERE trn_date = CURDATE() ',
+              '  AND CAST(debit AS DECIMAL(22,2)) > 0'
+            );
+
+            PREPARE stmt FROM @sql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        END IF;
+    END LOOP;
+    CLOSE cur;
+
+    SELECT IFNULL(SUM(amount),0) INTO vTotal FROM tmp_expenses;
+    INSERT INTO tmp_expenses VALUES ('Total','Total Expenses',vTotal);
+
+    SELECT  accountName AS account_name,
+            narration,
+            FORMAT(amount,0) AS debit
+    FROM    tmp_expenses;
+END$$
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS smsLoansDisbursedSummaryReport;
+DELIMITER $$
+
+CREATE PROCEDURE smsLoansDisbursedSummaryReport()
+    READS SQL DATA
+BEGIN
+    DECLARE vTotal DECIMAL(22,2);
+
+    -- Drop and create temporary table
+    DROP TEMPORARY TABLE IF EXISTS tmp_loans_out;
+    CREATE TEMPORARY TABLE tmp_loans_out (
+        accountName       VARCHAR(100),
+        phone             VARCHAR(50),
+        businessName      VARCHAR(100),
+        officerName       VARCHAR(100),
+        amountDisbursed   DECIMAL(22,2),
+        guarantorName     VARCHAR(100),
+        guarantorContact  VARCHAR(100),
+        clientType        VARCHAR(10)
+    );
+
+    -- Populate the temp table with only ONE guarantor per loan (the "first" one)
+    INSERT INTO tmp_loans_out (accountName, phone, businessName, officerName,
+                               amountDisbursed, guarantorName,
+                               guarantorContact, clientType)
+    SELECT  
+        lps.account_name,
+        COALESCE(m.mobile1,'')                                       AS phone,
+        COALESCE(bd.businessName,'')                                 AS businessName,
+        COALESCE(staffName(nls.gruop_id),'')                         AS officerName,
+        CAST(lps.princimpal_amount AS DECIMAL(22,2))                AS amountDisbursed,
+        COALESCE(g.gaurantorsName,'')                                AS guarantorName,
+        COALESCE(g.gaurantorsContact1,'')                            AS guarantorContact,
+        CASE WHEN DATE(acs.creation_date) = CURDATE()
+            THEN 'NEW' ELSE 'OLD' END                                AS clientType
+    FROM    loanprocessingstore AS lps
+    LEFT JOIN new_loan_appstore AS nls
+        ON nls.loan_id = CONCAT('newloan', lps.account_number)
+    LEFT JOIN businessdetails AS bd
+        ON bd.id = nls.OtherGroups2
+    -- This subquery ensures only one row per loanTrnId (lowest gaurantorsName, change to MIN(id) if you have PK)
+    LEFT JOIN (
+        SELECT
+            loanTrnId,
+            MIN(gaurantorsName) AS gaurantorsName,
+            MIN(gaurantorsContact1) AS gaurantorsContact1
+        FROM gaurantors
+        GROUP BY loanTrnId
+    ) AS g ON g.loanTrnId = nls.trn_id
+    LEFT JOIN pmms.account_created_store AS acs
+        ON acs.account_number = lps.account_number
+    LEFT JOIN pmms.`master` AS m
+        ON m.account_number  = lps.account_number
+    WHERE lps.trn_date = CURDATE()
+      AND IFNULL(lps.loan_cycle_status,'') = 'Disbursed';
+
+    -- Grand total
+    SELECT IFNULL(SUM(amountDisbursed),0) INTO vTotal FROM tmp_loans_out;
+    INSERT INTO tmp_loans_out
+        VALUES ('Total', '', '', '', vTotal, '', '', '');
+
+    -- Final output – officer_name last
+    SELECT  accountName                       AS account_name,
+            phone,
+            businessName                      AS business_name,
+            FORMAT(amountDisbursed,0)         AS amount_disbursed,
+            guarantorName                     AS guarantor_name,
+            guarantorContact                  AS guarantor_contact,
+            clientType                        AS client_type,
+            officerName                       AS officer_name
+    FROM    tmp_loans_out;
+END $$
+DELIMITER ;
+
+
+
+-- Run:
+CALL smsLoansDisbursedSummaryReport();
+
+
+ALTER TABLE `daily_reports`
+  -- 1) add the new column (an ENUM of your four types)
+  ADD COLUMN `report_type` 
+    ENUM('expense','officer','loans_disbursed','portfolio_summary') 
+    NOT NULL 
+    AFTER `contact_number`,
+  -- 2) drop the old PK
+  DROP PRIMARY KEY,
+  -- 3) make the PK include report_type as well
+  ADD PRIMARY KEY (`report_date`,`contact_number`,`report_type`);
+
+update daily_reports set report_type='officer';
+
+
+/* Phase 1 – allow NULLs while we populate the data */
+ALTER TABLE gaurantors
+  ADD COLUMN accountNumber VARCHAR(200) NULL
+  AFTER gaurantorsBusiness;
+
+/* Optional – an index helps later look-ups */
+CREATE INDEX idx_gaurantors_accountNumber ON gaurantors (accountNumber);
+
+
+/* -------------------------------------------------------------
+   Clean build-up
+------------------------------------------------------------- */
+DROP PROCEDURE IF EXISTS update_gaurantors_accountNumber_proc;
+DELIMITER $$
+
+CREATE PROCEDURE update_gaurantors_accountNumber_proc()
+BEGIN
+    /* ---------- error safety ---------- */
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    /* ---------- 1. fill from live store ---------- */
+    UPDATE gaurantors AS g
+    JOIN   new_loan_appstore AS n  ON n.trn_id = g.loanTrnId
+       SET g.accountNumber = n.applicant_account_number
+     WHERE g.accountNumber IS NULL OR g.accountNumber = '';
+
+    /* ---------- 2. fill from archive (still empty rows) ---------- */
+    UPDATE gaurantors AS g
+    JOIN   arch_new_loan_appstore AS a  ON a.trn_id = g.loanTrnId
+       SET g.accountNumber = a.applicant_account_number
+     WHERE g.accountNumber IS NULL OR g.accountNumber = '';
+
+    /* ---------- 3. show every row we managed to update ---------- */
+    SELECT
+        'updated'  AS action,
+        id,
+        loanTrnId,
+        accountNumber
+    FROM gaurantors
+    WHERE accountNumber IS NOT NULL
+      AND accountNumber <> '';
+
+    /* ---------- 4. capture and delete the orphans  ---------- */
+    DROP TEMPORARY TABLE IF EXISTS _tmp_deleted;
+    CREATE TEMPORARY TABLE _tmp_deleted
+        (id INT, loanTrnId VARCHAR(60));
+
+    INSERT INTO _tmp_deleted (id, loanTrnId)
+    SELECT id, loanTrnId
+    FROM   gaurantors
+    WHERE  accountNumber IS NULL OR accountNumber = '';
+
+    DELETE
+    FROM   gaurantors
+    WHERE  accountNumber IS NULL OR accountNumber = '';
+
+    /* ---------- 5. show what we deleted ---------- */
+    SELECT
+        'deleted' AS action,
+        id,
+        loanTrnId
+    FROM _tmp_deleted;
+
+    COMMIT;                     -- atomic change set
+    DROP TEMPORARY TABLE _tmp_deleted;
+END$$
+DELIMITER ;
+
+
+CALL update_gaurantors_accountNumber_proc();
+
+
+/* One-time build – MySQL 5.5.6 compatible */
+CREATE TABLE gaurantors_archive (
+    archive_id  INT(11) NOT NULL AUTO_INCREMENT,
+    original_id INT(11) NOT NULL,                -- gaurantors.id
+
+    gaurantorsName                VARCHAR(100),
+    gaurantorsContact1            VARCHAR(100),
+    gaurantorsContact2            VARCHAR(100),
+    gaurantorsIdNumber            VARCHAR(100),
+    gaurantorsRelationWithBorrower VARCHAR(100),
+    gaurantorsHomeArea            VARCHAR(500),
+    gaurantorsBusiness            VARCHAR(500),
+    accountNumber                 VARCHAR(200) NOT NULL,
+    loanTrnId                     VARCHAR(60),
+
+    /* FIRST (and only) TIMESTAMP ⇒ DEFAULT CURRENT_TIMESTAMP works */
+    archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (archive_id),
+    UNIQUE KEY uq_original_id (original_id),
+    INDEX      idx_loanTrnId    (loanTrnId)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8;
+
+
+
+DROP PROCEDURE IF EXISTS archive_gaurantors_proc;
+DELIMITER $$
+
+CREATE PROCEDURE archive_gaurantors_proc()
+BEGIN
+    /* ———— safety net ———— */
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    /* -----------------------------------------------------------------
+       1.  Move guarantors linked to CLOSED loans
+           • in arch_new_loan_appstore
+           • NOT present in new_loan_appstore
+    ------------------------------------------------------------------ */
+    DROP TEMPORARY TABLE IF EXISTS _tmp_to_archive;
+    CREATE TEMPORARY TABLE _tmp_to_archive
+          (PRIMARY KEY (id))          -- keeps the list we’ll delete
+    SELECT  g.id,
+            g.gaurantorsName,
+            g.gaurantorsContact1,
+            g.gaurantorsContact2,
+            g.gaurantorsIdNumber,
+            g.gaurantorsRelationWithBorrower,
+            g.gaurantorsHomeArea,
+            g.gaurantorsBusiness,
+            g.accountNumber,
+            g.loanTrnId
+    FROM    gaurantors AS g
+    /* closed loans … */
+    JOIN    arch_new_loan_appstore  a  ON a.trn_id = g.loanTrnId
+    /* … but NOT still running anywhere */
+    LEFT JOIN new_loan_appstore     n  ON n.trn_id = g.loanTrnId
+    WHERE   n.trn_id IS NULL;      -- NULL  ⇒  not a running loan
+
+    /* -----------------------------------------------------------------
+       2.  Insert them into the archive table (idempotent)
+    ------------------------------------------------------------------ */
+    INSERT IGNORE INTO gaurantors_archive
+            (original_id,
+             gaurantorsName, gaurantorsContact1, gaurantorsContact2,
+             gaurantorsIdNumber, gaurantorsRelationWithBorrower,
+             gaurantorsHomeArea, gaurantorsBusiness,
+             accountNumber, loanTrnId)
+    SELECT  id,
+            gaurantorsName, gaurantorsContact1, gaurantorsContact2,
+            gaurantorsIdNumber, gaurantorsRelationWithBorrower,
+            gaurantorsHomeArea, gaurantorsBusiness,
+            accountNumber, loanTrnId
+    FROM _tmp_to_archive;
+
+    /* -----------------------------------------------------------------
+       3.  Delete them from the live table
+    ------------------------------------------------------------------ */
+    DELETE g
+    FROM   gaurantors g
+    JOIN   _tmp_to_archive t USING (id);
+
+    /* -----------------------------------------------------------------
+       4.  Return the rows we just archived  ➜  caller sees the effect
+    ------------------------------------------------------------------ */
+    SELECT
+        'archived'  AS action,
+        original_id AS id,
+        loanTrnId,
+        accountNumber,
+        archived_at
+    FROM   gaurantors_archive
+    WHERE  original_id IN (SELECT id FROM _tmp_to_archive);
+
+    COMMIT;
+    DROP TEMPORARY TABLE _tmp_to_archive;
+END$$
+DELIMITER ;
+
+
+CALL archive_gaurantors_proc();
+
+
+
+/* =======================================================================
+   NEW-client loans disbursed between two dates – now returns disbursed_date
+   =======================================================================*/
+DROP PROCEDURE IF EXISTS smsLoansDisbursedSummaryReport_NewByRange;
+DELIMITER $$
+
+CREATE PROCEDURE smsLoansDisbursedSummaryReport_NewByRange (
+    IN  p_start DATE,      -- inclusive
+    IN  p_end   DATE       -- inclusive
+)
+READS SQL DATA
+BEGIN
+    DECLARE vTotal DECIMAL(22,2);
+
+    /* 1. scratch table ------------------------------------------------- */
+    DROP TEMPORARY TABLE IF EXISTS tmp_loans_out;
+    CREATE TEMPORARY TABLE tmp_loans_out (
+        accountName       VARCHAR(100),
+        phone             VARCHAR(50),
+        businessName      VARCHAR(100),
+        disbursedDate     DATE,
+        officerName       VARCHAR(100),
+        amountDisbursed   DECIMAL(22,2),
+        guarantorName     VARCHAR(100),
+        guarantorContact  VARCHAR(100),
+        clientType        VARCHAR(10)
+    );
+
+    /* 2. populate ------------------------------------------------------ */
+    INSERT INTO tmp_loans_out (accountName, phone, businessName, disbursedDate,
+                               officerName, amountDisbursed, guarantorName,
+                               guarantorContact, clientType)
+    SELECT  lps.account_name,
+            COALESCE(m.mobile1,''),
+            COALESCE(bd.businessName,''),
+            lps.trn_date,
+            COALESCE(staffName(nls.gruop_id),''),
+            CAST(lps.princimpal_amount AS DECIMAL(22,2)),
+            COALESCE(g.gaurantorsName,''),
+            COALESCE(g.gaurantorsContact1,''),
+            'NEW'
+    FROM    loanprocessingstore           AS lps
+    LEFT JOIN new_loan_appstore           AS nls ON nls.loan_id   = CONCAT('newloan', lps.account_number)
+    LEFT JOIN businessdetails             AS bd  ON bd.id         = nls.OtherGroups2
+    LEFT JOIN gaurantors                  AS g   ON g.loanTrnId   = nls.trn_id
+    LEFT JOIN pmms.account_created_store  AS acs ON acs.account_number = lps.account_number
+    LEFT JOIN pmms.`master`               AS m   ON m.account_number   = lps.account_number
+    WHERE   lps.trn_date BETWEEN p_start AND p_end
+      AND   IFNULL(lps.loan_cycle_status,'') = 'Disbursed'
+      AND   DATE(acs.creation_date) = DATE(lps.trn_date);      -- «NEW»
+
+    /* 3. grand total ----------------------------------------------------*/
+    SELECT IFNULL(SUM(amountDisbursed),0) INTO vTotal FROM tmp_loans_out;
+    INSERT INTO tmp_loans_out
+        VALUES ('Total','','',NULL,'',vTotal,'','','');
+
+    /* 4. final result set ----------------------------------------------*/
+    SELECT  accountName                       AS account_name,
+            phone,
+            businessName                      AS business_name,
+            DATE_FORMAT(disbursedDate,'%Y-%m-%d') AS disbursed_date,
+            FORMAT(amountDisbursed,0)         AS amount_disbursed,
+            guarantorName                     AS guarantor_name,
+            guarantorContact                  AS guarantor_contact,
+            clientType                        AS client_type,
+            officerName                       AS officer_name
+    FROM    tmp_loans_out;
+END$$
+DELIMITER ;
+
+
+-- If it exists from partial attempts
+DROP TABLE IF EXISTS `archive_loan_files`;
+
+CREATE TABLE `archive_loan_files` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `loan_id` INT NOT NULL,                 -- logical link to arch_new_loan_appstore.trn_id (no FK)
+  `file_path` VARCHAR(255) NOT NULL,
+  `file_name` VARCHAR(255) NOT NULL,
+  `upload_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_loan_id` (`loan_id`),          -- keeps lookups fast even without FK
+  KEY `idx_upload_date` (`upload_date`)   -- handy for recent-file queries
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 
 
 
 
+-- account_block
+CREATE TABLE account_block (
+  id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  account_number     VARCHAR(100) NOT NULL,
+  reason_code        VARCHAR(40)  NOT NULL,   -- e.g. INACTIVE_6M, COMBINED_LOAN, AML_HOLD
+  message            VARCHAR(255) NOT NULL,
+  requires_approval  TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_by         VARCHAR(50),
+  expires_at         DATETIME NULL,
+  cleared            TINYINT(1)   NOT NULL DEFAULT 0,
+  cleared_at         DATETIME NULL,
+  cleared_by         VARCHAR(50),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- jButton283.setEnabled(false);
+CREATE INDEX idx_block_active
+  ON account_block (account_number, cleared, reason_code);
+
+-- account_approval_override
+CREATE TABLE account_approval_override (
+  id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  account_number  VARCHAR(100) NOT NULL,
+  reason_code     VARCHAR(40)  NOT NULL,
+  approved_by     VARCHAR(50)  NOT NULL,
+  approved_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at      DATETIME NULL,
+  notes           VARCHAR(255),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE INDEX idx_override
+  ON account_approval_override (account_number, reason_code);
+
+
+ALTER TABLE pmms_loans.new_loan_appstore
+  ADD INDEX idx_loan_acct_status (applicant_account_number, loan_cycle_status);
+
+ALTER TABLE pmms_loans.new_loan_appstore
+  ADD INDEX idx_loan_acct_trndate (applicant_account_number, trn_date);
+
+
 
 
 -- PMMS
@@ -17571,23 +21263,29 @@ DROP PROCEDURE IF EXISTS runningLoansDetails;
 DELIMITER ##
 CREATE PROCEDURE runningLoansDetails() BEGIN
 
+
 DROP TABLE IF EXISTS runningLoanAnalysis;
 
 CREATE TEMPORARY TABLE  runningLoanAnalysis(id INTEGER NOT NULL AUTO_INCREMENT,customer_name VARCHAR(60),customer_account VARCHAR(60), PRIMARY KEY (`id`))ENGINE = InnoDB
 AUTO_INCREMENT =0
 DEFAULT CHARACTER SET = utf8;
 
-  --  INSERT INTO  runningLoanAnalysis( 
-  -- `id` ,
-  -- `customer_name` ,
-  -- `customer_account`  
-  -- )
-   SELECT 
+
+  SELECT
     trnId AS id,
-  AccountNumber AS customer_account
-       FROM loandisburserepaystatement GROUP BY AccountNumber;
-       
-      --  SELECT * FROM runningLoanAnalysis;
+    AccountNumber AS customer_account
+FROM (
+    SELECT trnId, AccountNumber
+    FROM loandisburserepaystatement
+
+    UNION ALL
+
+    SELECT trnId, AccountNumber
+    FROM arch_loandisburserepaystatement
+) AS combined_data
+GROUP BY AccountNumber;
+
+
 END ##
 DELIMITER ;
 CALL runningLoansDetails();
@@ -17624,6 +21322,7 @@ DELIMITER ##
 CREATE PROCEDURE   loanPrintingDetailsRenewed(IN batchNumber VARCHAR(45),IN staffId VARCHAR(45))
 BEGIN
 
+ 
  DECLARE l_done,noOfRenewals,loanTrnIdL,disLoanTrnIdL INT;
  DECLARE AmountPaidL,AmountRemainL,loan_takenL,princimpalL,interestL,loanRenewedL,arrearsAmount,amountRenewed,date_takenL VARCHAR(60);
   DECLARE companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus,officeNumber,theTxnTime VARCHAR(60);
@@ -17632,55 +21331,102 @@ DECLARE theTrn_date,dateLastRenewed DATE;
 DROP TABLE IF EXISTS loanPrintDetailsRenew;
 
 CREATE TEMPORARY  TABLE loanPrintDetailsRenew(
-id_1 INTEGER, -- 0
-company_name VARCHAR(60),-- 1
-company_branch VARCHAR(60),-- 2
-company_box_number VARCHAR(60),-- 3
-customer_name VARCHAR(60),-- 4
-staff_name VARCHAR(60),-- 5
-loan_taken VARCHAR(60),-- 6
-date_taken  VARCHAR(60),-- 7
-loan_renewed  VARCHAR(60),-- 8
-no_of_renewals  INT,-- 9
-date_last_renewed DATE,-- 10
-loans_paid VARCHAR(60),-- 11
-loan_remaining VARCHAR(60),-- 12
-amount_arrears VARCHAR(60),-- 13
-batchNumber  VARCHAR(60),-- 14
-loanID  VARCHAR(60),-- 15
-trn_date VARCHAR(60),-- 16
-trn_time VARCHAR(30),-- 17
-LoanStatus VARCHAR(60),-- 18
-princimpal_amount VARCHAR(60),-- 19
-interest_amount VARCHAR(60),-- 20
-office_number VARCHAR(60),-- 21
-amount_renewed VARCHAR(60));-- 21
-
--- loanDetails.add(rsxmt.getString("loan_taken"));
--- loanDetails.add(fmt.fromDatabaseWithDashSeperatorBeginningWithYear(rsxmt.getString("date_taken")));
-
--- loanDetails.add(rsxmt.getString("loan_renewed"));
--- loanDetails.add(rsxmt.getString("no_of_renewals"));
--- loanDetails.add(fmt.fromDatabaseWithDashSeperatorBeginningWithYear(rsxmt.getString("date_last_renewed")));
+id_1 INTEGER,
+company_name VARCHAR(60),
+company_branch VARCHAR(60),
+company_box_number VARCHAR(60),
+customer_name VARCHAR(60),
+staff_name VARCHAR(60),
+loan_taken VARCHAR(60),
+date_taken  VARCHAR(60),
+loan_renewed  VARCHAR(60),
+no_of_renewals  INT,
+date_last_renewed DATE,
+loans_paid VARCHAR(60),
+loan_remaining VARCHAR(60),
+amount_arrears VARCHAR(60),
+batchNumber  VARCHAR(60),
+loanID  VARCHAR(60),
+trn_date VARCHAR(60),
+trn_time VARCHAR(30),
+LoanStatus VARCHAR(60),
+princimpal_amount VARCHAR(60),
+interest_amount VARCHAR(60),
+office_number VARCHAR(60),
+amount_renewed VARCHAR(60));
 
 
 
-SELECT loanTrnId,AmountPaid,LoanBalance,AccountNumber,LoanStatusReport,TrnDate  INTO loanTrnIdL,AmountPaidL,AmountRemainL,accountNumberL ,LoanStatus ,theTrn_date FROM   pmms.loandisburserepaystatement WHERE BatchCode=batchNumber;
+SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+INTO loanTrnIdL, AmountPaidL, AmountRemainL, accountNumberL, LoanStatus, theTrn_date
+FROM (
+    SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+    FROM pmms.loandisburserepaystatement
+    WHERE BatchCode = batchNumber
+
+    UNION ALL
+
+    SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+    FROM pmms.arch_loandisburserepaystatement
+    WHERE BatchCode = batchNumber
+) AS combined_data;
 
 SELECT trn_time INTO theTxnTime FROM pmms.general_ledger WHERE chq_number=batchNumber LIMIT 1;
 
-SELECT authoriser_id,OtherGroups3,princimpal_amount INTO  disLoanTrnIdL,noOfRenewals,amountRenewed FROM pmms_loans.new_loan_appstore WHERE trn_id=loanTrnIdL;
 
--- SELECT SUM(InstalmentRemaining) INTO arrearsAmount FROM pmms_loans.new_loan_appstoreamort WHERE master1_id=loanTrnIdL AND NOT instalment_status='P' AND instalment_due_date<=DATE(NOW());
 
-SELECT total_loanAmount,instalment_start_date INTO  loan_takenL,date_takenL FROM  pmms_loans.new_loan_appstore WHERE trn_id=disLoanTrnIdL;
+SELECT authoriser_id, OtherGroups3, princimpal_amount
+INTO disLoanTrnIdL, noOfRenewals, amountRenewed
+FROM (
+    SELECT authoriser_id, OtherGroups3, princimpal_amount
+    FROM pmms_loans.new_loan_appstore
+    WHERE trn_id = loanTrnIdL
+
+    UNION ALL
+
+    SELECT authoriser_id, OtherGroups3, princimpal_amount
+    FROM pmms_loans.arch_new_loan_appstore
+    WHERE trn_id = loanTrnIdL
+) AS combined_data;
+
+
+SELECT total_loanAmount, instalment_start_date
+INTO loan_takenL, date_takenL
+FROM (
+    SELECT total_loanAmount, instalment_start_date
+    FROM pmms_loans.new_loan_appstore
+    WHERE trn_id = disLoanTrnIdL
+
+    UNION ALL
+
+    SELECT total_loanAmount, instalment_start_date
+    FROM pmms_loans.arch_new_loan_appstore
+    WHERE trn_id = disLoanTrnIdL
+) AS combined_data;
 
 SELECT the_company_name, the_company_branch,the_company_box_number,office_number INTO companyName,companyBranch, companyBoxNumber,officeNumber FROM the_company_datails;
 
-SELECT ExpectedTotalAmount,TrnDate,AmountDisbursed,ExpectedInterest INTO loanRenewedL,dateLastRenewed,princimpalL,interestL  FROM loandisburserepaystatement WHERE loanTrnId=loanTrnIdL ORDER BY TrnId ASC LIMIT 1;
+
+SELECT ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+INTO loanRenewedL, dateLastRenewed, princimpalL, interestL
+FROM (
+    SELECT TrnId, ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+    FROM loandisburserepaystatement
+    WHERE loanTrnId = loanTrnIdL
+
+    UNION ALL
+
+    SELECT TrnId, ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+    FROM arch_loandisburserepaystatement
+    WHERE loanTrnId = loanTrnIdL
+) AS combined_data
+ORDER BY TrnId ASC
+LIMIT 1;
+
+
 
 select trn_id into l_done from general_ledger where chq_number=batchNumber ORDER BY trn_id ASC LIMIT 1;
--- select date_takenL;
+
 SET arrearsAmount=AmountRemainL;
 
 IF ISNULL(arrearsAmount) THEN
@@ -17718,7 +21464,7 @@ END IF;
   IF ISNULL(noOfRenewals) THEN
 SET noOfRenewals=0;
 END IF;
- 
+
   IF ISNULL(dateLastRenewed) THEN
 SET dateLastRenewed=DATE_FORMAT(DATE(NOW()),'%d/%m/%Y');
 END IF;
@@ -17727,7 +21473,7 @@ END IF;
 SET loan_takenL=loanRenewedL;
 END IF;
 
--- select date_takenL;
+
 INSERT INTO loanPrintDetailsRenew VALUES (
   l_done,
   companyName,
@@ -17753,7 +21499,7 @@ INSERT INTO loanPrintDetailsRenew VALUES (
   officeNumber,
     FORMAT(amountRenewed,0)
   );
--- bc1q5qnzng4uk64gqcqvfsra9euf6z7t7dgzlcpfe2
+
 
    SELECT * FROM loanPrintDetailsRenew;
 
@@ -17768,6 +21514,210 @@ CALL loanPrintingDetailsRenewed('BTN70877',10000)\G
 
 
 
+
+
+
+
+-- /* LOAN RECEIPT PRINTING */
+
+-- DROP PROCEDURE IF EXISTS loanPrintingDetails;
+
+-- DELIMITER ##
+
+-- CREATE PROCEDURE   loanPrintingDetails(IN batchNumber VARCHAR(45),IN staffId VARCHAR(45))
+-- BEGIN
+-- DECLARE l_done,noOfRenewals,loanTrnIdL,disLoanTrnIdL INT;
+--  DECLARE AmountPaidL,AmountRemainL,loan_takenL,princimpalL,interestL,loanRenewedL,arrearsAmount,amountRenewed,date_takenL VARCHAR(60);
+--   DECLARE companyName,companyBranch,companyBoxNumber,accountNumberL,LoanStatus,officeNumber,theTxnTime VARCHAR(60);
+-- DECLARE theTrn_date,dateLastRenewed DATE;
+
+-- DROP TABLE IF EXISTS loanPrintDetailsRenew;
+
+-- CREATE TEMPORARY  TABLE loanPrintDetailsRenew(
+-- id_1 INTEGER,
+-- company_name VARCHAR(60),
+-- company_branch VARCHAR(60),
+-- company_box_number VARCHAR(60),
+-- customer_name VARCHAR(60),
+-- staff_name VARCHAR(60),
+-- loan_taken VARCHAR(60),
+-- date_taken  VARCHAR(60),
+-- loan_renewed  VARCHAR(60),
+-- no_of_renewals  INT,
+-- date_last_renewed DATE,
+-- loans_paid VARCHAR(60),
+-- loan_remaining VARCHAR(60),
+-- amount_arrears VARCHAR(60),
+-- batchNumber  VARCHAR(60),
+-- loanID  VARCHAR(60),
+-- trn_date VARCHAR(60),
+-- trn_time VARCHAR(30),
+-- LoanStatus VARCHAR(60),
+-- princimpal_amount VARCHAR(60),
+-- interest_amount VARCHAR(60),
+-- office_number VARCHAR(60),
+-- amount_renewed VARCHAR(60));
+
+
+
+
+
+
+
+
+
+
+-- SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+-- INTO loanTrnIdL, AmountPaidL, AmountRemainL, accountNumberL, LoanStatus, theTrn_date
+-- FROM (
+--     SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+--     FROM pmms.loandisburserepaystatement
+--     WHERE BatchCode = batchNumber
+
+--     UNION ALL
+
+--     SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+--     FROM pmms.arch_loandisburserepaystatement
+--     WHERE BatchCode = batchNumber
+-- ) AS combined_data;
+
+-- SELECT trn_time INTO theTxnTime FROM pmms.general_ledger WHERE chq_number=batchNumber LIMIT 1;
+
+
+
+-- SELECT authoriser_id, OtherGroups3, princimpal_amount
+-- INTO disLoanTrnIdL, noOfRenewals, amountRenewed
+-- FROM (
+--     SELECT authoriser_id, OtherGroups3, princimpal_amount
+--     FROM pmms_loans.new_loan_appstore
+--     WHERE trn_id = loanTrnIdL
+
+--     UNION ALL
+
+--     SELECT authoriser_id, OtherGroups3, princimpal_amount
+--     FROM pmms_loans.arch_new_loan_appstore
+--     WHERE trn_id = loanTrnIdL
+-- ) AS combined_data;
+
+
+-- SELECT total_loanAmount, instalment_start_date
+-- INTO loan_takenL, date_takenL
+-- FROM (
+--     SELECT total_loanAmount, instalment_start_date
+--     FROM pmms_loans.new_loan_appstore
+--     WHERE trn_id = disLoanTrnIdL
+
+--     UNION ALL
+
+--     SELECT total_loanAmount, instalment_start_date
+--     FROM pmms_loans.arch_new_loan_appstore
+--     WHERE trn_id = disLoanTrnIdL
+-- ) AS combined_data;
+
+-- SELECT the_company_name, the_company_branch,the_company_box_number,office_number INTO companyName,companyBranch, companyBoxNumber,officeNumber FROM the_company_datails;
+
+
+-- SELECT ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+-- INTO loanRenewedL, dateLastRenewed, princimpalL, interestL
+-- FROM (
+--     SELECT TrnId, ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+--     FROM loandisburserepaystatement
+--     WHERE loanTrnId = loanTrnIdL
+
+--     UNION ALL
+
+--     SELECT TrnId, ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+--     FROM arch_loandisburserepaystatement
+--     WHERE loanTrnId = loanTrnIdL
+-- ) AS combined_data
+-- ORDER BY TrnId ASC
+-- LIMIT 1;
+
+
+
+-- select trn_id into l_done from general_ledger where chq_number=batchNumber ORDER BY trn_id ASC LIMIT 1;
+
+-- SET arrearsAmount=AmountRemainL;
+
+-- IF ISNULL(arrearsAmount) THEN
+-- SET arrearsAmount=0;
+-- END IF;
+
+-- IF ISNULL(companyBranch) THEN
+-- SET companyBranch="-";
+-- END IF;
+
+-- IF ISNULL(companyBranch) THEN
+-- SET companyBranch="-";
+-- END IF;
+
+-- IF ISNULL(companyBoxNumber) THEN
+-- SET companyBoxNumber="-";
+-- END IF;
+
+-- IF ISNULL(accountNumberL) THEN
+-- SET accountNumberL="-";
+-- END IF;
+
+--   IF ISNULL(staffId) THEN
+-- SET staffId=10001;
+-- END IF;
+
+--   IF ISNULL(date_takenL)  THEN
+-- SET date_takenL=DATE_FORMAT(DATE(NOW()),'%d/%m/%Y');
+-- END IF;
+
+--   IF ISNULL(loanRenewedL) THEN
+-- SET loanRenewedL=0;
+-- END IF;
+
+--   IF ISNULL(noOfRenewals) THEN
+-- SET noOfRenewals=0;
+-- END IF;
+
+--   IF ISNULL(dateLastRenewed) THEN
+-- SET dateLastRenewed=DATE_FORMAT(DATE(NOW()),'%d/%m/%Y');
+-- END IF;
+
+--   IF ISNULL(loan_takenL) THEN
+-- SET loan_takenL=loanRenewedL;
+-- END IF;
+
+
+-- INSERT INTO loanPrintDetailsRenew VALUES (
+--   l_done,
+--   companyName,
+--   companyBranch,
+--   companyBoxNumber,
+--   customerNameL(accountNumberL),
+--   staffName(staffId),
+--   FORMAT(loan_takenL,0),
+--   date_takenL,
+--   FORMAT(loanRenewedL,0),
+--      noOfRenewals,
+--     dateLastRenewed,
+--   FORMAT(AmountPaidL,0),
+--   FORMAT(AmountRemainL,0),
+--     FORMAT(arrearsAmount,0),
+--   batchNumber,
+--   loanTrnIdL,
+--   DATE_FORMAT(theTrn_date,'%d/%m/%Y'),
+--   theTxnTime,
+--   LoanStatus,
+--   FORMAT(princimpalL,0),
+--   FORMAT(interestL,0),
+--   officeNumber,
+--     FORMAT(amountRenewed,0)
+--   );
+
+
+--    SELECT * FROM loanPrintDetailsRenew;
+
+
+
+-- END  ##
+
+--  DELIMITER ;
 
 
 
@@ -17810,12 +21760,44 @@ office_number VARCHAR(60),-- 17
 amount_arrears VARCHAR(60));-- 18
 
 SELECT loanTrnId,AmountPaid,LoanBalance,AccountNumber,LoanStatusReport,TrnDate  INTO loanTrnIdL,AmountPaidL,AmountRemainL,accountNumberL ,LoanStatus ,theTrn_date FROM   loandisburserepaystatement WHERE BatchCode=batchNumber;
+SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+INTO loanTrnIdL, AmountPaidL, AmountRemainL, accountNumberL, LoanStatus, theTrn_date
+FROM (
+    SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+    FROM pmms.loandisburserepaystatement
+    WHERE BatchCode = batchNumber
+
+    UNION ALL
+
+    SELECT loanTrnId, AmountPaid, LoanBalance, AccountNumber, LoanStatusReport, TrnDate
+    FROM pmms.arch_loandisburserepaystatement
+    WHERE BatchCode = batchNumber
+) AS combined_data;
+
+-- SELECT trn_time INTO theTxnTime FROM pmms.general_ledger WHERE chq_number=batchNumber LIMIT 1;
 
 SELECT SUM(InstalmentRemaining) INTO arrearsAmount FROM pmms_loans.new_loan_appstoreamort WHERE master1_id=loanTrnIdL AND NOT instalment_status='P' AND instalment_due_date<=DATE(NOW());
 
 SELECT the_company_name, the_company_branch,the_company_box_number,office_number INTO companyName,companyBranch, companyBoxNumber,officeNumber FROM the_company_datails;
 
 SELECT ExpectedTotalAmount,TrnDate,AmountDisbursed,ExpectedInterest INTO loan_takenL,date_takenL,princimpalL,interestL  FROM loandisburserepaystatement WHERE loanTrnId=loanTrnIdL ORDER BY TrnId ASC LIMIT 1;
+
+SELECT ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+INTO loan_takenL,date_takenL,princimpalL,interestL 
+FROM (
+    SELECT TrnId, ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+    FROM loandisburserepaystatement
+    WHERE loanTrnId = loanTrnIdL
+
+    UNION ALL
+
+    SELECT TrnId, ExpectedTotalAmount, TrnDate, AmountDisbursed, ExpectedInterest
+    FROM arch_loandisburserepaystatement
+    WHERE loanTrnId = loanTrnIdL
+) AS combined_data
+ORDER BY TrnId ASC
+LIMIT 1;
+
 
 select trn_id into l_done from general_ledger where chq_number=batchNumber ORDER BY trn_id ASC LIMIT 1;
 -- select AmountRemainL;
@@ -17833,51 +21815,6 @@ END ##
 DELIMITER ;
 
 
-
-/* LOAN RECEIPT PRINTING */
-
-DROP PROCEDURE IF EXISTS loanStatementDetails;
-
-DELIMITER ##
-
-CREATE PROCEDURE   loanStatementDetails(IN SloanTrnId VARCHAR(45))
-BEGIN
-
-DROP TABLE IF EXISTS loanStatementtDetailsTable;
-
-CREATE TEMPORARY  TABLE loanStatementtDetailsTable(
-`id` INTEGER NOT NULL AUTO_INCREMENT, 
-`trn_date` DATE,
-`amount_paid` VARCHAR(60),
-`princimpal_paid` VARCHAR(60),
-`interest_paid` VARCHAR(60),
-`amount_remaining` VARCHAR(60),
-`princimpal_remaining`  VARCHAR(60),
-`interest_remaining`  VARCHAR(60),
- PRIMARY KEY (`id`))
-ENGINE = InnoDB
-AUTO_INCREMENT =0
-DEFAULT CHARACTER SET = utf8;
-
-  
-
-INSERT INTO  loanStatementtDetailsTable( 
-  `id` ,
-  `trn_date` ,
-      `amount_paid`,
-     `princimpal_paid`,
-  `interest_paid`,
-        `amount_remaining`,
-          `princimpal_remaining`,
-          `interest_remaining`
-  ) SELECT  null,`TrnDate` ,FORMAT(`AmountPaid`,0) ,  FORMAT(`PrincipalPaid`,0) ,  FORMAT(`InterestPaid`,0) ,  FORMAT(`LoanBalance`,0) ,  FORMAT(`PrincipalBalance`,0) ,  FORMAT(`InterestBalance`,0)  FROM loandisburserepaystatement WHERE loanTrnId=SloanTrnId LIMIT 1,20000;
-
-
-   SELECT * FROM loanStatementtDetailsTable;
-
-END  ##
-
- DELIMITER ;
 
  
 DROP PROCEDURE IF EXISTS updatingBalances;
@@ -18488,9 +22425,6 @@ SET l_done=0;
 --   Dated 08/01/2023	400000.0	-	3914801.0	BTN216498
 
 -- CALL reverseTxnsX('BTN216498');
-
-
-
 
 
          DROP PROCEDURE IF EXISTS updateTheInterestComp; 
@@ -19380,7 +23314,7 @@ DROP PROCEDURE IF EXISTS getAllSendingDetailsLimit2;
 DELIMITER ##
 CREATE PROCEDURE getAllSendingDetailsLimit2() BEGIN
 
-SELECT contactName1 AS name,backUpContactNotification1 AS contact,TIME(CURRENT_TIMESTAMP) AS theTime,DATE_FORMAT(DATE(CURRENT_TIMESTAMP),"%d/%m/%Y") AS theDate FROM  backupcontact WHERE enabled=2 LIMIT 2;
+SELECT contactName1 AS name,backUpContactNotification1 AS contact,TIME(CURRENT_TIMESTAMP) AS theTime,DATE_FORMAT(DATE(CURRENT_TIMESTAMP),"%d/%m/%Y") AS theDate FROM  backupcontact WHERE enabled=2;
 
 END ##
 DELIMITER ;
@@ -19923,6 +23857,152 @@ DELIMITER ;
 
 
 
+
+ DROP PROCEDURE IF EXISTS adjustTrnIdS;
+ 
+ 	DELIMITER //
+
+   CREATE PROCEDURE  adjustTrnIdS (IN bsancaAccountNumber VARCHAR(30),IN dateInQuestion DATE,OUT trId INTEGER, OUT lastTrnId INTEGER) BEGIN
+   
+     SET @sql_text9 = concat(CAST(" SELECT  trn_id INTO @trIdV FROM  " AS CHAR CHARACTER SET utf8),bsancaAccountNumber,CAST("  WHERE trn_date<='"AS CHAR CHARACTER SET utf8),dateInQuestion,CAST("'  ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+
+/* SELECT @sql_text9; */
+PREPARE stmt9 FROM @sql_text9;
+  EXECUTE stmt9;
+DROP PREPARE stmt9;
+   
+       SET @sql_text = concat(CAST(' SELECT  trn_id INTO @LasttrId FROM  ' AS CHAR CHARACTER SET utf8),bsancaAccountNumber,CAST('  ORDER BY trn_id DESC LIMIT 1' AS CHAR CHARACTER SET utf8));
+PREPARE stmt FROM @sql_text;
+  EXECUTE stmt;
+DROP PREPARE stmt;
+
+/* SELECT @trIdV ,@LasttrId ; */
+
+IF @trIdV<>@LasttrId THEN
+SET @trIdV=@trIdV+1;
+END IF;
+
+IF @trIdV IS NULL THEN 
+
+SET @trIdV=@LasttrId;
+
+END IF;
+
+SET trId=@trIdV;
+
+SET lastTrnId=@LasttrId ;	 
+ 
+	  TxIdsXX:LOOP
+	  
+	  
+IF @trIdV=@LasttrId THEN
+		
+		SET trId=@trIdV+1;
+		
+		  LEAVE TxIdsXX;
+	  
+	  END IF;
+	  
+	  
+	  
+	SET   @oldIdC=@LasttrId+1;
+	  
+	 SET    @newIdC=@LasttrId-1;
+	  
+	     SET @sql_text = concat(CAST('UPDATE  ' AS CHAR CHARACTER SET utf8),bsancaAccountNumber,CAST('  SET trn_id= ' AS CHAR CHARACTER SET utf8),@oldIdC,CAST('  WHERE trn_id=  ' AS CHAR CHARACTER SET utf8),@LasttrId);
+       PREPARE stmt FROM @sql_text;
+       EXECUTE stmt;
+     DROP PREPARE stmt;
+	    SET @sql_text = concat(CAST('UPDATE  ' AS CHAR CHARACTER SET utf8),bsancaAccountNumber,CAST('  SET trn_id=  ' AS CHAR CHARACTER SET utf8),@LasttrId,CAST(' WHERE trn_id=  ' AS CHAR CHARACTER SET utf8),@newIdC);
+	 
+       PREPARE stmt FROM @sql_text;
+       EXECUTE stmt;
+     DROP PREPARE stmt;
+	  
+	
+		
+		SET @LasttrId=@newIdC;
+		
+		/*   SELECT @LasttrId; */
+		
+		
+		IF @newIdC=trId OR @newIdC=1000 THEN
+	  
+	  LEAVE TxIdsXX;
+	  
+	  END IF;
+	  
+	  
+	  END LOOP TxIdsXX;
+   
+
+
+
+     END //
+	 
+       DELIMITER ;
+
+DROP PROCEDURE IF EXISTS adjustIds;
+
+        DELIMITER //
+		
+        CREATE PROCEDURE adjustIds(IN startinId INT,IN theAccountNumber VARCHAR(100))
+        BEGIN
+        DECLARE numberOfIds,lastId,mostLast,oneX,twoX,counter INT;
+          
+        SET @qry1=CONCAT(CAST("SELECT COUNT(trn_id) INTO @numberOfIdsX  FROM bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" WHERE trn_id>=" AS CHAR CHARACTER SET utf8),startinId);
+        SELECT @qry1;
+         PREPARE stmt2 FROM @qry1;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+		SELECT @numberOfIdsX;
+		    SET @qry2=CONCAT(CAST("SELECT trn_id INTO @lastIdX  FROM bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" WHERE trn_id>=" AS CHAR CHARACTER SET utf8),startinId,CAST(" ORDER BY trn_id DESC LIMIT 1" AS CHAR CHARACTER SET utf8));
+ PREPARE stmt2 FROM @qry2;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+        SET lastId=@lastIdX;
+        SET counter=lastId;
+        SET mostLast=lastId+1;
+        SET onex=lastId-1;
+
+        SELECT lastId,counter,mostLast,onex;
+
+     SET @theData = concat(CAST("UPDATE  bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" SET trn_id=" AS CHAR CHARACTER SET utf8),mostLast,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),lastId);
+/* select @theData; */
+  PREPARE stmt2 FROM @theData;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+
+       REPEAT 
+
+SET @theData = concat(CAST("UPDATE  bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" SET trn_id=" AS CHAR CHARACTER SET utf8),lastId,CAST(" WHERE  trn_id=" AS CHAR CHARACTER SET utf8),onex);
+/* select @theData; */
+  PREPARE stmt2 FROM @theData;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;
+
+SET lastId=lastId-1;
+  SET onex=onex-1;                
+      
+ SET counter=counter-1;       
+        --  SELECT counter;
+UNTIL counter=(startinId) END REPEAT;
+
+  SET @theData = concat(CAST("UPDATE  bsanca" AS CHAR CHARACTER SET utf8),theAccountNumber,CAST(" SET trn_id=" AS CHAR CHARACTER SET utf8),startinId,CAST(" WHERE trn_id=" AS CHAR CHARACTER SET utf8),mostLast);
+/* select @theData; */
+  PREPARE stmt2 FROM @theData;
+  EXECUTE stmt2;
+DROP PREPARE stmt2;   
+
+        END //
+
+        DELIMITER ;
+
+	   
+
+
+
+
 DROP TABLE IF EXISTS sms_disburse_messages;
 
 CREATE TABLE sms_disburse_messages (
@@ -19961,11 +24041,7 @@ INSERT INTO sms_disburse_messages (message_content, message_status) VALUES
 --   CALL postingTxnsX(NULL,'2023-12-31','Retained Earnings Dated29/04/2024 Processed on 31/12/2023
 --   From Revenue Reserves','2023-12-31','-','2.9424757E7','2.9424757E7','04408000110','Retained Earnings','0002','BTN44959','GenXX','10002','07:02:42','3','04408000210','04408000010','Cr','Main','NA');
 
-
--- 71707	Mbabazi Janet 2 0702589652	Business Woman	72	5000000	754300	201984	0	956284	1 MONTHS	31/03/2023	10001	Disbursed
-
-
--- 71706	Mbabazi Janet	Business Woman	36	15000000	2019500	231170	0	2250670	1 MONTHS	31/03/2023	10001	Disbursed
+-- CALL postingTxnsX(NULL,'2024-12-12',' Loan Payment from ARINAITWE DIDASs   loan repayment. Paid on 12/12/2024','2024-12-12','-','2','0','05502002810','ARINAITWE DIDAS','0002','BTN42114','GenXX','10006','14:28:43','551','01128000110','01128000010','Cr','Main','NA');
 
 
 
@@ -20080,7 +24156,7 @@ DELIMITER $$
 
 -- Create a new procedure
 CREATE PROCEDURE normaliseIndividualBalanceCash(IN trnIdInd INT)
-READS SQL DATA
+MOFIFIES SQL DATA
 BEGIN
     -- Declaration of variables
     DECLARE theBatchNoS VARCHAR(60);
@@ -20362,348 +24438,441 @@ DELIMITER ;
 
 
 
+ALTER TABLE sequencenumbers
+ADD COLUMN officerReportingNo int(11) DEFAULT 11;
 
 
-DROP PROCEDURE IF EXISTS generalTrialBalanceCorrection;
+
+ALTER TABLE sequencenumbers
+ADD COLUMN optionalGaurantorCapture int(11) DEFAULT 11;
+
+
+
+
+ALTER TABLE sequencenumbers ADD COLUMN remoteCollectionsWithTerminal int(11) DEFAULT 11;
+
+
+
+ CREATE TABLE `sequencenumbersnew` (
+  `trn_id` enum('1') NOT NULL,
+   `remoteCollectionsWithTerminal` int(11) DEFAULT '11',
+  PRIMARY KEY (`trn_id`),
+  UNIQUE KEY `trn_id` (`trn_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO sequencenumbersnew (trn_id, remoteCollectionsWithTerminal)
+VALUES ('1', 0);
+
+
+ALTER TABLE sequencenumbersnew
+ADD COLUMN sendPortfolioSummuryReport int(11) DEFAULT 11;
+
+ALTER TABLE sequencenumbersnew
+ADD COLUMN sendExpensesReport int(11) DEFAULT 11;
+
+ALTER TABLE sequencenumbersnew
+ADD COLUMN sendLoansDisbursedReport int(11) DEFAULT 11;
+
+
+
+DELETE FROM specialgroups;
+
+INSERT INTO specialgroups (
+  trn_date, group_id, group_name, account_name, account_number, contact_one, contact_two, 
+  email_one, email_two, Other_One, Other_Two, Other_Three
+) VALUES (
+  '2024-09-26', 1, 'Sample Group', 'Sample Account', '123456789', 'Contact1', 'Contact2', 
+  'email1@example.com', 'email2@example.com', 'Other1', 'Other2', 'Other3'
+);
+
+
+UPDATE specialgroups SET group_id=750496605;
+
+
+
+SELECT * FROM specialgroups;
+
+
+/* 
+
+SELECT 
+    nl.trn_id,
+    nl.loan_id,
+    nl.applicant_account_name,
+    g.id AS gaurantor_id,
+    g.gaurantorsName,
+    g.gaurantorsContact1,
+    g.gaurantorsContact2,
+    g.gaurantorsIdNumber,
+    g.gaurantorsRelationWithBorrower,
+    g.gaurantorsHomeArea,
+    g.gaurantorsBusiness,
+    g.loanTrnId
+FROM 
+    new_loan_appstore nl
+LEFT JOIN 
+    gaurantors g 
+ON 
+    nl.trn_id = g.loanTrnId
+WHERE 
+    nl.loan_cycle_status IN ('Disbursed', 'Renewed') INTO OUTFILE 'loansWithG.sql' FIELDS TERMINATED BY '#' LINES TERMINATED BY '\n';
+ */
+
+
+
+
+-- DELETE new_loan_appstore,new_loan_appstoreamort from new_loan_appstore INNER JOIN new_loan_appstoreamort ON new_loan_appstore.trn_id=new_loan_appstoreamort.master1_id WHERE new_loan_appstore.loan_cycle_status='Completed' AND new_loan_appstore.trn_date<='2024-03-31';
+
+-- DELETE pmms_loans.new_loan_appstore1,pmms.loandisburserepaystatement from pmms_loans.new_loan_appstore1 INNER JOIN pmms.loandisburserepaystatement ON new_loan_appstore1.trn_id=loandisburserepaystatement.loanTrnId WHERE new_loan_appstore1.loan_cycle_status='Completed' AND new_loan_appstore1.trn_date<='2024-03-31';
+
+
+
+
+
+-- Help me with a comprehensive structure/modules for a simple enterprise resource planning web and mobile application that has a production, planning and control module and accounting module. Also help me with the necessary workflows involved in each module and the accounting entries required at each stage
+
+
+-- I want an ERP boss not just PPC AND ACCOUNTING SYSTEM ONLY
+
+-- Also help me with the necessary workflows involved in each module and the accounting entries required at each stage
+
+
+-- List for me the transaction documents involved in each module, e.g invoice scm and the reports expected
+
+
+-- Give me a more comprehensive List for me the transaction documents involved in each module, e.g invoice scm and the reports expected
+
+
+-- I kindly request for more comprehensive, kindly steadily but slowyly take your time and give me  more comprehensive List for me the transaction documents involved in each module, e.g invoice scm and the reports expected
+
+
+-- What could be the data captured for each module, kindly give me comprehensive list
+
+
+-- Other than the normal forms, what could be the other data sources?
+
+
+-- Finally give me a detailed data model with the relevant data relationship , sql based
+
+-- Debits	Merchant Payments		Merchant Payments	0
+
+
+
+DROP PROCEDURE IF EXISTS agingAnalysisXX;
+
 DELIMITER $$
 
-CREATE PROCEDURE generalTrialBalanceCorrection(IN startingDate DATE,IN diff DECIMAL(15,2))
+CREATE PROCEDURE agingAnalysisXX()
 BEGIN
     DECLARE l_done INT DEFAULT 0;
-    DECLARE trnDate DATE;
-    DECLARE trnId INT;
-    -- Declare cursor for the last transaction records of each day
-    DECLARE forLastTrnDate CURSOR FOR 
-        SELECT trn_date, MAX(trn_id) AS last_trn_id
-        FROM bsanca01128000010
-        WHERE trn_date >= startingDate
-        GROUP BY trn_date
-        ORDER BY trn_date;
+    DECLARE loanId VARCHAR(45);
+    DECLARE customerName VARCHAR(60);
+    DECLARE customerContactNumber VARCHAR(60);
+    DECLARE TrnDate DATE;
+    DECLARE princeremain DOUBLE DEFAULT 0;
+    DECLARE interestRem DOUBLE DEFAULT 0;
+    DECLARE arrears INT DEFAULT 0;
+    DECLARE loanCycleStatus VARCHAR(45);
+    DECLARE numberOfGaurantors INT DEFAULT 0;
+    DECLARE gaurantorName1 VARCHAR(60) DEFAULT '-';
+    DECLARE gaurantorContact1 VARCHAR(60) DEFAULT '-';
+    DECLARE gaurantorName2 VARCHAR(60) DEFAULT '-';
+    DECLARE gaurantorContact2 VARCHAR(60) DEFAULT '-';
 
-    -- Declare continue handler to set the done flag
+    -- Cursor Declaration
+    DECLARE loan_cursor CURSOR FOR
+        SELECT loan_id 
+        FROM new_loan_appstore 
+        WHERE loan_cycle_status IN ('Disbursed', 'Renewed');
+
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
 
-    -- Open the cursor
-    OPEN forLastTrnDate;
+    -- Temporary Table Creation
+    DROP TEMPORARY TABLE IF EXISTS aging_loan_analysis;
+    CREATE TEMPORARY TABLE aging_loan_analysis (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        customer_name VARCHAR(60),
+        customer_contact VARCHAR(60),
+        date_taken DATE,
+        loans_remaining DOUBLE,
+        principal_remaining DOUBLE,
+        interest_remaining DOUBLE,
+        principal_inarrears DOUBLE DEFAULT 0,
+        interest_inarrears DOUBLE DEFAULT 0,
+        number_of_days_in_arrears INT,
+        loan_deadline DATE,
+        gaurantor_name1 VARCHAR(60),
+        gaurantor_contact1 VARCHAR(60),
+        gaurantor_name2 VARCHAR(60),
+        gaurantor_contact2 VARCHAR(60),
+        loan_status VARCHAR(45)
+    );
 
-    -- Loop through the cursor
-    read_loop: LOOP
-        FETCH forLastTrnDate INTO trnDate, trnId;
-        
+    -- Open Cursor
+    OPEN loan_cursor;
+
+    loan_loop: LOOP
+        FETCH loan_cursor INTO loanId;
         IF l_done THEN
-            LEAVE read_loop;
+            LEAVE loan_loop;
         END IF;
-SELECT trnDate, trnId;
---         -- Call the procedures with the current trnDate
---         CALL addDebitBalances(trnDate, @theDebitBal);
---         CALL addCreditBalances(trnDate, @theCreditBal);
--- SELECT @theDebitBal ,@theCreditBal,trnDate;
---         -- Calculate the difference
---         SET diff = @theDebitBal - @theCreditBal;
 
---         -- Update master_balance if there is a difference for the last transaction of the day
---         IF diff > 0 THEN
-            UPDATE bsanca01128000010
-            SET master_balance = master_balance - diff
-            WHERE trn_id = trnId;
-            -- SELECT trnId,trnDate,diff;
-        -- ELSEIF diff < 0 THEN
-        --     UPDATE bsanca01128000010
-        --     SET master_balance = master_balance + ABS(diff)
-        --     WHERE trn_id = trnId;
-        --        SELECT trnId,trnDate,diff;
+        -- Fetch Loan Details
+        SELECT 
+            pl.applicant_account_name, 
+            m.mobile1, 
+            pl.instalment_start_date, 
+            pl.TotalPrincipalRemaining, 
+            pl.TotalInterestRemaining, 
+            pl.loan_cycle_status
+        INTO 
+            customerName, 
+            customerContactNumber, 
+            TrnDate, 
+            princeremain, 
+            interestRem, 
+            loanCycleStatus
+        FROM pmms.master m
+        INNER JOIN pmms_loans.new_loan_appstore pl
+            ON m.account_number = pl.applicant_account_number
+        WHERE pl.loan_id = loanId;
 
-        --        ELSE
+        -- Calculate Arrears
+        SELECT 
+            SUM(PrincipalRemaining + InterestRemaining), 
+            COUNT(*)
+        INTO 
+            arrears
+        FROM new_loan_appstoreamort 
+        WHERE master2_id = loanId 
+          AND instalment_due_date <= CURDATE() 
+          AND instalment_status != 'P';
 
-        --           SELECT "EQUAL",trnId,trnDate,diff;   
-        -- END IF;
+        -- Fetch Gaurantor Details
+        SELECT COUNT(*) INTO numberOfGaurantors FROM gaurantors WHERE loanTrnId = loanId;
 
--- SET @theDebitBal=NULL, @theCreditBal=NULL,diff=NULL;
+        IF numberOfGaurantors = 1 THEN
+            SELECT gaurantorsName, gaurantorsContact1 
+            INTO gaurantorName1, gaurantorContact1 
+            FROM gaurantors 
+            WHERE loanTrnId = loanId 
+            LIMIT 1;
+        ELSEIF numberOfGaurantors = 2 THEN
+            SELECT gaurantorsName, gaurantorsContact1 
+            INTO gaurantorName1, gaurantorContact1 
+            FROM gaurantors 
+            WHERE loanTrnId = loanId 
+            ORDER BY id ASC 
+            LIMIT 1;
 
+            SELECT gaurantorsName, gaurantorsContact1 
+            INTO gaurantorName2, gaurantorContact2 
+            FROM gaurantors 
+            WHERE loanTrnId = loanId 
+            ORDER BY id DESC 
+            LIMIT 1;
+        ELSE
+            SET gaurantorName1 = '-', gaurantorContact1 = '-', gaurantorName2 = '-', gaurantorContact2 = '-';
+        END IF;
+
+        -- Insert into Temporary Table
+        INSERT INTO aging_loan_analysis (
+            customer_name,
+            customer_contact,
+            date_taken,
+            loans_remaining,
+            principal_remaining,
+            interest_remaining,
+            principal_inarrears,
+            interest_inarrears,
+            number_of_days_in_arrears,
+            loan_deadline,
+            gaurantor_name1,
+            gaurantor_contact1,
+            gaurantor_name2,
+            gaurantor_contact2,
+            loan_status
+        ) VALUES (
+            customerName,
+            customerContactNumber,
+            TrnDate,
+            princeremain + interestRem,
+            princeremain,
+            interestRem,
+            0, -- principal_inarrears (calculated later)
+            0, -- interest_inarrears (calculated later)
+            arrears,
+            DATE_ADD(TrnDate, INTERVAL 30 DAY), -- loan_deadline
+            gaurantorName1,
+            gaurantorContact1,
+            gaurantorName2,
+            gaurantorContact2,
+            loanCycleStatus
+        );
     END LOOP;
 
-    -- Close the cursor
-    CLOSE forLastTrnDate;
+    CLOSE loan_cursor;
 
+    -- Categorization and Final Output
+    SELECT 
+        id,
+        customer_name,
+        customer_contact,
+        date_taken,
+        loans_remaining,
+        principal_remaining,
+        interest_remaining,
+        principal_inarrears,
+        interest_inarrears,
+        number_of_days_in_arrears,
+        loan_deadline,
+        gaurantor_name1,
+        gaurantor_contact1,
+        gaurantor_name2,
+        gaurantor_contact2,
+        CASE
+            WHEN number_of_days_in_arrears < 30 THEN 'Performing Portfolio'
+            WHEN number_of_days_in_arrears BETWEEN 30 AND 59 THEN 'Portfolio at Risk (30-60 days)'
+            WHEN number_of_days_in_arrears BETWEEN 60 AND 89 THEN 'Portfolio at Risk (60-90 days)'
+            WHEN number_of_days_in_arrears BETWEEN 90 AND 359 THEN 'Non-Performing Portfolio'
+            ELSE 'Portfolio Due for Write-Off'
+        END AS classification
+    FROM aging_loan_analysis
+    ORDER BY number_of_days_in_arrears ASC;
 END$$
 
--- Reset the delimiter to its default value
 DELIMITER ;
 
---  UPDATE bsanca01128000010 SET master_balance=account_balance where trn_date>='2024-01-15';
-
-
--- CALL generalTrialBalanceCorrection('2024-01-31',1);
 
 
 
 
+ALTER TABLE backupcontact
+  ADD COLUMN notify_expense_report         TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN notify_officer_report         TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN notify_loans_disbursed_report TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN notify_portfolio_summary      TINYINT(1) NOT NULL DEFAULT 0;
 
-DROP PROCEDURE IF EXISTS trialBalanceCorrection;
+
+  UPDATE backupcontact
+  SET notify_expense_report = 1, notify_officer_report = 1,notify_loans_disbursed_report = 1, notify_portfolio_summary=1;
+
+
+CREATE TABLE `smstable_deposit_log` (
+  `deposit_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `quantity` int(11) NOT NULL,
+  `password_used` varchar(10) NOT NULL,
+  `logged_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`deposit_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE smstable_deposit_log
+ADD COLUMN password_used VARCHAR(10) NOT NULL AFTER quantity;
+
+
+
+/* remember the month (YYYYMM) we last verified payment */
+ALTER TABLE the_company_datails
+  ADD COLUMN licence_verified_ym CHAR(6) NULL
+      COMMENT 'YYYYMM of the most recent PAID verification';
+UPDATE the_company_datails SET licence_verified_ym= 202505;
+
+
+
+-- 1) Switch table to utf8mb4 (full Unicode)
+ALTER TABLE smsmanagement CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- 2) Widen message + reasons (or use TEXT if you prefer)
+ALTER TABLE smsmanagement
+  MODIFY SmsMessage        VARCHAR(700)  NOT NULL,
+  MODIFY SmsSentReason     VARCHAR(255)  NOT NULL,
+  MODIFY SmsDeliveryReason VARCHAR(255)  NOT NULL,
+  MODIFY SmsOther2         VARCHAR(255)  NOT NULL,
+  MODIFY SmsOther3         VARCHAR(255)  NOT NULL,
+  MODIFY SmsOther4         VARCHAR(255)  NOT NULL;
+
+-- (Optional) remove odd defaults so you don't accidentally store placeholder text
+ALTER TABLE smsmanagement
+  ALTER SmsSenToName DROP DEFAULT,
+  ALTER SmsSenToNumber DROP DEFAULT,
+  ALTER SmsMessage DROP DEFAULT,
+  ALTER SmsSentStatus DROP DEFAULT,
+  ALTER SmsSentReason DROP DEFAULT,
+  ALTER SmsDeliveryStatus DROP DEFAULT,
+  ALTER SmsDeliveryReason DROP DEFAULT,
+  ALTER SmsOriginator DROP DEFAULT,
+  ALTER SmsOther2 DROP DEFAULT,
+  ALTER SmsOther3 DROP DEFAULT,
+  ALTER SmsOther4 DROP DEFAULT;
+
+
+CREATE TABLE roles (
+  role_id INT AUTO_INCREMENT PRIMARY KEY,
+  role_code VARCHAR(64) UNIQUE NOT NULL,
+  role_name VARCHAR(128) NOT NULL,
+  is_active TINYINT(1) DEFAULT 1
+);
+
+CREATE TABLE permissions (
+  permission_id INT AUTO_INCREMENT PRIMARY KEY,
+  permission_code VARCHAR(128) UNIQUE NOT NULL,
+  description VARCHAR(255)
+);
+
+CREATE TABLE role_permissions (
+  role_id INT NOT NULL,
+  permission_id INT NOT NULL,
+  is_allowed TINYINT(1) DEFAULT 1,
+  PRIMARY KEY (role_id, permission_id)
+);
+
+CREATE TABLE user_roles (
+  user_id VARCHAR(64) NOT NULL,
+  role_id INT NOT NULL,
+  PRIMARY KEY (user_id, role_id)
+);
+INSERT INTO permissions (permission_code, description) VALUES
+('can_start_day_auto','Auto SOD from login'),
+('can_manual_start_day','Manual SOD from CreateNewStaff');
+
+-- AUTO SOD users
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE p.permission_code='can_start_day_auto'
+AND r.role_code IN ('ACCOUNTANT','CASHIER','SUPERVISOR');
+
+-- MANUAL SOD users
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE p.permission_code='can_manual_start_day'
+AND r.role_code IN ('SYSTEM_ADMIN','DATE_STARTER');
 DELIMITER $$
 
-CREATE PROCEDURE trialBalanceCorrection(IN startingDate DATE)
+CREATE PROCEDURE get_user_permissions(IN p_user_id VARCHAR(64))
 BEGIN
-    DECLARE l_done INT DEFAULT 0;
-    DECLARE trnDate DATE;
-    DECLARE trnId INT;
-    DECLARE diff DECIMAL(15,2);
+  START TRANSACTION;
 
-    -- Declare cursor for the last transaction records of each day
-    DECLARE forLastTrnDate CURSOR FOR 
-        SELECT trn_date, MAX(trn_id) AS last_trn_id
-        FROM bsanca05502000010
-        WHERE trn_date >= startingDate
-        GROUP BY trn_date
-        ORDER BY trn_date;
+  SELECT p.permission_code
+  FROM user_roles ur
+  JOIN role_permissions rp ON ur.role_id = rp.role_id AND rp.is_allowed = 1
+  JOIN permissions p ON p.permission_id = rp.permission_id
+  WHERE ur.user_id = p_user_id;
 
-    -- Declare continue handler to set the done flag
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET l_done = 1;
-
-    -- Open the cursor
-    OPEN forLastTrnDate;
-
-    -- Loop through the cursor
-    read_loop: LOOP
-        FETCH forLastTrnDate INTO trnDate, trnId;
-        
-        IF l_done THEN
-            LEAVE read_loop;
-        END IF;
-
-        -- Call the procedures with the current trnDate
-        CALL addDebitBalances(trnDate, @theDebitBal);
-        CALL addCreditBalances(trnDate, @theCreditBal);
-
-        -- Calculate the difference
-        SET diff = @theDebitBal - @theCreditBal;
-
-        -- Update master_balance if there is a difference for the last transaction of the day
-        IF diff <> 0 THEN
-            UPDATE bsanca05502000010
-            SET master_balance = master_balance + diff
-            WHERE trn_id = trnId;
-        END IF;
-    END LOOP;
-
-    -- Close the cursor
-    CLOSE forLastTrnDate;
-
+  COMMIT;
 END$$
 
--- Reset the delimiter to its default value
 DELIMITER ;
 
 
 
 
-
-
-
-
-DROP PROCEDURE IF EXISTS addDebitBalances;
-DELIMITER $$
-
-CREATE PROCEDURE addDebitBalances(IN trnDate DATE, OUT totalDebitBalance DECIMAL(15,2))
-BEGIN
-    DECLARE done INT DEFAULT 0;
-    DECLARE accountInitialNumber VARCHAR(100);
-    DECLARE accountName VARCHAR(300);
-    DECLARE tableName VARCHAR(255);
-    DECLARE sumBalance DECIMAL(15,2) DEFAULT 0.0;
-    DECLARE balance DECIMAL(15,2) DEFAULT 0.0;
-    DECLARE rowCount INT DEFAULT 0;
-    DECLARE currentIndex INT DEFAULT 0;
-
-    -- Debugging
-    DECLARE debugMsg VARCHAR(255);
-
-    -- Create a temporary table to store distinct account_l5 values
-    CREATE TEMPORARY TABLE temp_accounts AS
-        SELECT DISTINCT account_l5
-        FROM account_created_store
-        WHERE account_l1 = 'Debits' AND NOT account_l5 ='Accumulated Depreciation/Amortization';
-
-    -- Get the number of rows in the temporary table
-    SELECT COUNT(*) INTO rowCount FROM temp_accounts;
-
-    -- Initialize the loop index
-    SET currentIndex = 0;
-
-    -- Loop through the temporary table
-    WHILE currentIndex < rowCount DO
-        -- Get the account_l5 at the current index
-        SELECT account_l5 INTO accountName
-        FROM temp_accounts
-        LIMIT currentIndex, 1;
-
-        -- Get the initial account number
-        SELECT account_number INTO accountInitialNumber
-        FROM account_created_store
-        WHERE account_l5 = accountName
-        LIMIT 1;
-
-        -- Construct the table name
-        CALL accountMasterX(accountInitialNumber, @accountMaster);
-        SET @MastertableName = CONCAT('BSANCA', @accountMaster);
-
-        -- Debugging
-        -- SET debugMsg = CONCAT('Constructed table name: ', @MastertableName);
-        -- SELECT debugMsg;
-
-        -- Reset balance to ensure no carry-over
-        SET @balance = 0.0;
-
-        -- Dynamically construct and execute the query to sum the master_balance from the table
-        SET @query = CONCAT('SELECT IFNULL(SUM(CAST(master_balance AS DECIMAL(15,2))), 0) INTO @balance FROM ', @MastertableName,
-                            ' WHERE trn_date <= ? AND trn_id = (SELECT MAX(trn_id) FROM ', @MastertableName, ' WHERE trn_date <= ?)');
-        PREPARE stmt FROM @query;
-        SET @trnDate1 = trnDate;
-        SET @trnDate2 = trnDate;
-        EXECUTE stmt USING @trnDate1, @trnDate2;
-        DEALLOCATE PREPARE stmt;
-
-        -- Fetch the balance
-        SELECT @balance INTO balance;
-
-        -- Add the balance to the total sum
-        IF balance IS NOT NULL THEN
-            SET sumBalance = sumBalance + balance;
-        END IF;
-
-        -- Debugging
-        -- SET debugMsg = CONCAT('Account: ', accountInitialNumber, ', Master: ', @accountMaster, ', Balance: ', balance, ', SumBalance: ', sumBalance);
-        -- SELECT debugMsg;
-
-        -- Increment the loop index
-        SET currentIndex = currentIndex + 1;
-    END WHILE;
-
-    -- Set the output variable
-    SET totalDebitBalance = sumBalance;
-
-    -- Drop the temporary table
-    DROP TEMPORARY TABLE IF EXISTS temp_accounts;
-
-END$$
-
--- Reset the delimiter to its default value
-DELIMITER ;
-
--- Declare a variable to hold the output value
-SET @totalDebitBalance = 0.00;
-
--- Call the procedure
-CALL addDebitBalances('2024-04-27', @totalDebitBalance);
-
--- Select the output variable to see the result
-SELECT @totalDebitBalance AS TotalDebitBalance;
-
-
-
-
-
-
-
-
-
-DROP PROCEDURE IF EXISTS addCreditBalances;
-DELIMITER $$
-
-CREATE PROCEDURE addCreditBalances(IN trnDate DATE, OUT totalDebitBalance DECIMAL(15,2))
-BEGIN
-    DECLARE done INT DEFAULT 0;
-    DECLARE accountInitialNumber VARCHAR(100);
-    DECLARE accountName VARCHAR(300);
-    DECLARE tableName VARCHAR(255);
-    DECLARE sumBalance DECIMAL(15,2) DEFAULT 0.0;
-    DECLARE balance DECIMAL(15,2) DEFAULT 0.0;
-    DECLARE rowCount INT DEFAULT 0;
-    DECLARE currentIndex INT DEFAULT 0;
-
-    -- Debugging
-    DECLARE debugMsg VARCHAR(255);
-
-    -- Create a temporary table to store distinct account_l5 values
-    CREATE TEMPORARY TABLE temp_accounts AS
-        SELECT DISTINCT account_l5
-        FROM account_created_store
-        WHERE account_l1 = 'Credits' OR (account_l1 = 'Debits' AND  account_l5 ='Accumulated Depreciation/Amortization');
-
-    -- Get the number of rows in the temporary table
-    SELECT COUNT(*) INTO rowCount FROM temp_accounts;
-
-    -- Initialize the loop index
-    SET currentIndex = 0;
-
-    -- Loop through the temporary table
-    WHILE currentIndex < rowCount DO
-        -- Get the account_l5 at the current index
-        SELECT account_l5 INTO accountName
-        FROM temp_accounts
-        LIMIT currentIndex, 1;
-
-        -- Get the initial account number
-        SELECT account_number INTO accountInitialNumber
-        FROM account_created_store
-        WHERE account_l5 = accountName
-        LIMIT 1;
-
-        -- Construct the table name
-        CALL accountMasterX(accountInitialNumber, @accountMaster);
-        SET @MastertableName = CONCAT('BSANCA', @accountMaster);
-
-        -- Debugging
-        -- SET debugMsg = CONCAT('Constructed table name: ', @MastertableName);
-        -- SELECT debugMsg;
-
-        -- Reset balance to ensure no carry-over
-        SET @balance = 0.0;
-
-        -- Dynamically construct and execute the query to sum the master_balance from the table
-        SET @query = CONCAT('SELECT IFNULL(SUM(CAST(master_balance AS DECIMAL(15,2))), 0) INTO @balance FROM ', @MastertableName,
-                            ' WHERE trn_date <= ? AND trn_id = (SELECT MAX(trn_id) FROM ', @MastertableName, ' WHERE trn_date <= ?)');
-        PREPARE stmt FROM @query;
-        SET @trnDate1 = trnDate;
-        SET @trnDate2 = trnDate;
-        EXECUTE stmt USING @trnDate1, @trnDate2;
-        DEALLOCATE PREPARE stmt;
-
-        -- Fetch the balance
-        SELECT @balance INTO balance;
-
-        -- Add the balance to the total sum
-        IF balance IS NOT NULL THEN
-            SET sumBalance = sumBalance + balance;
-        END IF;
-
-        -- Debugging
-        -- SET debugMsg = CONCAT('Account: ', accountInitialNumber, ', Master: ', @accountMaster, ', Balance: ', balance, ', SumBalance: ', sumBalance);
-        -- SELECT debugMsg;
-
-        -- Increment the loop index
-        SET currentIndex = currentIndex + 1;
-    END WHILE;
-
-    -- Set the output variable
-    SET totalDebitBalance = sumBalance;
-
-    -- Drop the temporary table
-    DROP TEMPORARY TABLE IF EXISTS temp_accounts;
-
-END$$
-
--- Reset the delimiter to its default value
-DELIMITER ;
-
--- Declare a variable to hold the output value
-SET @totalDebitBalance = 0.00;
-
--- Call the procedure
-CALL addCreditBalances('2024-04-27', @totalDebitBalance);
-
--- Select the output variable to see the result
-SELECT @totalDebitBalance AS TotalDebitBalance;
+CALL savingsStatementDetails(
+  '05502008510',
+  '2025-01-01',
+  '2025-11-30'
+)\G;
 
 DROP PROCEDURE IF EXISTS savingsPrintingDetails;
 DELIMITER ##
@@ -20727,7 +24896,7 @@ BEGIN
 
     DECLARE v_message_text VARCHAR(255);
 
-    /* Simple error handlers for MySQL 5.5 */
+    /* Basic error handling for MySQL 5.5 */
     DECLARE EXIT HANDLER FOR 1452
     BEGIN
         ROLLBACK;
@@ -20766,8 +24935,8 @@ BEGIN
     /* Customer name – use your existing helper or member table */
     SET v_customer_name = customerNameL(p_account_number);
 
-    /* Opening balance before from_date */
-    SELECT IFNULL(SavingsRunningBalance,0)
+    /* Opening balance before from_date (cast from VARCHAR to DECIMAL) */
+    SELECT IFNULL(CAST(SavingsRunningBalance AS DECIMAL(18,2)),0)
     INTO   v_opening_balance
     FROM   newsavingsmembers
     WHERE  AccountNumber = p_account_number
@@ -20775,20 +24944,21 @@ BEGIN
     ORDER BY TrnDate DESC, TrnId DESC
     LIMIT 1;
 
-    /* Totals and closing balance in [from_date, to_date] */
+    /* Totals in [from_date, to_date] (cast to DECIMAL) */
     SELECT
-        IFNULL(SUM(SavingsAdded),0),
-        IFNULL(SUM(SavingsRemoved),0),
-        IFNULL(MAX(SavingsRunningBalance),0)
+        IFNULL(SUM(CAST(SavingsAdded   AS DECIMAL(18,2))),0),
+        IFNULL(SUM(CAST(SavingsRemoved AS DECIMAL(18,2))),0)
     INTO
         v_total_deposits,
-        v_total_withdrawals,
-        v_closing_balance
+        v_total_withdrawals
     FROM newsavingsmembers
     WHERE AccountNumber = p_account_number
       AND TrnDate BETWEEN p_from_date AND p_to_date;
 
-    /* Normalise possible NULLs */
+    /* Closing balance derived from opening + flows */
+    SET v_closing_balance = v_opening_balance + v_total_deposits - v_total_withdrawals;
+
+    /* Normalise NULLs */
     IF v_company_branch IS NULL THEN SET v_company_branch = '-'; END IF;
     IF v_company_box_number IS NULL THEN SET v_company_box_number = '-'; END IF;
     IF v_customer_name IS NULL THEN SET v_customer_name = '-'; END IF;
@@ -20836,6 +25006,12 @@ END
 ##
 DELIMITER ;
 
+CALL savingsPrintingDetails(
+  '05502008510',
+  '2025-01-01',
+  '2025-11-30'
+)\G;
+
 DROP PROCEDURE IF EXISTS savingsStatementDetails;
 DELIMITER ##
 
@@ -20873,9 +25049,9 @@ BEGIN
     SELECT
         TrnId                                   AS trn_id,
         DATE_FORMAT(TrnDate,'%d/%m/%Y')        AS trn_date,
-        FORMAT(SavingsAdded,0)                 AS savings_added,
-        FORMAT(SavingsRemoved,0)               AS savings_removed,
-        FORMAT(SavingsRunningBalance,0)        AS savings_running_balance,
+        FORMAT(CAST(SavingsAdded   AS DECIMAL(18,2)),0)   AS savings_added,
+        FORMAT(CAST(SavingsRemoved AS DECIMAL(18,2)),0)   AS savings_removed,
+        FORMAT(CAST(SavingsRunningBalance AS DECIMAL(18,2)),0) AS savings_running_balance,
         SavingsMonth,
         SavingsYear
     FROM newsavingsmembers
@@ -20888,10 +25064,399 @@ END
 ##
 DELIMITER ;
 
-CALL savingsPrintingDetails(
-    '05502008510',
-    '2025-01-01',
-    '2025-11-30'
-)\G
+
+CALL savingsStatementDetails(
+  '05502008510',
+  '2025-01-01',
+  '2025-11-30'
+)\G;
 
 
+CREATE TABLE savings_minimum_config (
+  config_id           INT NOT NULL AUTO_INCREMENT,
+  is_active           TINYINT(1) NOT NULL DEFAULT 1,
+  base_amount         DECIMAL(18,2) NOT NULL,          -- e.g. 10000.00
+  increment_type      ENUM('FIXED','PERCENT') NOT NULL DEFAULT 'FIXED',
+  increment_value     DECIMAL(18,4) NOT NULL,          -- e.g. 5000.00 or 5.00 (percent)
+  schedule_mode       ENUM('CALENDAR','PER_MEMBER') NOT NULL DEFAULT 'CALENDAR',
+  start_year          INT NOT NULL,                    -- e.g. 2025
+  start_month         TINYINT(2) NOT NULL,             -- 1–12
+  PRIMARY KEY (config_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE savings_minimum_schedule (
+  schedule_id     INT NOT NULL AUTO_INCREMENT,
+  period_year     INT NOT NULL,
+  period_month    TINYINT(2) NOT NULL,
+  required_amount DECIMAL(18,2) NOT NULL,
+  generated_at    DATETIME NOT NULL,
+  PRIMARY KEY (schedule_id),
+  UNIQUE KEY uq_savings_minimum_period (period_year, period_month)
+);
+
+
+
+INSERT INTO savings_minimum_config (
+  is_active,
+  base_amount,
+  increment_type,
+  increment_value,
+  schedule_mode,
+  start_year,
+  start_month
+) VALUES (
+  1,              -- active
+  10000.00,       -- USER-DEFINED base minimum (UGX)
+  'FIXED',        -- today: fixed increment
+  5000.00,        -- USER-DEFINED monthly increment (UGX)
+  'CALENDAR',     -- today: calendar-based
+  2025,           -- USER-DEFINED start year
+  1               -- USER-DEFINED start month (1=Jan)
+);
+
+
+CREATE EVENT ev_update_savings_minimum
+ON SCHEDULE EVERY 1 MONTH
+STARTS '2025-01-01 00:05:00'         -- adjust start date/time
+DO
+  CALL update_savings_minimum_schedule();
+
+  SELECT
+  n.AccountNumber,
+  n.AccountName,
+  n.SavingsYear,
+  n.SavingsMonth,
+  CAST(n.SavingsAdded AS DECIMAL(18,2)) AS actual_amount,
+  s.required_amount,
+  CAST(n.SavingsAdded AS DECIMAL(18,2)) - s.required_amount AS variance_month,
+  CASE
+    WHEN CAST(n.SavingsAdded AS DECIMAL(18,2)) < s.required_amount
+      THEN 'BELOW'
+    WHEN CAST(n.SavingsAdded AS DECIMAL(18,2)) = s.required_amount
+      THEN 'AT'
+    ELSE 'ABOVE'
+  END AS status_month
+FROM newsavingsmembers n
+JOIN savings_minimum_schedule s
+  ON s.period_year  = CAST(n.SavingsYear AS SIGNED)
+ AND s.period_month = MONTH(STR_TO_DATE(n.SavingsMonth, '%M'));
+
+
+ DELIMITER $$
+
+DROP PROCEDURE IF EXISTS update_savings_minimum_schedule $$
+CREATE PROCEDURE update_savings_minimum_schedule()
+proc_main: BEGIN
+
+  DECLARE v_base_amount       DECIMAL(18,2);
+  DECLARE v_increment_type    VARCHAR(10);
+  DECLARE v_increment_value   DECIMAL(18,4);
+  DECLARE v_start_year        INT;
+  DECLARE v_start_month       TINYINT;
+
+  DECLARE v_last_year         INT;
+  DECLARE v_last_month        TINYINT;
+  DECLARE v_last_amount       DECIMAL(18,2);
+
+  DECLARE v_next_year         INT;
+  DECLARE v_next_month        TINYINT;
+  DECLARE v_required_amount   DECIMAL(18,2);
+
+  DECLARE v_current_year      INT;
+  DECLARE v_current_month     TINYINT;
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    SELECT 'OTHER_ER' AS theMessage, 'A database error occurred' AS MESSAGE;
+  END;
+
+  START TRANSACTION;
+
+  -- 1) Load configuration
+  SELECT
+    base_amount,
+    increment_type,
+    increment_value,
+    start_year,
+    start_month
+  INTO
+    v_base_amount,
+    v_increment_type,
+    v_increment_value,
+    v_start_year,
+    v_start_month
+  FROM savings_minimum_config
+  WHERE is_active = 1
+  ORDER BY config_id DESC
+  LIMIT 1;
+
+  IF v_base_amount IS NULL THEN
+    ROLLBACK;
+    SELECT 'CONFIG_MISSING' AS theMessage, 'No active savings_minimum_config found' AS MESSAGE;
+    LEAVE proc_main;
+  END IF;
+
+  SET v_current_year  = YEAR(CURDATE());
+  SET v_current_month = MONTH(CURDATE());
+
+  -- 2) Determine last schedule row
+  SELECT
+    period_year,
+    period_month,
+    required_amount
+  INTO
+    v_last_year,
+    v_last_month,
+    v_last_amount
+  FROM savings_minimum_schedule
+  ORDER BY period_year DESC, period_month DESC
+  LIMIT 1;
+
+  IF v_last_year IS NULL THEN
+    SET v_next_year       = v_start_year;
+    SET v_next_month      = v_start_month;
+    SET v_required_amount = v_base_amount;
+  ELSE
+    SET v_next_year  = v_last_year;
+    SET v_next_month = v_last_month;
+
+    IF v_next_month = 12 THEN
+      SET v_next_month = 1;
+      SET v_next_year  = v_next_year + 1;
+    ELSE
+      SET v_next_month = v_next_month + 1;
+    END IF;
+
+    IF v_increment_type = 'FIXED' THEN
+      SET v_required_amount = v_last_amount + v_increment_value;
+    ELSE
+      SET v_required_amount = v_last_amount * (1 + (v_increment_value / 100));
+    END IF;
+  END IF;
+
+  -- 3) Insert months up to current month
+  savings_min_loop: WHILE
+    (v_next_year < v_current_year)
+      OR (v_next_year = v_current_year AND v_next_month <= v_current_month)
+  DO
+    INSERT INTO savings_minimum_schedule (
+      period_year,
+      period_month,
+      required_amount,
+      generated_at
+    ) VALUES (
+      v_next_year,
+      v_next_month,
+      v_required_amount,
+      NOW()
+    );
+
+    IF v_next_month = 12 THEN
+      SET v_next_month = 1;
+      SET v_next_year  = v_next_year + 1;
+    ELSE
+      SET v_next_month = v_next_month + 1;
+    END IF;
+
+    IF v_increment_type = 'FIXED' THEN
+      SET v_required_amount = v_required_amount + v_increment_value;
+    ELSE
+      SET v_required_amount = v_required_amount * (1 + (v_increment_value / 100));
+    END IF;
+
+  END WHILE;
+
+  COMMIT;
+  SELECT 'SUCCESS' AS theMessage, 'Schedule updated' AS MESSAGE;
+
+END $$
+
+DELIMITER ;
+CALL update_savings_minimum_schedule();
+
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS get_savings_monthly_variance $$
+CREATE PROCEDURE get_savings_monthly_variance(
+  IN p_year  INT,
+  IN p_month TINYINT
+)
+proc_main: BEGIN
+  DECLARE v_year  INT;
+  DECLARE v_month TINYINT;
+
+  -- Simple error handler for MySQL 5.5
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SELECT 'OTHER_ER' AS theMessage,
+           'A database error occurred while computing savings variance' AS MESSAGE;
+  END;
+
+  -- Default to current year/month if not provided or 0
+  IF p_year IS NULL OR p_year = 0 THEN
+    SET v_year = YEAR(CURDATE());
+  ELSE
+    SET v_year = p_year;
+  END IF;
+
+  IF p_month IS NULL OR p_month = 0 THEN
+    SET v_month = MONTH(CURDATE());
+  ELSE
+    SET v_month = p_month;
+  END IF;
+
+  -- Feature flag: if there is no active config, treat as disabled/optional
+  IF NOT EXISTS (
+    SELECT 1
+    FROM savings_minimum_config
+    WHERE is_active = 1
+  ) THEN
+    SELECT 'FEATURE_DISABLED' AS theMessage,
+           'Floating minimum savings tracking is disabled (no active config)' AS MESSAGE;
+    LEAVE proc_main;
+  END IF;
+
+  -- Main result set: one row per member for that month
+  SELECT
+    n.AccountNumber                             AS account_number,
+    n.AccountName                               AS account_name,
+    n.SavingsYear                               AS savings_year,
+    n.SavingsMonth                              AS savings_month,
+    CAST(n.SavingsAdded AS DECIMAL(18,2))       AS actual_amount,
+    s.required_amount,
+    CAST(n.SavingsAdded AS DECIMAL(18,2)) - s.required_amount AS variance_month,
+    CASE
+      WHEN CAST(n.SavingsAdded AS DECIMAL(18,2)) < s.required_amount THEN 'BELOW'
+      WHEN CAST(n.SavingsAdded AS DECIMAL(18,2)) = s.required_amount THEN 'AT'
+      ELSE 'ABOVE'
+    END AS status_month
+  FROM newsavingsmembers n
+  JOIN savings_minimum_schedule s
+    ON s.period_year  = CAST(n.SavingsYear AS SIGNED)
+   AND s.period_month = MONTH(STR_TO_DATE(n.SavingsMonth, '%M'))
+  WHERE CAST(n.SavingsYear AS SIGNED) = v_year
+    AND MONTH(STR_TO_DATE(n.SavingsMonth, '%M')) = v_month
+  ORDER BY n.AccountNumber;
+
+END $$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS update_savings_minimum_schedule;
+DELIMITER $$
+
+CREATE PROCEDURE update_savings_minimum_schedule()
+proc_end: BEGIN
+  DECLARE v_not_found TINYINT DEFAULT 0;
+
+  DECLARE v_config_id INT;
+  DECLARE v_base_amount DECIMAL(18,2);
+  DECLARE v_increment_type VARCHAR(20);
+  DECLARE v_increment_value DECIMAL(18,4);
+  DECLARE v_schedule_mode VARCHAR(20);
+  DECLARE v_start_year INT;
+  DECLARE v_start_month INT;
+
+  DECLARE v_i INT DEFAULT 0;
+  DECLARE v_current_year INT;
+  DECLARE v_current_month INT;
+  DECLARE v_required_amount DECIMAL(18,2);
+
+  /* Error handlers without GET DIAGNOSTICS */
+  DECLARE EXIT HANDLER FOR 1452
+  BEGIN
+    ROLLBACK;
+    SELECT 'REF_ER' AS theMessage,
+           'Referenced field does not exist while updating savings minimum schedule.' AS MESSAGE;
+  END;
+
+  DECLARE EXIT HANDLER FOR 1062
+  BEGIN
+    ROLLBACK;
+    SELECT 'ER_DUP_ENTRY' AS theMessage,
+           'Duplicate entry not permitted while updating savings minimum schedule.' AS MESSAGE;
+  END;
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    SELECT 'OTHER_ER' AS theMessage,
+           'Unexpected error while updating savings minimum schedule.' AS MESSAGE;
+  END;
+
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_not_found = 1;
+
+  START TRANSACTION;
+
+  SET v_not_found = 0;
+  SELECT  config_id,
+          base_amount,
+          increment_type,
+          increment_value,
+          schedule_mode,
+          start_year,
+          start_month
+    INTO  v_config_id,
+          v_base_amount,
+          v_increment_type,
+          v_increment_value,
+          v_schedule_mode,
+          v_start_year,
+          v_start_month
+  FROM savings_minimum_config
+  WHERE is_active = 1
+  ORDER BY config_id DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF v_not_found = 1 OR v_config_id IS NULL THEN
+    ROLLBACK;
+    SELECT 'NO_ACTIVE' AS theMessage,
+           'No active savings minimum config found.' AS MESSAGE;
+    LEAVE proc_end;
+  END IF;
+
+  /* Rebuild schedule from scratch */
+  DELETE FROM savings_minimum_schedule;
+
+  SET v_current_year  = v_start_year;
+  SET v_current_month = v_start_month;
+  SET v_i = 0;
+
+  /* Generate 12 months; adjust if you want more/less */
+  WHILE v_i < 12 DO
+
+    IF UPPER(v_increment_type) = 'FIXED' THEN
+      -- month 0: base; month 1: base + inc; month 2: base + 2*inc; ...
+      SET v_required_amount = v_base_amount + v_increment_value * v_i;
+
+    ELSEIF UPPER(v_increment_type) = 'PERCENT' THEN
+      -- Compounding percentage growth
+      SET v_required_amount = v_base_amount * POW(1 + (v_increment_value / 100), v_i);
+
+    ELSE
+      -- Fallback: no increment
+      SET v_required_amount = v_base_amount;
+    END IF;
+
+    INSERT INTO savings_minimum_schedule
+            (period_year, period_month, required_amount, generated_at)
+    VALUES  (v_current_year, v_current_month, v_required_amount, NOW());
+
+    SET v_i = v_i + 1;
+    SET v_current_month = v_current_month + 1;
+
+    IF v_current_month > 12 THEN
+      SET v_current_month = 1;
+      SET v_current_year = v_current_year + 1;
+    END IF;
+
+  END WHILE;
+
+  COMMIT;
+
+  SELECT 'OK' AS theMessage, 'Schedule updated' AS MESSAGE;
+
+END proc_end$$
+DELIMITER ;
